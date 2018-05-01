@@ -38,7 +38,7 @@ int main(int argc, char** argv )
   struct dirent **namelist;
   int n;
   std::cout<<"Pattern "<<spat.str()<<std::endl;
-  std::string dirp="/data/local/FE1PR/APRIL1_ONE_QUATER";
+  std::string dirp="/data/local/GIFPP";
   //dirp=".";
   n = scandir(dirp.c_str(), &namelist, NULL, alphasort);
   if (n < 0)

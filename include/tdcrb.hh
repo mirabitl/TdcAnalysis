@@ -41,7 +41,7 @@ private:
   uint32_t _gtc;
   double _t,_t0,_tspill;
   std::string _directory;
-  uint32_t _run,_event,_totalSize;
+  uint32_t _run,_event,_totalSize,_nread;
   uint32_t _nevt,_ntrigger,_nfound,_nbside;
   int32_t _fdIn,_fdOut;
   bool _started;

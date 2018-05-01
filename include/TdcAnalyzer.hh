@@ -39,11 +39,18 @@ namespace lydaq
     void scurveAnalysis(uint32_t mezId,std::vector<lydaq::TdcChannel>& vChannel);
     void normalAnalysis(uint32_t mezId,std::vector<lydaq::TdcChannel>& vChannel);
     void LmAnalysis(uint32_t mezId,std::vector<lydaq::TdcChannel>& vChannel);
+    void fullAnalysis(std::vector<lydaq::TdcChannel>& vChannel);
+
     void end();
     void setInfo(uint32_t dif,uint32_t run,uint32_t ev,uint32_t gt,uint64_t ab,uint16_t trgchan,uint32_t vth,uint32_t dac);
     double acquisitionTime(){ return (_abcid-_abcid0)*2E-7;}
     void clear(){_strips.clear();}
-    std::vector<lydaq::TdcStrip>& strips(){return _strips;} 
+    std::vector<lydaq::TdcStrip>& strips(){return _strips;}
+    uint32_t triggers(){return _ntrigger;}
+    bool trigger(){return _triggerFound;}
+    uint32_t gtc(){return _gtc;}
+    uint64_t abcid(){return _abcid;}
+
   private:
     DCHistogramHandler* _rh;
     std::vector<lydaq::TdcChannel>::iterator _trigger;
@@ -51,7 +58,7 @@ namespace lydaq
     uint32_t _dif,_run,_event,_gtc,_vthSet,_dacSet,_nevt,_ntrigger,_nfound,_nbside;
     uint64_t _abcid,_abcid0;
     uint16_t _triggerChannel;
-    bool _pedestalProcessed;
+    bool _pedestalProcessed,_triggerFound;
   };
 };
 #endif

@@ -20,7 +20,7 @@
  *
  */
 using namespace std;
-lydaq::TdcAnalyzer::TdcAnalyzer(DCHistogramHandler*r ) : _rh(r),_pedestalProcessed(false),_nevt(0),_ntrigger(0),_nfound(0),_nbside(0)
+lydaq::TdcAnalyzer::TdcAnalyzer(DCHistogramHandler*r ) : _rh(r),_pedestalProcessed(false),_nevt(0),_ntrigger(0),_nfound(0),_nbside(0),_triggerFound(false)
 {
 }
 void lydaq::TdcAnalyzer::setInfo(uint32_t dif,uint32_t run,uint32_t ev,uint32_t gt,uint64_t ab,uint16_t trgchan,uint32_t vth,uint32_t dac)
@@ -36,6 +36,132 @@ void lydaq::TdcAnalyzer::setInfo(uint32_t dif,uint32_t run,uint32_t ev,uint32_t 
   
 }
 
+void lydaq::TdcAnalyzer::fullAnalysis(std::vector<lydaq::TdcChannel>& vChannel)
+{
+  std::stringstream sr;
+  
+  sr<<"/run"<<_run<<"/";
+  TH2* hdtr=_rh->GetTH2(sr.str()+"DeltaTrigger");
+  TH2* hdtrt=_rh->GetTH2(sr.str()+"DeltaTriggerSel");
+
+  TH2* hdtrt0=_rh->GetTH2(sr.str()+"DeltaTriggerSel0");
+  TH2* hdtrt1=_rh->GetTH2(sr.str()+"DeltaTriggerSel1");
+  TH1* hnstrip=_rh->GetTH1(sr.str()+"NSTRIP");
+  TH1* heff=_rh->GetTH1(sr.str()+"Efficiency");
+  TH1* hbp2=_rh->GetTH1(sr.str()+"BeamProfile");
+  TH2* hpos=_rh->GetTH2(sr.str()+"DeltaTvsStrip");
+  if (hdtr==NULL)
+    {
+      hdtr=_rh->BookTH2(sr.str()+"DeltaTrigger",4000,-1000.,0.,48,71.,119.);
+      hdtrt=_rh->BookTH2(sr.str()+"DeltaTriggerSel",4000,-600.,-560,48,71.,119.);
+      hdtrt0=_rh->BookTH2(sr.str()+"DeltaTriggerSel0",4000,-600.,-560,48,71.,119.);
+      hdtrt1=_rh->BookTH2(sr.str()+"DeltaTriggerSel1",4000,-600.,-560,48,71.,119.);
+      hpos=_rh->BookTH2(sr.str()+"DeltaTvsStrip",3000,-30.,30.,48,71.,119.);
+      hnstrip=_rh->BookTH1(sr.str()+"NSTRIP",24,-0.1,23.9);
+      heff=_rh->BookTH1(sr.str()+"Efficiency",10,-0.1,9.9);
+      hbp2=_rh->BookTH1(sr.str()+"BeamProfile",128,0.1,128.1);
+
+    }
+
+
+
+  
+  std::bitset<16> btrg(0);
+  for (auto x:vChannel)
+    {
+      if (x.channel()==24) {
+	//printf("Trigger found %d %d %f\n",x.feb(),x.channel(),x.tdcTime());
+	btrg.set(x.feb(),1);
+      }
+    }
+  _triggerFound=(btrg.count()==4);
+  if (btrg.count()==4) _ntrigger++;
+  heff->Fill(1.1);
+  if (!_triggerFound) return;
+  heff->Fill(2.1);
+
+  std::bitset<128> side[2];
+  side[0].reset();
+  side[1].reset();
+  double dtmin=-600,dtmax=-565.;
+  double febbcid[128];
+  memset(febbcid,0,128*sizeof(double));
+  for (int idif=0;idif<24;idif++)
+    {
+      if (FEB2STRIP[idif]==255) continue;
+      double tbcid=0;
+
+      for (auto x:vChannel)
+	{
+	  if (x.feb()!=idif) continue;
+	  if (x.channel()!=24) continue;
+	  tbcid=x.tdcTime();
+	  //printf("TRIGGER FOUND %f \n",tbcid);
+	  //getchar();
+	  break;
+	}
+      febbcid[idif]=tbcid;
+       for (auto x:vChannel)
+	{
+	  if (x.feb()!=idif) continue;
+	  //printf("strip %f %f %d \n",x.tdcTime(),tbcid,x.strip());
+	  hdtr->Fill(x.tdcTime()-tbcid,x.detectorStrip(x.feb()));
+	}
+
+       // Now fill those in good range
+       for (auto x:vChannel)
+	{
+	  if (x.feb()!=idif) continue;
+	  if ((x.tdcTime()-tbcid)<dtmin) continue;
+	  if ((x.tdcTime()-tbcid)>dtmax) continue;
+	  
+	  //printf("strip %f %f %d \n",x.tdcTime(),tbcid,x.strip());
+	  hdtrt->Fill(x.tdcTime()-tbcid,x.detectorStrip(x.feb()));
+	  side[x.side()].set(x.detectorStrip(x.feb()),1);
+	  if (x.side())
+	    {
+	      hdtrt1->Fill(x.tdcTime()-tbcid,x.detectorStrip(x.feb()));
+
+	    }
+	  else
+	    hdtrt0->Fill(x.tdcTime()-tbcid,x.detectorStrip(x.feb()));
+	}
+  
+    }
+  //std::cout<<side[0]<<std::endl;
+  // std::cout<<side[1]<<std::endl;
+  if (side[0].count()!=0 || side[1].count()!=0) heff->Fill(3.1);
+  uint32_t nstrip=0;
+  for (int i=0;i<128;i++)
+    if (side[0][i]&&side[1][i])
+      {
+	nstrip++;
+	hbp2->Fill(i*1.);
+	double t0=-1,t1=-1;
+	for (auto x:vChannel)
+	{
+	  double tbcid=febbcid[x.feb()];
+	  if (tbcid==0) continue;
+	  if ((x.tdcTime()-tbcid)<dtmin) continue;
+	  if ((x.tdcTime()-tbcid)>dtmax) continue;
+	  if (x.detectorStrip(x.feb())!=i) continue;
+	  if (x.side()==0 && t0==-1) 	    t0=x.tdcTime();
+	  if (x.side()==1 && t1==-1) 	    t1=x.tdcTime();
+	      
+	
+	if(t0>0 && t1>0)
+	  {
+	    //printf("%f %f %f\n",t0,t1,t1-t0);
+	  hpos->Fill(t1-t0,x.detectorStrip(x.feb()));
+	  break;
+	  }
+	}
+      }
+  //std::cout<<"NSTRIP "<<nstrip<<std::endl;
+  //getchar();
+
+  if (nstrip>=1) {heff->Fill(4.1);  hnstrip->Fill(nstrip*1.);}
+}
 void lydaq::TdcAnalyzer::pedestalAnalysis(uint32_t mezId,std::vector<lydaq::TdcChannel>& vChannel)
 {
   _pedestalProcessed=true;
@@ -200,6 +326,8 @@ void lydaq::TdcAnalyzer::end()
 
 void lydaq::TdcAnalyzer::LmAnalysis(uint32_t mezId,std::vector<lydaq::TdcChannel>& vChannel)
 {
+  //if (vChannel.size()==254) return;
+  //printf("%d %d %d \n",_event,mezId,vChannel.size());
   double fe2_shift[128];
   double fe1_shift[128];
   fe1_shift[71]=-1.36;
@@ -312,7 +440,7 @@ for (int i=0;i<12;i++){fe1_shift[71+i]+=fe8_739331[i];}
  for (int i=72;i<81;i++)
    {fe1_shift[i]=0; for (int j=72;j<=i;j++) fe1_shift[i]+=fe1_diff[j];}
 
- //memset(fe1_shift,0,128*sizeof(double));
+ memset(fe1_shift,0,128*sizeof(double));
 
  
  
@@ -391,7 +519,7 @@ memset(fe1_2tr,0,32*sizeof(double));
       hstript1=_rh->BookTH1(sr.str()+"Stript1",32,0.,32.);
       hnstrip2=_rh->BookTH1(sr.str()+"NStrips2",32,0.,32.);
       hxp=_rh->BookTH1(sr.str()+"XP",400,0.,10.);
-      hti=_rh->BookTH1(sr.str()+"time",400,0.,0.02);
+      hti=_rh->BookTH1(sr.str()+"time",4000,0.,0.02);
       hra=_rh->BookTH1(sr.str()+"rate",750,0.,200000.);
 
     }
@@ -440,12 +568,13 @@ memset(fe1_2tr,0,32*sizeof(double));
   //     //getchar();
   //   }
   // Strore the maximum time of acquisition
+  if (tmax==0) tmax=0.025;
   if (ndeclenchement==0) hti->Fill(tmax);
   // Calculate channel occupancy
-  if (tmax==0) tmax=0.005;
+
   float ncx=vChannel.size();
   if (ncx==0) ncx=1;
-  if (ndeclenchement==0) hra->Fill(ncx/0.005);
+  if (ndeclenchement==0) hra->Fill(ncx/0.0025);
   // Accept events with only one trigger
   if (ndeclenchement!=1) return;
   // Find the trigger
@@ -482,7 +611,7 @@ memset(fe1_2tr,0,32*sizeof(double));
 	    {
 	      if (x->used()) continue;
 	      if (x->channel() == _triggerChannel) continue;
-	      if (x->bcid()>(it->bcid()+4) || x->bcid()<(it->bcid()-4)) continue;
+	      if (x->bcid()>(it->bcid()-2) || x->bcid()<(it->bcid()-3)) continue;
 	      
 	      #ifdef TIMECORRCERN
 	      if ((x->tdcTime()-it->tdcTime())<-220) continue;
@@ -554,7 +683,7 @@ memset(fe1_2tr,0,32*sizeof(double));
       spat2.reset();
       for (std::vector<lydaq::TdcChannel>::iterator x=t->second.begin();x!=t->second.end();++x)
 	{
-	  DEBUG_PRINTF("\t TDC %d LEMO %d STRIP %d  SIDE %d   time %f \n",x->channel(),x->lemo(),x->strip(),x->side(),  (x->tdcTime()-trigtime));
+	  INFO_PRINTF("\t TDC %d LEMO %d STRIP %d  SIDE %d   time %f \n",x->channel(),x->lemo(),x->strip(),x->side(),  (x->tdcTime()-trigtime));
 	  if (x->channel()!=_triggerChannel) spat.set(x->strip()-70,1);
 	  if (x->channel()!=_triggerChannel) spatb.set(32*x->side()+x->strip()-70,1);
 	}
@@ -584,7 +713,7 @@ memset(fe1_2tr,0,32*sizeof(double));
 		     TH1* hdts=_rh->GetTH1(sr.str()+s.str());
 		     if (hdts==NULL)
 		       {
-			 hdts=_rh->BookTH1(sr.str()+s.str(),60,-185.,-125.);
+			 hdts=_rh->BookTH1(sr.str()+s.str(),120,-655.,-445.);
 		       }
 		     hdts->Fill(t0-trigtime);
 		   }
@@ -597,7 +726,7 @@ memset(fe1_2tr,0,32*sizeof(double));
 		     TH1* hdts=_rh->GetTH1(sr.str()+s.str());
 		     if (hdts==NULL)
 		       {
-			 hdts=_rh->BookTH1(sr.str()+s.str(),60,-185.,-125.);
+			 hdts=_rh->BookTH1(sr.str()+s.str(),120,-655.,-445.);
 		       }
 		     hdts->Fill(t1-trigtime);
 
@@ -682,12 +811,12 @@ memset(fe1_2tr,0,32*sizeof(double));
 	
 	{
 
-	  if ((it->tdcTime()-trigtime<-130) &&
-	      (it->tdcTime()-trigtime>-210) )
+	  if ((it->tdcTime()-trigtime<-600) &&
+	      (it->tdcTime()-trigtime>-500) )
 	    {
 	      for (std::vector<lydaq::TdcChannel>::iterator jt=t->second.begin();jt!=t->second.end();++jt)
-		if ((jt->tdcTime()-trigtime<-130) &&
-		    (jt->tdcTime()-trigtime>-210) )
+		if ((jt->tdcTime()-trigtime<-600) &&
+		    (jt->tdcTime()-trigtime>-500) )
 		  {
 		    if (it->channel()==jt->channel()) continue;
 		    if (it->side()==jt->side()) continue;

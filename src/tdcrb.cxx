@@ -73,6 +73,7 @@ uint32_t tdcrb::runNumber(){return _run;}
 void tdcrb::Read()
 {
   int nfile=0;
+  _nread=0;
   for (std::vector<std::pair<uint32_t,std::string> >::iterator it=_files.begin();it!=_files.end();it++)
     {
       std::cout<<"NEW File "<<it->first<<" "<<it->second<<std::endl;
@@ -103,6 +104,9 @@ void tdcrb::read()
   
   zdaq::buffer b(0x100000);
   int last=-1;
+  uint64_t _eventChannel[4096*8];
+  std::vector<lydaq::TdcChannel> _vAll;
+  uint32_t _eventChannels;
   while (_started)
     {
       if (!_started) return;
@@ -114,6 +118,7 @@ void tdcrb::read()
 
 	  
 	  int ier=::read(_fdIn,&_event,sizeof(uint32_t));
+	  _nread++;
 	  if (ier<0 || last==_event)
 	    {
 	      printf("Cannot read Event anymore %d \n ",ier);return;
@@ -137,8 +142,12 @@ void tdcrb::read()
 	  uint32_t trigFound[256];
 	  memset(trigFound,0,256*sizeof(uint32_t));
 	  _analyzer->clear();
+	  _vAll.clear();
+	  memset(_eventChannel,0,4096*8*sizeof(uint64_t));
+	  _eventChannels=0;
 	  for (uint32_t idif=0;idif<theNumberOfDIF;idif++) 
 	    {
+	      uint32_t tbcid=0;
 	      //DEBUG_PRINTF("\t writing %d bytes",idata[SHM_BUFFER_SIZE]);
 	      //(*iv)->compress();
 	      uint32_t bsize=0;
@@ -204,7 +213,7 @@ void tdcrb::read()
 		  std::vector<lydaq::TdcChannel> vch;
 		  vch.clear();
 		  _analyzer->setInfo(_difId,_run,_event,_gtc,_bxId,TDC_TRIGGER_CHANNEL,_vthSet,_dacSet);
-		  if (ibuf[6]>0)
+		  if (ibuf[6]>=0)
 		    {
 		      for (uint32_t i=1;i<255;i++)
 			if (_mezMap[i].size()>0) _mezMap[i].clear();
@@ -216,27 +225,33 @@ void tdcrb::read()
 			  //for (int j=0;j<8;j++)
 			  //  DEBUG_PRINTF("\t %.2x ",cbuf[i*8+j]);
 			  //  DEBUG_PRINTF("\n");
-			  
-			  lydaq::TdcChannel c(&cbuf[8*i]);
+			  memcpy(&_eventChannel[_eventChannels],&cbuf[8*i],8*sizeof(uint8_t));
+			  lydaq::TdcChannel c(&cbuf[8*i],_difId&0xFF);
+			  lydaq::TdcChannel ca((uint8_t*) &_eventChannel[_eventChannels],_difId&0xFF);
+			  _eventChannels++;
 			  if (c.channel()==24)
 			    {
 			      tfound=true;
 			      trigFound[_difId]++;
+			      tbcid=c.bcid();
 			    }
 			  //_mezMap[_difId].push_back(c);
 			  vch.push_back(c);
+			  _vAll.push_back(ca);
+			  
 			}
 		      //if (!tfound && _runType==0 && _event%10000!=0 ) continue;
-		      if (_runType==1) _analyzer->pedestalAnalysis(_difId,vch);
-		      if (_runType==2) _analyzer->scurveAnalysis(_difId,vch);
-		      if (_runType==0) _analyzer->normalAnalysis(_difId,vch);
+		      //if (_runType==1) _analyzer->pedestalAnalysis(_difId,vch);
+		      //if (_runType==2) _analyzer->scurveAnalysis(_difId,vch);
+		      //if (_runType==0) _analyzer->normalAnalysis(_difId,vch);
 		    }
-		  difFound[ _difId]+=1;
+		  difFound[ _difId]+=vch.size();
 		  if (_event%100==0)
 		    DEBUG_PRINTF("Time Acquisition => \t %lu %lu %10.3f \n",_bxId0,_bxId,(_bxId-_bxId0)*2E-7);
 		  
 		
-		  if (_gtc%100==0) DEBUG_PRINTF("Oops \t Type %d Mez %d DIF %d %x  channels %d Event %d \n",_runType,_mezzanine,_difId,ibuf[5],_mezMap[_difId].size(),_gtc);
+		  if (_gtc%100==0)
+		    DEBUG_PRINTF("\t \t \t ========>Oops Type %d Mez %d DIF %d %x  channels %d Event %d %d\n",_runType,_mezzanine,_difId,ibuf[5],difFound[_difId],_gtc,tbcid);
 
 
 		  // for (uint32_t i=1;i<255;i++)
@@ -251,6 +266,10 @@ void tdcrb::read()
 
      
 	    }
+	  _analyzer->fullAnalysis(_vAll);
+	  if (_analyzer->trigger())
+	    INFO_PRINTF("EVENT SUMMARY \t \t ========>Oops %d total %d, %d, triggers %d %f \n",_event,_eventChannels,_vAll.size(),_analyzer->triggers(),_analyzer->acquisitionTime());
+	  //getchar();
 	   uint32_t nst[8];
 	   memset(nst,0,8*4);
 	   std::vector<lydaq::TdcStrip> _strips=_analyzer->strips();
@@ -316,13 +335,13 @@ void tdcrb::read()
 		}
 		
 
-	      for (int i=71;i<95;i++)
+	      for (int i=71;i<71+48;i++)
 		{
 		  float ti=-2000.,tj=-2000.;
 		  for (auto it=_strips.begin();it!=_strips.end();it++)
 		    {
 		      lydaq::TdcStrip& x=(*it);
-		      if (x.dif()!=8) continue;
+		      //if (x.dif()!=8) continue;
 		      if (x.strip()==i) {ti=x.ypos();}
 		      if (x.strip()==i+1) {tj=x.ypos();}
 		    }

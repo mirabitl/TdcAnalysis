@@ -11,12 +11,13 @@ namespace lydaq {
 {
 public:
   TdcChannel() :_fr(NULL),_used(false) {;}
-  TdcChannel(uint8_t*  b) :_fr(b),_used(false) {;}
+  TdcChannel(uint8_t*  b,uint8_t feb=0) :_fr(b),_used(false),_feb(feb) {;}
   inline uint8_t channel() {return  (_fr[0]&0XFF);}
   inline uint8_t pr() {return  TDC2PR[channel()];}
   inline uint8_t lemo() {return  PR2LEMO[pr()];}
   inline uint8_t side() {return  lemo()/16;}
   inline uint8_t strip() {return  LEMO2STRIP[lemo()];}
+  inline uint8_t feb(){return _feb;}
   inline uint8_t detectorStrip(uint32_t feb) {return  strip()+FEB2STRIP[feb];}
   inline uint8_t length(){return 8;}
   inline uint64_t coarse() const {return ((uint64_t)_fr[6])|((uint64_t)_fr[5]<<8)|((uint64_t)_fr[4]<<16)|((uint64_t)_fr[3]<<24);}
@@ -47,6 +48,7 @@ public:
 private:
   uint8_t* _fr;
   bool _used;
+  uint8_t _feb;
 };
 };
 #endif
