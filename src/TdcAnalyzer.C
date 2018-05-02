@@ -137,6 +137,10 @@ void lydaq::TdcAnalyzer::fullAnalysis(std::vector<lydaq::TdcChannel>& vChannel)
       {
 	nstrip++;
 	hbp2->Fill(i*1.);
+      }
+  for (int i=0;i<128;i++)
+    if (side[0][i]&&side[1][i])
+      {
 	double t0=-1,t1=-1;
 	for (auto x:vChannel)
 	{
@@ -153,6 +157,25 @@ void lydaq::TdcAnalyzer::fullAnalysis(std::vector<lydaq::TdcChannel>& vChannel)
 	  {
 	    //printf("%f %f %f\n",t0,t1,t1-t0);
 	  hpos->Fill(t1-t0,x.detectorStrip(x.feb()));
+	  std::stringstream s;
+	  s<<"Timing/All/hdtpos"<<(int) x.detectorStrip(x.feb());
+	  TH1* hdts=_rh->GetTH1(sr.str()+s.str());
+	  if (hdts==NULL)
+	    {
+	      hdts=_rh->BookTH1(sr.str()+s.str(),300,-25.,25.);
+	    }
+	  hdts->Fill(t1-t0);
+	  if (nstrip==1)
+	    {
+	  std::stringstream s;
+	  s<<"Timing/OneStrip/hdtpos"<<(int) x.detectorStrip(x.feb());
+	  TH1* hdts=_rh->GetTH1(sr.str()+s.str());
+	  if (hdts==NULL)
+	    {
+	      hdts=_rh->BookTH1(sr.str()+s.str(),300,-25.,25.);
+	    }
+	  hdts->Fill(t1-t0);
+	    }
 	  break;
 	  }
 	}
