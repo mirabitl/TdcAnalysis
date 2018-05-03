@@ -4,6 +4,24 @@
 #include <stdio.h>
 int main()
 {
+  for (int itdc=0;itdc<24;itdc++)
+    printf("TDC %d SIDE %d \n",itdc,SIDE[itdc]);
+  getchar();
+  for (int itdc=0;itdc<24;itdc++)
+    printf("TDC %d STRIP %d \n",itdc,STRIP[itdc]);
+  getchar();
+  
+  for (int istrip=1;istrip<=12;istrip++)
+    {
+      int itdc;
+      for (itdc=0;itdc<24;itdc++)
+	if (STRIP[itdc]==istrip && SIDE[itdc]==0)
+	  printf("%d %d ",istrip,itdc);
+      for (itdc=0;itdc<24;itdc++)
+	if (STRIP[itdc]==istrip && SIDE[itdc]==1)
+	  printf("%d \n",itdc);
+    }
+  getchar();
   // printf(" TDC2PR %d PR2LEMO %d \n",TDC2PR[7],PR2LEMO[TDC2PR[7]]);
   // printf(" TDC2PR %d PR2LEMO %d \n",LEMO2PR[18],PR2TDC[LEMO2PR[18]]);
 
