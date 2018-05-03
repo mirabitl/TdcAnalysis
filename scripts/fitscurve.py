@@ -16,17 +16,124 @@ def calApp(V,P,T):
   print 1-(0.2+0.8*P/990.*293./T)
   return  V*(0.2+0.8*P/990.*293./T)
 
+
+def fitdif(run):
+  f82=TFile("./histo%d_0.root" % run);
+  #f82.cd("/run%d/TDC%d/LmAnalysis/Timing" % (run,tdc));
+  f82.cd("/run%d/ChamberDif" % (run));
+  c1=TCanvas();
+  gStyle.SetOptFit();
+  pos0=[]
+  pmean0=[]
+  pos1=[]
+  pmean1=[]
+  for i in range(48):
+    pos0.append(0)
+    pmean0.append(0)
+    #hstrip=f82.Get("/run%d/TDC%d/LmAnalysis/Timing/hdtpos%d" % (run,tdc,i+71));
+    hstrip=f82.Get("/run%d/Timing/OneStrip/Side0/hdtr_%d" % (run,i+71));
+    if (hstrip == None):
+      continue
+    if (hstrip.GetEntries()<20):
+      continue
+    hstrip.Rebin(2)
+    
+    hstrip.Draw()
+    c1.Update()
+
+    print "Enter min max"
+    #hmin = float(raw_input())
+    #hmax = float(raw_input())
+    hmin=hstrip.GetMean()-5.*hstrip.GetRMS()
+    hmax=hstrip.GetMean()+5.*hstrip.GetRMS()
+    print hmin,hmax
+    #scfit=TF1("scfit","gaus",hstrip.GetMean()-3.*hstrip.GetRMS(),hstrip.GetMean()+3.*hstrip.GetRMS())
+    #hstrip.GetXaxis().SetRangeUser(hstrip.GetMean()-3.*hstrip.GetRMS(),hstrip.GetMean()+3.*hstrip.GetRMS())
+    
+    scfit=TF1("scfit","gaus",hmin,hmax)
+    hstrip.GetXaxis().SetRangeUser(hmin,hmax)
+    hstrip.Fit("scfit","Q");
+    dtmean=scfit.GetParameter(1)
+    dtres=scfit.GetParameter(2)
+    hstrip.Draw()
+    c1.Update()
+    #c1.SaveAs("Run%d_Strip_pos.png" % (run));
+
+    val = raw_input()
+    pmean0[i]=hstrip.GetMean()
+    if (dtres<hstrip.GetRMS()):
+      pos0[i]=dtmean
+    else:
+      pos0[i]=hstrip.GetMean()
+      
+  print pos0
+  print pmean0
+  for i in range(48):
+    pos1.append(0)
+    pmean1.append(0)
+    #hstrip=f82.Get("/run%d/TDC%d/LmAnalysis/Timing/hdtpos%d" % (run,tdc,i+71));
+    hstrip=f82.Get("/run%d/Timing/OneStrip/Side1/hdtr_%d" % (run,i+71));
+    if (hstrip == None):
+      continue
+    if (hstrip.GetEntries()<20):
+      continue
+    hstrip.Rebin(2)
+    
+    hstrip.Draw()
+    c1.Update()
+
+    print "Enter min max"
+    #hmin = float(raw_input())
+    #hmax = float(raw_input())
+    hmin=hstrip.GetMean()-5.*hstrip.GetRMS()
+    hmax=hstrip.GetMean()+5.*hstrip.GetRMS()
+    print hmin,hmax
+    #scfit=TF1("scfit","gaus",hstrip.GetMean()-3.*hstrip.GetRMS(),hstrip.GetMean()+3.*hstrip.GetRMS())
+    #hstrip.GetXaxis().SetRangeUser(hstrip.GetMean()-3.*hstrip.GetRMS(),hstrip.GetMean()+3.*hstrip.GetRMS())
+    
+    scfit=TF1("scfit","gaus",hmin,hmax)
+    hstrip.GetXaxis().SetRangeUser(hmin,hmax)
+    hstrip.Fit("scfit","Q");
+    dtmean=scfit.GetParameter(1)
+    dtres=scfit.GetParameter(2)
+    hstrip.Draw()
+    c1.Update()
+    #c1.SaveAs("Run%d_Strip_pos.png" % (run));
+
+    val = raw_input()
+    pmean1[i]=hstrip.GetMean()
+    if (dtres<hstrip.GetRMS()):
+      pos1[i]=dtmean
+    else:
+      pos1[i]=hstrip.GetMean()
+      
+  print pos0
+  print pmean0
+
+
+
+
+
+  
+  dt=0
+  for i in range(48):
+    print "fe1_2tr[%d]=%5.3f;" % (i+71,pos0[i]-pos1[i])
+
+  #print pos
+
 def fitpos(run,tdc):
   f82=TFile("./histo%d_0.root" % run);
-  f82.cd("/run%d/TDC%d/LmAnalysis/Timing" % (run,tdc));
+  #f82.cd("/run%d/TDC%d/LmAnalysis/Timing" % (run,tdc));
+  f82.cd("/run%d/Timing" % (run));
   c1=TCanvas();
   gStyle.SetOptFit();
   pos=[]
   pmean=[]
-  for i in range(12):
+  for i in range(48):
     pos.append(0)
     pmean.append(0)
-    hstrip=f82.Get("/run%d/TDC%d/LmAnalysis/Timing/hdtpos%d" % (run,tdc,i+71));
+    #hstrip=f82.Get("/run%d/TDC%d/LmAnalysis/Timing/hdtpos%d" % (run,tdc,i+71));
+    hstrip=f82.Get("/run%d/Timing/All/hdtpos%d" % (run,i+71));
     if (hstrip == None):
       continue
     hstrip.Rebin(5)

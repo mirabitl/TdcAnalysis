@@ -38,6 +38,158 @@ void lydaq::TdcAnalyzer::setInfo(uint32_t dif,uint32_t run,uint32_t ev,uint32_t 
 
 void lydaq::TdcAnalyzer::fullAnalysis(std::vector<lydaq::TdcChannel>& vChannel)
 {
+
+  double fe1_2tr[128];
+  memset(fe1_2tr,0,128*sizeof(double));
+  fe1_2tr[71]=0.538;
+fe1_2tr[72]=2.684;
+fe1_2tr[73]=4.380;
+fe1_2tr[74]=6.970;
+fe1_2tr[75]=4.854;
+fe1_2tr[76]=3.512;
+fe1_2tr[77]=3.841;
+fe1_2tr[78]=2.302;
+fe1_2tr[79]=0.000;
+fe1_2tr[80]=3.909;
+fe1_2tr[81]=0.658;
+fe1_2tr[82]=0.000;
+fe1_2tr[83]=-0.868;
+fe1_2tr[84]=2.402;
+fe1_2tr[85]=4.748;
+fe1_2tr[86]=5.251;
+fe1_2tr[87]=3.620;
+fe1_2tr[88]=0.697;
+fe1_2tr[89]=1.292;
+fe1_2tr[90]=0.465;
+fe1_2tr[91]=3.092;
+fe1_2tr[92]=2.013;
+fe1_2tr[93]=-1.252;
+fe1_2tr[94]=0.000;
+fe1_2tr[95]=-3.725;
+fe1_2tr[96]=-0.851;
+fe1_2tr[97]=0.862;
+fe1_2tr[98]=2.577;
+fe1_2tr[99]=0.960;
+fe1_2tr[100]=-1.688;
+fe1_2tr[101]=-0.950;
+fe1_2tr[102]=-1.264;
+fe1_2tr[103]=0.236;
+fe1_2tr[104]=-0.445;
+fe1_2tr[105]=-3.270;
+fe1_2tr[106]=0.000;
+fe1_2tr[107]=-8.650;
+fe1_2tr[108]=-3.841;
+fe1_2tr[109]=-1.670;
+fe1_2tr[110]=-0.204;
+fe1_2tr[111]=-1.868;
+fe1_2tr[112]=-3.775;
+fe1_2tr[113]=-3.519;
+fe1_2tr[114]=-3.850;
+fe1_2tr[115]=-1.360;
+fe1_2tr[116]=-2.633;
+fe1_2tr[117]=-5.976;
+fe1_2tr[118]=0.000;
+
+//740473
+ fe1_2tr[71]=-0.729;
+fe1_2tr[72]=5.578;
+fe1_2tr[73]=5.346;
+fe1_2tr[74]=6.979;
+fe1_2tr[75]=5.484;
+fe1_2tr[76]=2.787;
+fe1_2tr[77]=3.493;
+fe1_2tr[78]=5.086;
+fe1_2tr[79]=0.000;
+fe1_2tr[80]=4.209;
+fe1_2tr[81]=0.596;
+fe1_2tr[82]=0.000;
+fe1_2tr[83]=6.131;
+fe1_2tr[84]=4.099;
+fe1_2tr[85]=3.636;
+fe1_2tr[86]=5.273;
+fe1_2tr[87]=1.221;
+fe1_2tr[88]=0.899;
+fe1_2tr[89]=3.930;
+fe1_2tr[90]=0.601;
+fe1_2tr[91]=3.246;
+fe1_2tr[92]=4.602;
+fe1_2tr[93]=-1.179;
+fe1_2tr[94]=0.000;
+fe1_2tr[95]=-2.724;
+fe1_2tr[96]=-0.747;
+fe1_2tr[97]=1.005;
+fe1_2tr[98]=2.766;
+fe1_2tr[99]=1.104;
+fe1_2tr[100]=-1.629;
+fe1_2tr[101]=-1.153;
+fe1_2tr[102]=-1.796;
+fe1_2tr[103]=0.899;
+fe1_2tr[104]=-0.291;
+fe1_2tr[105]=-3.507;
+fe1_2tr[106]=0.000;
+fe1_2tr[107]=-7.014;
+fe1_2tr[108]=-3.733;
+fe1_2tr[109]=-4.378;
+fe1_2tr[110]=-2.629;
+fe1_2tr[111]=-1.741;
+fe1_2tr[112]=-4.752;
+fe1_2tr[113]=-3.914;
+fe1_2tr[114]=-4.568;
+fe1_2tr[115]=-1.864;
+fe1_2tr[116]=-3.137;
+fe1_2tr[117]=-6.686;
+fe1_2tr[118]=0.000;
+
+// 740478
+fe1_2tr[71]=0.000;
+fe1_2tr[72]=0.000;
+fe1_2tr[73]=0.000;
+fe1_2tr[74]=0.000;
+fe1_2tr[75]=0.000;
+fe1_2tr[76]=0.000;
+fe1_2tr[77]=0.000;
+fe1_2tr[78]=0.000;
+fe1_2tr[79]=0.000;
+fe1_2tr[80]=8.305;
+fe1_2tr[81]=0.000;
+fe1_2tr[82]=0.000;
+fe1_2tr[83]=2.105;
+fe1_2tr[84]=0.000;
+fe1_2tr[85]=0.000;
+fe1_2tr[86]=8.945;
+fe1_2tr[87]=3.062;
+fe1_2tr[88]=5.103;
+fe1_2tr[89]=8.276;
+fe1_2tr[90]=3.793;
+fe1_2tr[91]=6.835;
+fe1_2tr[92]=8.472;
+fe1_2tr[93]=2.664;
+fe1_2tr[94]=0.000;
+fe1_2tr[95]=0.865;
+fe1_2tr[96]=3.147;
+fe1_2tr[97]=4.950;
+fe1_2tr[98]=7.080;
+fe1_2tr[99]=5.983;
+fe1_2tr[100]=2.446;
+fe1_2tr[101]=2.696;
+fe1_2tr[102]=2.037;
+fe1_2tr[103]=4.759;
+fe1_2tr[104]=3.647;
+fe1_2tr[105]=0.141;
+fe1_2tr[106]=0.000;
+fe1_2tr[107]=0.000;
+fe1_2tr[108]=-0.161;
+fe1_2tr[109]=-1.075;
+fe1_2tr[110]=0.997;
+fe1_2tr[111]=1.908;
+fe1_2tr[112]=-1.301;
+fe1_2tr[113]=-0.374;
+fe1_2tr[114]=-1.463;
+fe1_2tr[115]=0.753;
+fe1_2tr[116]=-0.498;
+fe1_2tr[117]=-3.602;
+fe1_2tr[118]=0.000;
+
   std::stringstream sr;
   
   sr<<"/run"<<_run<<"/";
@@ -83,7 +235,7 @@ void lydaq::TdcAnalyzer::fullAnalysis(std::vector<lydaq::TdcChannel>& vChannel)
   std::bitset<128> side[2];
   side[0].reset();
   side[1].reset();
-  double dtmin=-600,dtmax=-565.;
+  double dtmin=-585,dtmax=-545.,dtmean=-565.;
   double febbcid[128];
   memset(febbcid,0,128*sizeof(double));
   for (int idif=0;idif<24;idif++)
@@ -165,16 +317,60 @@ void lydaq::TdcAnalyzer::fullAnalysis(std::vector<lydaq::TdcChannel>& vChannel)
 	      hdts=_rh->BookTH1(sr.str()+s.str(),300,-25.,25.);
 	    }
 	  hdts->Fill(t1-t0);
+	  s.str("");
+	  s.clear();
+	  s<<"Timing/Side0/hdtr_"<<(int) x.detectorStrip(x.feb());
+	  TH1* hdts0=_rh->GetTH1(sr.str()+s.str());
+	  if (hdts0==NULL)
+	    {
+	      hdts0=_rh->BookTH1(sr.str()+s.str(),100,dtmin-dtmean,dtmax-dtmean);
+	    }
+	  hdts0->Fill(t0-tbcid-dtmean);
+	  s.str("");
+	  s.clear();
+	  s<<"Timing/Side1/hdtr_"<<(int) x.detectorStrip(x.feb());
+	  TH1* hdts1=_rh->GetTH1(sr.str()+s.str());
+	  if (hdts1==NULL)
+	    {
+	      hdts1=_rh->BookTH1(sr.str()+s.str(),100,dtmin-dtmean,dtmax-dtmean);
+	    }
+	  hdts1->Fill(t1-tbcid-dtmean);
+
+	  lydaq::TdcStrip ts(x.feb(),x.detectorStrip(x.feb()),t0,t1,fe1_2tr[x.detectorStrip(x.feb())]);
+	  _strips.push_back(ts);
+
 	  if (nstrip==1)
 	    {
-	  std::stringstream s;
-	  s<<"Timing/OneStrip/hdtpos"<<(int) x.detectorStrip(x.feb());
-	  TH1* hdts=_rh->GetTH1(sr.str()+s.str());
-	  if (hdts==NULL)
-	    {
-	      hdts=_rh->BookTH1(sr.str()+s.str(),300,-25.,25.);
+	      std::stringstream s;
+	      s<<"Timing/OneStrip/hdtpos"<<(int) x.detectorStrip(x.feb());
+	      TH1* hdts=_rh->GetTH1(sr.str()+s.str());
+	      if (hdts==NULL)
+		{
+		  hdts=_rh->BookTH1(sr.str()+s.str(),300,-25.,25.);
+		}
+	      hdts->Fill(t1-t0);
 	    }
-	  hdts->Fill(t1-t0);
+	  if (nstrip<=3)
+	    {
+	      std::stringstream s;
+	  s.str("");
+	  s.clear();
+	  s<<"Timing/OneStrip/Side0/hdtr_"<<(int) x.detectorStrip(x.feb());
+	  TH1* hdts0=_rh->GetTH1(sr.str()+s.str());
+	  if (hdts0==NULL)
+	    {
+	      hdts0=_rh->BookTH1(sr.str()+s.str(),100,dtmin-dtmean,dtmax-dtmean);
+	    }
+	  hdts0->Fill(t0-tbcid-dtmean);
+	  s.str("");
+	  s.clear();
+	  s<<"Timing/OneStrip/Side1/hdtr_"<<(int) x.detectorStrip(x.feb());
+	  TH1* hdts1=_rh->GetTH1(sr.str()+s.str());
+	  if (hdts1==NULL)
+	    {
+	      hdts1=_rh->BookTH1(sr.str()+s.str(),100,dtmin-dtmean,dtmax-dtmean);
+	    }
+	  hdts1->Fill(t1-tbcid-dtmean);
 	    }
 	  break;
 	  }
@@ -184,6 +380,108 @@ void lydaq::TdcAnalyzer::fullAnalysis(std::vector<lydaq::TdcChannel>& vChannel)
   //getchar();
 
   if (nstrip>=1) {heff->Fill(4.1);  hnstrip->Fill(nstrip*1.);}
+
+
+
+  uint32_t nst[8];
+  memset(nst,0,8*4);
+
+  if (_strips.size()>0)
+    {
+      DEBUG_PRINTF("================> Event %d Number of DIF found %d \n",_event,theNumberOfDIF);
+      DEBUG_PRINTF(" ======================================> Strips \n");
+      
+      
+      for (auto it=_strips.begin();it!=_strips.end();it++)
+	{
+	  lydaq::TdcStrip& x=(*it);
+	  DEBUG_PRINTF("\t STRIP %d %d %f %f pos %f %f \n",x.dif(),x.strip(),x.t0(),x.t1(),x.xpos(),x.ypos());
+	  nst[x.dif()/2]++;
+	  std::stringstream sr;
+	  uint32_t ich=x.dif();
+	  sr<<"/run"<<_run<<"/Chamber"<<ich<<"/";
+	  
+	  TH2* hpos=_rh->GetTH2(sr.str()+"XY");
+	  if (hpos==NULL)
+	    {
+	      
+	      hpos=_rh->BookTH2(sr.str()+"XY",128,0.,128.,128,-10.,10.);
+	      
+	      
+	    }
+	  hpos->Fill(x.xpos(),x.ypos());
+	}
+      // getchar();
+
+      std::stringstream sr;
+
+      sr<<"/run"<<_run<<"/ChamberAll/";
+		  
+      TH2* hpos=_rh->GetTH2(sr.str()+"XY");
+      if (hpos==NULL)
+	{
+		      
+	  hpos=_rh->BookTH2(sr.str()+"XY",128,0.,128.,256,-15.,15.);
+
+
+	}
+      if (_strips.size()==1)
+	hpos->Fill(_strips[0].xpos(),_strips[0].ypos());
+      if (_strips.size()==2)
+	hpos->Fill((_strips[0].xpos()+_strips[1].xpos())/2.,(_strips[0].ypos()+_strips[1].ypos())/2.);
+      if (_strips.size()==3)
+	hpos->Fill(_strips[1].xpos(),_strips[1].ypos());
+      if (_strips.size()==4)
+	hpos->Fill((_strips[2].xpos()+_strips[1].xpos())/2.,(_strips[2].ypos()+_strips[1].ypos())/2.);
+
+      if (_strips.size()>=5 && _strips.size()<=12)
+	{
+	  double x=0,y=0;
+	  for (int i=2;i<_strips.size()-2;i++)
+	    {
+	      x+=_strips[i].xpos();
+	      y+=_strips[i].ypos();
+	    }
+	  x/=(_strips.size()-4);
+	  y/=(_strips.size()-4);
+	  hpos->Fill(x,y);
+	}
+		
+
+      for (int i=71;i<71+48;i++)
+	{
+	  float ti=-2000.,tj=-2000.;
+	  for (auto it=_strips.begin();it!=_strips.end();it++)
+	    {
+	      lydaq::TdcStrip& x=(*it);
+	      //if (x.dif()!=8) continue;
+	      if (x.strip()==i) {ti=x.ypos();}
+	      if (x.strip()==i+1) {tj=x.ypos();}
+	    }
+
+	  if (ti>-100 && tj>-100 && _strips.size()<12)
+	    {
+	      std::stringstream sd;
+		      
+	      sd<<"/run"<<_run<<"/ChamberDif/dif"<<i<<"_"<<i+1;
+
+	      TH1* hpos=_rh->GetTH1(sd.str());
+	      if (hpos==NULL)
+		{
+		  
+		  hpos=_rh->BookTH1(sd.str(),128,-10.,10.);
+
+
+		}
+	      hpos->Fill(tj-ti);
+
+	    }
+	}
+
+	      
+    }
+	 
+
 }
 void lydaq::TdcAnalyzer::pedestalAnalysis(uint32_t mezId,std::vector<lydaq::TdcChannel>& vChannel)
 {
