@@ -1,5 +1,6 @@
 from ROOT import *
 import math
+import time
 defped=[31,31,31,31,31,31,31,31,31,31,31,31,31,31,31,31,31,31,31,31,31,31,31,31,31,31,31,31,31,31,31,31]
 #defped=[30, 30, 34, 29, 32, 32, 37, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 33, 27, 31, 29, 25, 35, 33, 9]
 #defped=[39,38,42,37,41,40,46,0,43,48,37,49,0,0,0,0,0,0,0,0,39,39,36,35,41,35,40,34,32,44,43,34]
@@ -15,6 +16,34 @@ def calV(V,P,T):
 def calApp(V,P,T):
   print 1-(0.2+0.8*P/990.*293./T)
   return  V*(0.2+0.8*P/990.*293./T)
+
+
+def fitProfile(run,sel=92):
+  f82=TFile("./histo%d_0.root" % run);
+  #f82.cd("/run%d/TDC%d/LmAnalysis/Timing" % (run,tdc));
+  f82.cd("/run%d/ChamberAll" % (run));
+  c1=TCanvas();
+  gStyle.SetOptFit();
+  pos0=[]
+  pmean0=[]
+  pos1=[]
+  pmean1=[]
+  hall=f82.Get("/run%d/ChamberAll/XY" % (run));
+  for i in range(sel,sel+1):
+    pos0.append(0)
+    pmean0.append(0)
+    #hstrip=f82.Get("/run%d/TDC%d/LmAnalysis/Timing/hdtpos%d" % (run,tdc,i+71));
+    hstrip=hall.ProjectionY("strip%d" % (i),(i),i+1)
+    if (hstrip.GetEntries()<100):
+      continue
+    scfit=TF1("scfit","gaus",hstrip.GetMean()-2.*hstrip.GetRMS(),hstrip.GetMean()+2.*hstrip.GetRMS())
+    hstrip.Fit("scfit","Q","",hstrip.GetMean()-2.*hstrip.GetRMS(),hstrip.GetMean()+2.*hstrip.GetRMS())
+    dtmean=scfit.GetParameter(1)
+    dtres=scfit.GetParameter(2)
+    print run,i,dtmean,dtres,dtmean*80./8.3,dtres*80/8.3
+    c1.Update()
+    #val = raw_input()
+    time.sleep(2)
 
 
 def fitdif(run):

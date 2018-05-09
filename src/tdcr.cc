@@ -27,7 +27,7 @@ int main(int argc, char** argv )
 {
   static tdcrb bs("/tmp");
   TApplication theApp("tapp", &argc, argv);
-  bs.geometry("m3_avril2015.json");
+  bs.geometry("gifpp_geom.json");
 
   std::stringstream spat;
   int runask=atol(argv[1]);

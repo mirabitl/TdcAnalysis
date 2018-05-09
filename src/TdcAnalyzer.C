@@ -20,7 +20,7 @@
  *
  */
 using namespace std;
-lydaq::TdcAnalyzer::TdcAnalyzer(DCHistogramHandler*r ) : _rh(r),_pedestalProcessed(false),_nevt(0),_ntrigger(0),_nfound(0),_nbside(0),_triggerFound(false)
+lydaq::TdcAnalyzer::TdcAnalyzer(DCHistogramHandler*r ) : _rh(r),_pedestalProcessed(false),_nevt(0),_ntrigger(0),_nfound(0),_nbside(0),_triggerFound(false),_geo(NULL)
 {
 }
 void lydaq::TdcAnalyzer::setInfo(uint32_t dif,uint32_t run,uint32_t ev,uint32_t gt,uint64_t ab,uint16_t trgchan,uint32_t vth,uint32_t dac)
@@ -34,6 +34,322 @@ void lydaq::TdcAnalyzer::setInfo(uint32_t dif,uint32_t run,uint32_t ev,uint32_t 
   _dacSet=dac;
   if (_abcid0==0 || _abcid<_abcid0) _abcid0=_abcid;
   
+}
+
+void lydaq::TdcAnalyzer::multiChambers(std::vector<lydaq::TdcChannel>& vChannel)
+{
+
+  std::stringstream sr;
+  
+
+
+  
+  std::bitset<16> btrg(0);
+  for (auto x:vChannel)
+    {
+      if (x.channel()==24) {
+	//printf("Trigger found %d %d %f\n",x.feb(),x.channel(),x.tdcTime());
+	btrg.set(x.feb(),1);
+      }
+    }
+  _triggerFound=(btrg.count()==8);
+  if (btrg.count()==8) _ntrigger++;
+
+  if (!_triggerFound) return;
+
+
+  for (uint32_t chamber=1;chamber<=2;chamber++)
+    {
+      double dtmin,dtmax,dtmean;
+            std::stringstream sr;
+      sr.clear();
+      sr.str("");
+
+      sr<<"/run"<<_run<<"/Chamber"<<chamber<<"/";
+      TH2* hdtr=_rh->GetTH2(sr.str()+"DeltaTrigger");
+      TH2* hdtrt=_rh->GetTH2(sr.str()+"DeltaTriggerSel");
+      
+      TH2* hdtrt0=_rh->GetTH2(sr.str()+"DeltaTriggerSel0");
+      TH2* hdtrt1=_rh->GetTH2(sr.str()+"DeltaTriggerSel1");
+      TH1* hnstrip=_rh->GetTH1(sr.str()+"NSTRIP");
+      TH1* heff=_rh->GetTH1(sr.str()+"Efficiency");
+      TH1* hbp2=_rh->GetTH1(sr.str()+"BeamProfile");
+      TH2* hpos=_rh->GetTH2(sr.str()+"DeltaTvsStrip");
+      if (hdtr==NULL)
+	{
+	  hdtr=_rh->BookTH2(sr.str()+"DeltaTrigger",4000,-1000.,0.,48,71.,119.);
+	  hdtrt=_rh->BookTH2(sr.str()+"DeltaTriggerSel",4000,dtmin,dtmax,48,71.,119.);
+	  hdtrt0=_rh->BookTH2(sr.str()+"DeltaTriggerSel0",4000,dtmin,dtmax,48,71.,119.);
+	  hdtrt1=_rh->BookTH2(sr.str()+"DeltaTriggerSel1",4000,dtmin,dtmax,48,71.,119.);
+	  hpos=_rh->BookTH2(sr.str()+"DeltaTvsStrip",3000,-30.,30.,48,71.,119.);
+	  hnstrip=_rh->BookTH1(sr.str()+"NSTRIP",24,-0.1,23.9);
+	  heff=_rh->BookTH1(sr.str()+"Efficiency",10,-0.1,9.9);
+	  hbp2=_rh->BookTH1(sr.str()+"BeamProfile",128,0.1,128.1);
+
+	}
+
+      std::bitset<128> side[2];
+      side[0].reset();
+      side[1].reset();
+
+  double febbcid[128];
+  memset(febbcid,0,128*sizeof(double));
+  heff->Fill(1.1);
+  heff->Fill(2.1);
+
+  for (int idif=1;idif<=24;idif++)
+    {
+      //      std::cout<<"idif "<<idif<<" "<<_geo->feb(idif).id<<" "<<_geo->feb(idif).chamber<<std::endl;
+      //getchar();
+      if (_geo->feb(idif).id!=idif) continue;
+      if (_geo->feb(idif).chamber!=chamber) continue;
+      double tbcid=0;
+      dtmin=_geo->feb(idif).triggerMin,dtmax=_geo->feb(idif).triggerMax,dtmean=_geo->feb(idif).triggerMean;
+      for (auto x:vChannel)
+	{
+	  if (x.feb()!=idif) continue;
+	  if (x.channel()!=24) continue;
+	  tbcid=x.tdcTime();
+	  //printf("TRIGGER FOUND %f \n",tbcid);
+	  //getchar();
+	  break;
+	}
+      febbcid[idif]=tbcid;
+
+      for (auto x:vChannel)
+	{
+	  if (x.feb()!=idif) continue;
+	  //printf("strip %f %f %d \n",x.tdcTime(),tbcid,x.strip());
+	  hdtr->Fill(x.tdcTime()-tbcid,x.detectorStrip(_geo->feb(idif)));
+	}
+
+       // Now fill those in good range
+       for (auto x:vChannel)
+	{
+	  if (x.feb()!=idif) continue;
+	  if ((x.tdcTime()-tbcid)<dtmin) continue;
+	  if ((x.tdcTime()-tbcid)>dtmax) continue;
+	  if (chamber==112)
+	    {
+	      printf("strip time  %f  bcid %f strip %d detStrip %d channel %d feb %d \n",x.tdcTime(),tbcid,x.strip(_geo->feb(idif)),x.detectorStrip(_geo->feb(idif)),x.channel(),x.feb());
+	      _geo->feb(idif).dump();
+	      getchar();
+	    }
+	  hdtrt->Fill(x.tdcTime()-tbcid,x.detectorStrip(_geo->feb(idif)));
+	  side[x.side(_geo->feb(idif))].set(x.detectorStrip(_geo->feb(idif)),1);
+	  if (x.side(_geo->feb(idif)))
+	    {
+	      hdtrt1->Fill(x.tdcTime()-tbcid,x.detectorStrip(_geo->feb(idif)));
+
+	    }
+	  else
+	    hdtrt0->Fill(x.tdcTime()-tbcid,x.detectorStrip(_geo->feb(idif)));
+	}
+  
+    }
+
+  //std::cout<<side[0]<<std::endl;
+  // std::cout<<side[1]<<std::endl;
+  if (side[0].count()!=0 || side[1].count()!=0) heff->Fill(3.1);
+  uint32_t nstrip=0;
+  for (int i=0;i<128;i++)
+    if (side[0][i]&&side[1][i])
+      {
+	nstrip++;
+	hbp2->Fill(i*1.);
+      }
+  for (int i=0;i<128;i++)
+    if (side[0][i]&&side[1][i])
+      {
+	double t0=-1,t1=-1;
+	for (auto x:vChannel)
+	{
+	  double tbcid=febbcid[x.feb()];
+	  if (tbcid==0) continue;
+	  if ((x.tdcTime()-tbcid)<dtmin) continue;
+	  if ((x.tdcTime()-tbcid)>dtmax) continue;
+	  if (x.detectorStrip(_geo->feb(x.feb()))!=i) continue;
+	  if (x.side()==0 && t0==-1) 	    t0=x.tdcTime();
+	  if (x.side()==1 && t1==-1) 	    t1=x.tdcTime();
+	      
+	
+	if(t0>0 && t1>0)
+	  {
+	    //printf("%f %f %f\n",t0,t1,t1-t0);
+	  hpos->Fill(t1-t0,x.detectorStrip(_geo->feb(x.feb())));
+	  std::stringstream s;
+	  s<<"Timing/All/hdtpos"<<(int) x.detectorStrip(_geo->feb(x.feb()));
+	  TH1* hdts=_rh->GetTH1(sr.str()+s.str());
+	  if (hdts==NULL)
+	    {
+	      hdts=_rh->BookTH1(sr.str()+s.str(),300,-25.,25.);
+	    }
+	  hdts->Fill(t1-t0);
+	  s.str("");
+	  s.clear();
+	  s<<"Timing/Side0/hdtr_"<<(int) x.detectorStrip(_geo->feb(x.feb()));
+	  TH1* hdts0=_rh->GetTH1(sr.str()+s.str());
+	  if (hdts0==NULL)
+	    {
+	      hdts0=_rh->BookTH1(sr.str()+s.str(),100,dtmin-dtmean,dtmax-dtmean);
+	    }
+	  hdts0->Fill(t0-tbcid-dtmean);
+	  s.str("");
+	  s.clear();
+	  s<<"Timing/Side1/hdtr_"<<(int) x.detectorStrip(_geo->feb(x.feb()));
+	  TH1* hdts1=_rh->GetTH1(sr.str()+s.str());
+	  if (hdts1==NULL)
+	    {
+	      hdts1=_rh->BookTH1(sr.str()+s.str(),100,dtmin-dtmean,dtmax-dtmean);
+	    }
+	  hdts1->Fill(t1-tbcid-dtmean);
+
+	  lydaq::TdcStrip ts(_geo->feb(x.feb()).chamber,x.feb(),x.detectorStrip(x.feb()),t0,t1,_geo->feb(x.feb()).timePedestal[x.detectorStrip( _geo->feb(x.feb()))-70]);
+	  _strips.push_back(ts);
+
+	  if (nstrip==1)
+	    {
+	      std::stringstream s;
+	      s<<"Timing/OneStrip/hdtpos"<<(int) x.detectorStrip(_geo->feb(x.feb()));
+	      TH1* hdts=_rh->GetTH1(sr.str()+s.str());
+	      if (hdts==NULL)
+		{
+		  hdts=_rh->BookTH1(sr.str()+s.str(),300,-25.,25.);
+		}
+	      hdts->Fill(t1-t0);
+	    }
+	  if (nstrip<=3)
+	    {
+	      std::stringstream s;
+	  s.str("");
+	  s.clear();
+	  s<<"Timing/OneStrip/Side0/hdtr_"<<(int) x.detectorStrip(_geo->feb(x.feb()));
+	  TH1* hdts0=_rh->GetTH1(sr.str()+s.str());
+	  if (hdts0==NULL)
+	    {
+	      hdts0=_rh->BookTH1(sr.str()+s.str(),100,dtmin-dtmean,dtmax-dtmean);
+	    }
+	  hdts0->Fill(t0-tbcid-dtmean);
+	  s.str("");
+	  s.clear();
+	  s<<"Timing/OneStrip/Side1/hdtr_"<<(int) x.detectorStrip(_geo->feb(x.feb()));
+	  TH1* hdts1=_rh->GetTH1(sr.str()+s.str());
+	  if (hdts1==NULL)
+	    {
+	      hdts1=_rh->BookTH1(sr.str()+s.str(),100,dtmin-dtmean,dtmax-dtmean);
+	    }
+	  hdts1->Fill(t1-tbcid-dtmean);
+	    }
+	  break;
+	  }
+	}
+      }
+  //std::cout<<"NSTRIP "<<nstrip<<std::endl;
+  //getchar();
+
+  if (nstrip>=1) {heff->Fill(4.1);  hnstrip->Fill(nstrip*1.);}
+
+    }
+  #ifdef AFAIRE
+  uint32_t nst[8];
+  memset(nst,0,8*4);
+
+  if (_strips.size()>0)
+    {
+      DEBUG_PRINTF("================> Event %d Number of DIF found %d \n",_event,theNumberOfDIF);
+      DEBUG_PRINTF(" ======================================> Strips \n");
+      
+      
+      for (auto it=_strips.begin();it!=_strips.end();it++)
+	{
+	  lydaq::TdcStrip& x=(*it);
+	  DEBUG_PRINTF("\t STRIP %d %d %f %f pos %f %f \n",x.dif(),x.strip(),x.t0(),x.t1(),x.xpos(),x.ypos());
+	  nst[x.dif()/2]++;
+	  std::stringstream sr;
+	  uint32_t ich=x.dif();
+	  sr<<"/run"<<_run<<"/Chamber"<<ich<<"/";
+	  
+	  TH2* hpos=_rh->GetTH2(sr.str()+"XY");
+	  if (hpos==NULL)
+	    {
+	      
+	      hpos=_rh->BookTH2(sr.str()+"XY",128,0.,128.,128,-10.,10.);
+	      
+	      
+	    }
+	  hpos->Fill(x.xpos(),x.ypos());
+	}
+      // getchar();
+
+      std::stringstream sr;
+
+      sr<<"/run"<<_run<<"/ChamberAll/";
+		  
+      TH2* hpos=_rh->GetTH2(sr.str()+"XY");
+      if (hpos==NULL)
+	{
+		      
+	  hpos=_rh->BookTH2(sr.str()+"XY",128,0.,128.,256,-15.,15.);
+
+
+	}
+      if (_strips.size()==1)
+	hpos->Fill(_strips[0].xpos(),_strips[0].ypos());
+      if (_strips.size()==2)
+	hpos->Fill((_strips[0].xpos()+_strips[1].xpos())/2.,(_strips[0].ypos()+_strips[1].ypos())/2.);
+      if (_strips.size()==3)
+	hpos->Fill(_strips[1].xpos(),_strips[1].ypos());
+      if (_strips.size()==4)
+	hpos->Fill((_strips[2].xpos()+_strips[1].xpos())/2.,(_strips[2].ypos()+_strips[1].ypos())/2.);
+
+      if (_strips.size()>=5 && _strips.size()<=12)
+	{
+	  double x=0,y=0;
+	  for (int i=2;i<_strips.size()-2;i++)
+	    {
+	      x+=_strips[i].xpos();
+	      y+=_strips[i].ypos();
+	    }
+	  x/=(_strips.size()-4);
+	  y/=(_strips.size()-4);
+	  hpos->Fill(x,y);
+	}
+		
+
+      for (int i=71;i<71+48;i++)
+	{
+	  float ti=-2000.,tj=-2000.;
+	  for (auto it=_strips.begin();it!=_strips.end();it++)
+	    {
+	      lydaq::TdcStrip& x=(*it);
+	      //if (x.dif()!=8) continue;
+	      if (x.strip()==i) {ti=x.ypos();}
+	      if (x.strip()==i+1) {tj=x.ypos();}
+	    }
+
+	  if (ti>-100 && tj>-100 && _strips.size()<12)
+	    {
+	      std::stringstream sd;
+		      
+	      sd<<"/run"<<_run<<"/ChamberDif/dif"<<i<<"_"<<i+1;
+
+	      TH1* hpos=_rh->GetTH1(sd.str());
+	      if (hpos==NULL)
+		{
+		  
+		  hpos=_rh->BookTH1(sd.str(),128,-10.,10.);
+
+
+		}
+	      hpos->Fill(tj-ti);
+
+	    }
+	}
+
+	      
+    }
+	 
+#endif
 }
 
 void lydaq::TdcAnalyzer::fullAnalysis(std::vector<lydaq::TdcChannel>& vChannel)
@@ -275,8 +591,8 @@ fe1_2tr[118]=0.000;
 	btrg.set(x.feb(),1);
       }
     }
-  _triggerFound=(btrg.count()==4);
-  if (btrg.count()==4) _ntrigger++;
+  _triggerFound=(btrg.count()==8);
+  if (btrg.count()==8) _ntrigger++;
   heff->Fill(1.1);
   if (!_triggerFound) return;
   heff->Fill(2.1);
@@ -284,7 +600,7 @@ fe1_2tr[118]=0.000;
   std::bitset<128> side[2];
   side[0].reset();
   side[1].reset();
-  double dtmin=-585,dtmax=-545.,dtmean=-565.;
+  double dtmin=-640.,dtmax=-590.,dtmean=-640.;
   double febbcid[128];
   memset(febbcid,0,128*sizeof(double));
   for (int idif=0;idif<24;idif++)

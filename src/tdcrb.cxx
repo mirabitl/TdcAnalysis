@@ -37,6 +37,7 @@ _analyzer= new lydaq::TdcAnalyzer(_rh);
 void tdcrb::geometry(std::string name)
 {
   _geo=new jsonGeo(name);
+  _analyzer->setGeometry(_geo);
 }
 void tdcrb::open(std::string filename)
 {
@@ -107,6 +108,7 @@ void tdcrb::read()
   uint64_t _eventChannel[4096*8];
   std::vector<lydaq::TdcChannel> _vAll;
   uint32_t _eventChannels;
+  _geo->fillFebs(_run);
   while (_started)
     {
       if (!_started) return;
@@ -181,6 +183,8 @@ void tdcrb::read()
 		  uint32_t* buf=(uint32_t*) b.payload();
 		  printf("NEW RUN %d \n",_event);
 		  _run=_event;
+
+
 		  for (int i=0;i<b.payloadSize()/4;i++)
 		    {
 		      printf("%d ",buf[i]);
@@ -243,7 +247,7 @@ void tdcrb::read()
 		      //if (!tfound && _runType==0 && _event%10000!=0 ) continue;
 		      if (_runType==1) _analyzer->pedestalAnalysis(_difId,vch);
 		      if (_runType==2) _analyzer->scurveAnalysis(_difId,vch);
-		      //if (_runType==0) _analyzer->normalAnalysis(_difId,vch);
+		      if (_runType==0) _analyzer->normalAnalysis(_difId,vch);
 		    }
 		  difFound[ _difId]+=vch.size();
 		  if (_event%100==0)
@@ -266,7 +270,8 @@ void tdcrb::read()
 
      
 	    }
-	  _analyzer->fullAnalysis(_vAll);
+	  //_analyzer->fullAnalysis(_vAll);
+	  _analyzer->multiChambers(_vAll);
 	  if (_analyzer->trigger())
 	    INFO_PRINTF("EVENT SUMMARY \t \t ========>Oops %d total %d, %d, triggers %d %f \n",_event,_eventChannels,_vAll.size(),_analyzer->triggers(),_analyzer->acquisitionTime());
 	  //getchar();

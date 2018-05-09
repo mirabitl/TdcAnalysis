@@ -58,6 +58,36 @@ jsonGeo::jsonGeo(std::string config)
       }
 
   }
+void jsonGeo::fillFebs(uint32_t run)
+{
+  if (_jroot.isMember("febs"))
+    {
+   const Json::Value& books = _jroot["febs"];
+
+   for (Json::ValueConstIterator it = books.begin(); it != books.end(); ++it)
+    {
+      const Json::Value& jfeb = *it;
+      std::cout<<jfeb["first"].asUInt()<<" "<<jfeb["last"].asUInt()<<" "<<jfeb["id"].asUInt()<<std::endl;
+      if (jfeb["first"].asUInt()>run) continue;
+      if (jfeb["last"].asUInt()<run) continue;
+      uint32_t feb_id=jfeb["id"].asUInt();
+      _jFebs[feb_id].id=feb_id;
+      _jFebs[feb_id].chamber=jfeb["chamber"].asUInt();
+      _jFebs[feb_id].stripShift=jfeb["stripShift"].asUInt();
+      
+      for (int i=0;i<24;i++)
+	{
+	  _jFebs[feb_id].tdc2strip[i]=jfeb["tdc2strip"][i].asUInt();
+	  _jFebs[feb_id].tdc2side[i]=jfeb["side"][i].asUInt();
+	}
+      _jFebs[feb_id].triggerMin=jfeb["triggerMin"].asDouble();
+      _jFebs[feb_id].triggerMax=jfeb["triggerMax"].asDouble();
+      _jFebs[feb_id].triggerMean=jfeb["triggerMean"].asDouble();
+      for (int i=0;i<12;i++)
+	  _jFebs[feb_id].timePedestal[i]=jfeb["delta"][i].asDouble();
+    }
+    }
+}
 void jsonGeo::convert(uint32_t difid,uint32_t asicid,uint32_t ipad,ROOT::Math::XYZPoint* p)
 {
       //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////

@@ -3,14 +3,18 @@
 #include "TdcChannel.hh"
 #include "DCHistogramHandler.hh"
 #include "TdcMapping.hh"
+#include "jsonGeo.hh"
+
 namespace lydaq
 {
   class TdcStrip
   {
   public:
-    TdcStrip() :_dif(0), _str(0),_t0(0),_t1(0),_shift(0){;}
-    TdcStrip(uint16_t dif,uint16_t st,double t0,double t1,double shift=0) :_dif(dif), _str(st),_t0(t0),_t1(t1),_shift(shift){;}
+    TdcStrip() :_ch(0),_dif(0), _str(0),_t0(0),_t1(0),_shift(0){;}
+    TdcStrip(uint16_t dif,uint16_t st,double t0,double t1,double shift=0) :_dif(dif), _str(st),_t0(t0),_t1(t1),_shift(shift),_ch(1) {;}
+    TdcStrip(uint16_t ch,uint16_t dif,uint16_t st,double t0,double t1,double shift=0) :_ch(ch),_dif(dif), _str(st),_t0(t0),_t1(t1),_shift(shift) {;}
     inline uint8_t strip() const {return _str;}
+    inline uint8_t chamber() const {return _ch;}
     inline uint8_t dif() const {return _dif;}
     inline double t0() const {return _t0;}
     inline double t1() const {return _t1;}
@@ -28,7 +32,7 @@ namespace lydaq
 
     #endif
   private:
-    uint16_t _dif,_str;
+    uint16_t _dif,_str,_ch;
     double _t0,_t1,_shift;
 
   };
@@ -40,6 +44,7 @@ namespace lydaq
     void normalAnalysis(uint32_t mezId,std::vector<lydaq::TdcChannel>& vChannel);
     void LmAnalysis(uint32_t mezId,std::vector<lydaq::TdcChannel>& vChannel);
     void fullAnalysis(std::vector<lydaq::TdcChannel>& vChannel);
+    void multiChambers(std::vector<lydaq::TdcChannel>& vChannel);
 
     void end();
     void setInfo(uint32_t dif,uint32_t run,uint32_t ev,uint32_t gt,uint64_t ab,uint16_t trgchan,uint32_t vth,uint32_t dac);
@@ -50,7 +55,8 @@ namespace lydaq
     bool trigger(){return _triggerFound;}
     uint32_t gtc(){return _gtc;}
     uint64_t abcid(){return _abcid;}
-
+    jsonGeo* geometry(){return _geo;}
+    void setGeometry(jsonGeo* g){_geo=g;}
   private:
     DCHistogramHandler* _rh;
     std::vector<lydaq::TdcChannel>::iterator _trigger;
@@ -59,6 +65,7 @@ namespace lydaq
     uint64_t _abcid,_abcid0;
     uint16_t _triggerChannel;
     bool _pedestalProcessed,_triggerFound;
+    jsonGeo* _geo;
   };
 };
 #endif
