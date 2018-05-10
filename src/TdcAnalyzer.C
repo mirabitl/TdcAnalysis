@@ -74,6 +74,10 @@ void lydaq::TdcAnalyzer::multiChambers(std::vector<lydaq::TdcChannel>& vChannel)
       TH1* hnstrip=_rh->GetTH1(sr.str()+"NSTRIP");
       TH1* heff=_rh->GetTH1(sr.str()+"Efficiency");
       TH1* hbp2=_rh->GetTH1(sr.str()+"BeamProfile");
+      TH1* hti=_rh->GetTH1(sr.str()+"MaxTime");
+      TH1* hnch=_rh->GetTH1(sr.str()+"Channels");
+      TH1* hrate=_rh->GetTH1(sr.str()+"Rate");
+	    
       TH2* hpos=_rh->GetTH2(sr.str()+"DeltaTvsStrip");
       if (hdtr==NULL)
 	{
@@ -85,6 +89,9 @@ void lydaq::TdcAnalyzer::multiChambers(std::vector<lydaq::TdcChannel>& vChannel)
 	  hnstrip=_rh->BookTH1(sr.str()+"NSTRIP",24,-0.1,23.9);
 	  heff=_rh->BookTH1(sr.str()+"Efficiency",10,-0.1,9.9);
 	  hbp2=_rh->BookTH1(sr.str()+"BeamProfile",128,0.1,128.1);
+	  hti=_rh->BookTH1(sr.str()+"MaxTime",20000,0.,200000*25E-9);
+	  hnch=_rh->BookTH1(sr.str()+"Channels",1024,-0.1,1023.9);
+	  hrate=_rh->BookTH1(sr.str()+"Rate",10000,0.,500000.);
 
 	}
 
@@ -95,8 +102,21 @@ void lydaq::TdcAnalyzer::multiChambers(std::vector<lydaq::TdcChannel>& vChannel)
   double febbcid[128];
   memset(febbcid,0,128*sizeof(double));
   heff->Fill(1.1);
-  heff->Fill(2.1);
 
+  uint32_t maxbcid=0,nch=0;
+  for (auto x:vChannel)
+    {
+      if (_geo->feb(x.feb()).chamber!=chamber) continue;
+      if (x.bcid()>maxbcid) maxbcid=x.bcid();
+      nch++;
+      
+    }
+  if (nch>0)
+    {hti->Fill(maxbcid*2e-7);hrate->Fill(nch*1./(maxbcid*2E-7)/2./160.);
+      std::cout<<nch*1./(maxbcid*2E-7)<<std::endl;}
+  hnch->Fill(nch*1.);
+  //if (maxbcid*2E-7<1E-5) continue;
+  heff->Fill(2.1);
   for (int idif=1;idif<=24;idif++)
     {
       //      std::cout<<"idif "<<idif<<" "<<_geo->feb(idif).id<<" "<<_geo->feb(idif).chamber<<std::endl;
@@ -115,14 +135,12 @@ void lydaq::TdcAnalyzer::multiChambers(std::vector<lydaq::TdcChannel>& vChannel)
 	  break;
 	}
       febbcid[idif]=tbcid;
-
       for (auto x:vChannel)
 	{
 	  if (x.feb()!=idif) continue;
 	  //printf("strip %f %f %d \n",x.tdcTime(),tbcid,x.strip());
 	  hdtr->Fill(x.tdcTime()-tbcid,x.detectorStrip(_geo->feb(idif)));
 	}
-
        // Now fill those in good range
        for (auto x:vChannel)
 	{
