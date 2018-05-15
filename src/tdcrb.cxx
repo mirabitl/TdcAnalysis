@@ -247,7 +247,7 @@ void tdcrb::read()
 		      //if (!tfound && _runType==0 && _event%10000!=0 ) continue;
 		      if (_runType==1) _analyzer->pedestalAnalysis(_difId,vch);
 		      if (_runType==2) _analyzer->scurveAnalysis(_difId,vch);
-		      if (_runType==0) _analyzer->normalAnalysis(_difId,vch);
+		      //if (_runType==0) _analyzer->normalAnalysis(_difId,vch);
 		    }
 		  difFound[ _difId]+=vch.size();
 		  if (_event%100==0)

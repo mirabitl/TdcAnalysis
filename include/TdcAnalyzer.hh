@@ -13,9 +13,9 @@ namespace lydaq
     TdcStrip() :_ch(0),_dif(0), _str(0),_t0(0),_t1(0),_shift(0){;}
     TdcStrip(uint16_t dif,uint16_t st,double t0,double t1,double shift=0) :_dif(dif), _str(st),_t0(t0),_t1(t1),_shift(shift),_ch(1) {;}
     TdcStrip(uint16_t ch,uint16_t dif,uint16_t st,double t0,double t1,double shift=0) :_ch(ch),_dif(dif), _str(st),_t0(t0),_t1(t1),_shift(shift) {;}
-    inline uint8_t strip() const {return _str;}
-    inline uint8_t chamber() const {return _ch;}
-    inline uint8_t dif() const {return _dif;}
+    inline uint16_t strip() const {return _str;}
+    inline uint16_t chamber() const {return _ch;}
+    inline uint16_t dif() const {return _dif;}
     inline double t0() const {return _t0;}
     inline double t1() const {return _t1;}
     #ifdef SMALLPCB
@@ -27,7 +27,7 @@ namespace lydaq
     #else
     inline double ypos() const {return (_t0-_t1-_shift)/1.;}
     inline double xpos() const {
-      return _str;
+      return _str*1.0;
     }
 
     #endif
