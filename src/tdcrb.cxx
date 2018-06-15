@@ -98,8 +98,8 @@ void tdcrb::Read()
        nfile++;
     }
 }
-
-
+#define FEBCMS
+#ifndef FEBCMS
 void tdcrb::read()
 {
   
@@ -123,12 +123,12 @@ void tdcrb::read()
 	  _nread++;
 	  if (ier<0 || last==_event)
 	    {
-	      printf("Cannot read Event anymore %d \n ",ier);return;
+	      printf("Cannot read Event anymore %d %d %d \n ",ier,last,_event);return;
 	    }
 	  //else
 	  last=_event;
 	  if (_event%100==0)
-	    DEBUG_PRINTF("Event read %d \n",_event);
+	    INFO_PRINTF("Event read %d \n",_event);
       
 	  ier=::read(_fdIn,&theNumberOfDIF,sizeof(uint32_t));
 	  if (ier<0)
@@ -290,7 +290,192 @@ void tdcrb::read()
 
     }
 }
+#else
+void tdcrb::read()
+{
+  
+  zdaq::buffer b(0x100000);
+  int last=-1;
+  uint64_t _eventChannel[4096*8];
+  std::vector<lydaq::TdcChannel> _vAll;
+  uint32_t _eventChannels;
+  _geo->fillFebs(_run);
+  while (_started)
+    {
+      if (!_started) return;
+      uint32_t theNumberOfDIF=0;
+      // To be implemented
+      if (_fdIn>0)
+	{
+	  _idx=0;
 
+	  
+	  int ier=::read(_fdIn,&_event,sizeof(uint32_t));
+	  _nread++;
+if (ier<0 || ((last==_event)&_nread>20))
+	    {
+printf("Cannot read Event anymore %d  %d %d\n ",ier,last,_event);return;
+	    }
+	  //else
+	  last=_event;
+	  if (_event%100==0)
+	    DEBUG_PRINTF("Event read %d \n",_event);
+      
+	  ier=::read(_fdIn,&theNumberOfDIF,sizeof(uint32_t));
+	  if (ier<0)
+	    {
+	      printf("Cannot read anymore number of DIF %d \n ",ier);return;
+	    }
+	  else
+	    if (_event%100==0)
+	      DEBUG_PRINTF("================> Event %d Number of DIF found %d \n",_event,theNumberOfDIF);
+	  INFO_PRINTF("================> Event %d Number of DIF found %d \n",_event,theNumberOfDIF);
+	  uint32_t difFound[256];
+	  memset(difFound,0,256*sizeof(uint32_t));
+	  uint32_t trigFound[256];
+	  memset(trigFound,0,256*sizeof(uint32_t));
+	  _analyzer->clear();
+	  _vAll.clear();
+	  memset(_eventChannel,0,4096*8*sizeof(uint64_t));
+	  _eventChannels=0;
+	  for (uint32_t idif=0;idif<theNumberOfDIF;idif++) 
+	    {
+	      uint32_t tbcid=0;
+	      //DEBUG_PRINTF("\t writing %d bytes",idata[SHM_BUFFER_SIZE]);
+	      //(*iv)->compress();
+	      uint32_t bsize=0;
+	      // _totalSize+=bsize;
+	      ier=::read(_fdIn,&bsize,sizeof(uint32_t));
+	      if (ier<0)
+		{
+		  printf("Cannot read anymore  DIF Size %d \n ",ier);return;
+		}
+	      else
+		if (_event%100<100)
+		  INFO_PRINTF("\t DIF size %d \n",bsize);
+	  
+	      ier=::read(_fdIn,b.ptr(),bsize);
+	      if (ier<0)
+		{
+		  printf("Cannot read anymore Read data %d \n ",ier);return;
+		}
+	      b.setPayloadSize(bsize-(3*sizeof(uint32_t)+sizeof(uint64_t)));
+	      b.uncompress();
+	      memcpy(&_buf[_idx], b.payload(),b.payloadSize());
+	      b.setDetectorId(b.detectorId()&0xFF);
+	      INFO_PRINTF("\t \t det %d source %d event %d bx %x payload %d size  %d %d\n",b.detectorId()&0XFF,b.dataSourceId(),b.eventId(),b.bxId(),b.payloadSize(),bsize,_idx);
+	      _bxId=b.bxId();
+	      if (_bxId0==0) _bxId0=_bxId;
+	      uint32_t _detId=b.detectorId()&0xFF;
+	      DEBUG_PRINTF("DUMP DETID %d \n",_detId);
+	      uint8_t* cc=(uint8_t*) b.payload();
+	      
+	      // for (int ib=0;ib<b.payloadSize();ib++)
+	      // 	{
+	      // 	  printf(" %.2x ",cc[ib]);
+	      // 	  if (ib%16==15 &&ib>0) printf("\n");
+	      // 	}
+
+
+	      
+	      // getchar();
+	      if (_detId==255)
+		{
+		  uint32_t* buf=(uint32_t*) b.payload();
+		  printf("NEW RUN %d \n",_event);
+		  _run=_event;
+
+
+		  for (int i=0;i<b.payloadSize()/4;i++)
+		    {
+		      printf("%d ",buf[i]);
+		    }
+		  _difId=b.dataSourceId();
+		  _runType=buf[0];
+		  if (_runType==1)
+		    _dacSet=buf[1];
+		  if (_runType==2)
+		    _vthSet=buf[1];
+		  printf("\n Run type %d DAC set %d VTH set %d \n",_runType,_dacSet,_vthSet);
+		  // getchar();
+
+		}
+	      if (_detId==130)
+		{
+		  uint32_t* ibuf=(uint32_t*) b.payload();
+	       
+		   // for (int i=0;i<7;i++)
+		   //   {
+		   //     printf("%d ",ibuf[i]);
+		   //  }
+		  uint32_t nch=ibuf[6];
+		  printf("\n channels -> %d \n",nch);
+		  _mezzanine=ibuf[4];
+		  _difId=(ibuf[5]>>24)&0xFF;
+		  _gtc=ibuf[1];
+
+		  INFO_PRINTF("\t \t \t %d %d GTC %d NCH %d \n",_mezzanine,_difId,_gtc,nch);
+		  std::vector<lydaq::TdcChannel> vch;
+		  vch.clear();
+		  _analyzer->setInfo(_difId,_run,_event,_gtc,_bxId,TDC_TRIGGER_CHANNEL,_vthSet,_dacSet);
+		  if (ibuf[6]>=0)
+		    {
+		      for (uint32_t i=1;i<255;i++)
+			if (_mezMap[i].size()>0) _mezMap[i].clear();
+		      uint8_t* cbuf=( uint8_t*)&ibuf[7];
+		      bool tfound=false;
+		      for (int i=0;i<nch;i++)
+			{
+			  
+			  // for (int j=0;j<6;j++)
+			  //    INFO_PRINTF("\t %.2x ",cbuf[i*6+j]);
+			  // INFO_PRINTF("\n");
+			  memcpy(&_eventChannel[_eventChannels],&cbuf[6*i],6*sizeof(uint8_t));
+			  lydaq::TdcChannel c(&cbuf[6*i],_difId&0xFF);
+			  lydaq::TdcChannel ca((uint8_t*) &_eventChannel[_eventChannels],_difId&0xFF);
+			  //c.dump();
+			 
+			  _eventChannels++;
+			  if (c.channel()==0)
+			    {
+			      tfound=true;
+			      trigFound[_difId]++;
+			      tbcid=c.bcid();
+			    }
+			  //_mezMap[_difId].push_back(c);
+			  vch.push_back(c);
+			  _vAll.push_back(ca);
+			  
+			}
+		      // if (nch>0)
+		      // getchar();
+		      //if (!tfound && _runType==0 && _event%10000!=0 ) continue;
+		      if (_runType==1) _analyzer->pedestalAnalysis(_difId,vch);
+		      if (_runType==2) _analyzer->scurveAnalysis(_difId,vch);
+		      if (_runType==0) _analyzer->normalAnalysis(_difId,vch);
+		    }
+		  difFound[ _difId]+=vch.size();
+		  if (_event%100==0)
+		    DEBUG_PRINTF("Time Acquisition => \t %lu %lu %10.3f \n",_bxId0,_bxId,(_bxId-_bxId0)*2E-7);
+		  
+		
+		  if (_gtc%100==0)
+		    DEBUG_PRINTF("\t \t \t ========>Oops Type %d Mez %d DIF %d %x  channels %d Event %d %d\n",_runType,_mezzanine,_difId,ibuf[5],difFound[_difId],_gtc,tbcid);
+
+		
+		}
+
+     
+	    }
+	  //_analyzer->fullAnalysis(_vAll);
+	  //if (_runType==0) _analyzer->multiChambers(_vAll);
+	  if (_analyzer->trigger())
+	    INFO_PRINTF("EVENT SUMMARY \t \t ========>Oops %d total %d, %d, triggers %d %f \n",_event,_eventChannels,_vAll.size(),_analyzer->triggers(),_analyzer->acquisitionTime());
+	}
+
+    }
+}
+#endif
 void tdcrb::end()
 {
 

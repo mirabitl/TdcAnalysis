@@ -91,7 +91,7 @@ void lydaq::TdcAnalyzer::multiChambers(std::vector<lydaq::TdcChannel>& vChannel)
 	  hnstrip=_rh->BookTH1(sr.str()+"NSTRIP",24,-0.1,23.9);
 	  heff=_rh->BookTH1(sr.str()+"Efficiency",10,-0.1,9.9);
 	  hbp2=_rh->BookTH1(sr.str()+"BeamProfile",128,0.1,128.1);
-	  hti=_rh->BookTH1(sr.str()+"MaxTime",20000,0.,200000*25E-9);
+	  hti=_rh->BookTH1(sr.str()+"MaxTime",20000,0.,20000*25E-9);
 	  hnch=_rh->BookTH1(sr.str()+"Channels",1024,-0.1,1023.9);
 	  hrate=_rh->BookTH1(sr.str()+"Rate",10000,0.,500000.);
 
@@ -926,11 +926,11 @@ void lydaq::TdcAnalyzer::scurveAnalysis(uint32_t mezId,std::vector<lydaq::TdcCha
 
   //if (gtc[mezId-1]
   std::cout<<"Mezzanine "<<mezId<<"Event "<<_event<<" GTC"<<_gtc<<" hits"<<vChannel.size()<<" Vth set "<<_vthSet<<" Trigger channel "<<_triggerChannel<<std::endl;
-
+  _triggerChannel=24;
   // Analyze
   std::stringstream sr;
   sr<<"/run"<<_run<<"/TDC"<<mezId<<"/";
-
+  
   uint32_t vth =_vthSet;
   for (int ich=0;ich<_triggerChannel+1;ich++)
     {
@@ -957,6 +957,16 @@ void lydaq::TdcAnalyzer::scurveAnalysis(uint32_t mezId,std::vector<lydaq::TdcCha
 	  }
 	}
     }
+  std::stringstream srt;
+  srt<<sr.str()<<"maxtime";
+  TH1* hti=_rh->GetTH1(srt.str());
+  if (hti==NULL)
+    {
+	 
+      hti=_rh->BookTH1(srt.str(),90000,0.,90000.);
+      printf("Booking %s \n",srt.str().c_str());
+    }
+  double maxt=0;
   for (int ich=0;ich<_triggerChannel+1;ich++)
     {
  
@@ -973,8 +983,10 @@ void lydaq::TdcAnalyzer::scurveAnalysis(uint32_t mezId,std::vector<lydaq::TdcCha
       double lastf=0;
       for (std::vector<lydaq::TdcChannel>::iterator x=vChannel.begin();x!=vChannel.end();x++)
 	{
+	  // x->dump();
+	  if (x->tdcTime()>maxt) maxt=x->tdcTime();
 	  if (x->channel()==ich) {
-	    printf("%d \n",x->channel());
+	    //printf("%d \n",x->channel());
 	    double dt=x->tdcTime()-lastf;
 	    lastf=x->tdcTime();
 	    hvth->Fill(vth*1.);
@@ -982,7 +994,10 @@ void lydaq::TdcAnalyzer::scurveAnalysis(uint32_t mezId,std::vector<lydaq::TdcCha
 	  }
 	}
     }
-
+  hti->Fill(maxt);
+  printf("MAXTIME %f %f \n",maxt,maxt*2.5E-9);
+  //  if (maxt>0)
+  //  getchar();
 }
 void lydaq::TdcAnalyzer::normalAnalysis(uint32_t mezId,std::vector<lydaq::TdcChannel>& vChannel)
 {
@@ -1241,7 +1256,7 @@ memset(fe1_2tr,0,32*sizeof(double));
       hstript1=_rh->BookTH1(sr.str()+"Stript1",32,0.,32.);
       hnstrip2=_rh->BookTH1(sr.str()+"NStrips2",32,0.,32.);
       hxp=_rh->BookTH1(sr.str()+"XP",400,0.,10.);
-      hti=_rh->BookTH1(sr.str()+"time",4000,0.,0.02);
+      hti=_rh->BookTH1(sr.str()+"time",90000,0.,90000*25E-9);
       hra=_rh->BookTH1(sr.str()+"rate",750,0.,200000.);
 
     }

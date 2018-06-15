@@ -14,8 +14,11 @@
 #include "TdcChannel.hh"
 #include "TdcAnalyzer.hh"
 #include "zmBuffer.hh"
+#ifndef FEBCMS
 #define TDC_TRIGGER_CHANNEL 24
-
+#else
+#define TDC_TRIGGER_CHANNEL 0
+#endif
 class tdcrb
 {
 public:

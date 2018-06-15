@@ -380,7 +380,12 @@ def fitped(run,tdc,vthmin,vthmax,old=defped):
         ipr=ip/2
       else:
         ipr=31-ip/2
-
+      firmwaret=[31,29,27,25,23,22,21,20,19,18,17,16,15,14,13,12,11,10,9,8,7,6]
+      firmware=firmwaret
+      if (ip>0):
+        ipr=firmware[ip-1]
+      else:
+        ipr=0
       ped[ipr]=rped
       print ip,ipr,ped[ipr]
       hmean.Fill(rped)
