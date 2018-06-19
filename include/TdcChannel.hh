@@ -8,7 +8,8 @@
 #include "jsonGeo.hh"
 using namespace std;
 namespace lydaq {
-
+#define FEBCMS
+#undef SUCHAIN
 #ifdef SUCHAIN
   class TdcChannel
 {
@@ -69,7 +70,7 @@ private:
 };
 
   #endif
-  #define FEBCMS
+
   #ifdef FEBCMS
   class TdcChannel
 {
@@ -93,7 +94,7 @@ public:
   inline uint64_t coarse() const {return ((uint64_t)_fr[4])|((uint64_t)_fr[3]<<8)|((uint64_t)_fr[2]<<16)|((uint64_t)_fr[1]<<24);}
   inline uint8_t fine() const {return _fr[5];}
 
-  inline uint16_t bcid(){return (uint16_t) (coarse()*TDC_COARSE_TIME/200);}
+  inline uint32_t bcid(){return (uint32_t) (coarse()*TDC_COARSE_TIME/200);}
   inline  double tdcTime() const { return (coarse()+fine()/256.0)*TDC_COARSE_TIME;}
   inline uint8_t* frame(){ return _fr;}
   inline bool used(){return _used;}

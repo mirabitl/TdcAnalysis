@@ -468,7 +468,7 @@ printf("Cannot read Event anymore %d  %d %d\n ",ier,last,_event);return;
      
 	    }
 	  //_analyzer->fullAnalysis(_vAll);
-	  //if (_runType==0) _analyzer->multiChambers(_vAll);
+	  if (_runType==0) _analyzer->multiChambers(_vAll);
 	  if (_analyzer->trigger())
 	    INFO_PRINTF("EVENT SUMMARY \t \t ========>Oops %d total %d, %d, triggers %d %f \n",_event,_eventChannels,_vAll.size(),_analyzer->triggers(),_analyzer->acquisitionTime());
 	}
