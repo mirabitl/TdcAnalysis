@@ -35,7 +35,7 @@ public:
   uint32_t tdc2strip[24];
   uint32_t  tdc2side[24];
   uint32_t stripShift;
-
+  float polarity;
   float triggerMin,triggerMax,triggerMean;
   float timePedestal[12];
   void dump()

@@ -78,6 +78,7 @@ void lydaq::TdcAnalyzer::multiChambers(std::vector<lydaq::TdcChannel>& vChannel)
       TH1* heff=_rh->GetTH1(sr.str()+"Efficiency");
       TH1* hbp2=_rh->GetTH1(sr.str()+"BeamProfile");
       TH1* hti=_rh->GetTH1(sr.str()+"MaxTime");
+      TH1* htti=_rh->GetTH1(sr.str()+"TriggerTime");
       TH1* hnch=_rh->GetTH1(sr.str()+"Channels");
       TH1* hrate=_rh->GetTH1(sr.str()+"Rate");
 	    
@@ -93,6 +94,7 @@ void lydaq::TdcAnalyzer::multiChambers(std::vector<lydaq::TdcChannel>& vChannel)
 	  heff=_rh->BookTH1(sr.str()+"Efficiency",10,-0.1,9.9);
 	  hbp2=_rh->BookTH1(sr.str()+"BeamProfile",128,0.1,128.1);
 	  hti=_rh->BookTH1(sr.str()+"MaxTime",20000,0.,0.25);
+	  htti=_rh->BookTH1(sr.str()+"TriggerTime",20000,0.,0.25);
 	  hnch=_rh->BookTH1(sr.str()+"Channels",4096,-0.1,4095.9);
 	  hrate=_rh->BookTH1(sr.str()+"Rate",10000,0.,2000.);
 
@@ -110,7 +112,13 @@ void lydaq::TdcAnalyzer::multiChambers(std::vector<lydaq::TdcChannel>& vChannel)
       for (auto x:vChannel)
 	{
 	  if (_geo->feb(x.feb()).chamber!=chamber) continue;
-	  if (x.channel()==triggerChannel) continue;
+	  if (x.channel()==triggerChannel)
+	    {
+	      htti->Fill(x.tdcTime()*1E-9);
+	      continue;
+	  
+	    }
+	  
 
 	  if (x.bcid()>maxbcid) maxbcid=x.bcid();
 	  nch++;
@@ -263,7 +271,13 @@ void lydaq::TdcAnalyzer::multiChambers(std::vector<lydaq::TdcChannel>& vChannel)
 			hdts1=_rh->BookTH1(sr.str()+s.str(),100,dtmin-dtmean,dtmax-dtmean);
 		      }
 		    hdts1->Fill(t1-tbcid-dtmean);
-
+		    if (_geo->feb(x.feb()).polarity==-1)
+		      {
+			double tt=t1;
+			t1=t0;
+			t0=tt;
+		      }
+		    
 		    lydaq::TdcStrip ts(_geo->feb(x.feb()).chamber,x.feb(),x.detectorStrip(_geo->feb(x.feb())),t0,t1,_geo->feb(x.feb()).timePedestal[x.detectorStrip( _geo->feb(x.feb()))-70]);
 
 		    //if (chamber==2)

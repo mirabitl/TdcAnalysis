@@ -288,6 +288,8 @@ def fitped(run,tdc,vthmin,vthmax,old=defped):
   gStyle.SetOptFit();
   hmean=TH1F("hmean","Summary %d %d " %(run,tdc),vthmax-vthmin+1,vthmin,vthmax)
   hnoise=TH1F("hnoise","Summary noise %d %d " %(run,tdc),100,0.,30.)
+  hpmean=TH1F("hpmean","Summary %d %d " %(run,tdc),32,0.,32.);
+  hpnoise=TH1F("hpnoise","Summary noise %d %d " %(run,tdc),32,0.,32.);
   scfit=TF1("scfit","[0]*TMath::Erfc((x-[1])/[2])",vthmin+1,vthmax);
   
   for ip in range(0,24):
@@ -363,7 +365,7 @@ def fitped(run,tdc,vthmin,vthmax,old=defped):
 
       hder.Draw()
       c1.Update()
-      val = raw_input()
+      #val = raw_input()
 
       print "heho ",rped,hder.GetMean()
       rped=hder.GetMean()
@@ -390,19 +392,24 @@ def fitped(run,tdc,vthmin,vthmax,old=defped):
       print ip,ipr,ped[ipr]
       hmean.Fill(rped)
       hnoise.Fill(scfit.GetParameter(2))
-      c1.SaveAs("Run%d_Strip%d.root" % (run,ip));
+      hpmean.SetBinContent(ip+1,rped);
+      hpnoise.SetBinContent(ip+1,scfit.GetParameter(2))
+      #c1.SaveAs("Run%d_Strip%d.root" % (run,ip));
       #val = raw_input()
 
       #hder.Draw()
       
       #c1.Update()
-      val = raw_input()
+      #val = raw_input()
   c1.cd()
   hmean.Draw()
+  hpmean.GetYaxis().SetRangeUser(vthmin,vthmax)
+  hpmean.Draw()
   c1.Update()
   c1.SaveAs("Summary_%d_TDC%d.png" % (run,tdc));
   val = raw_input()
   hnoise.Draw()
+  hpnoise.Draw()
   c1.Update()
   c1.SaveAs("Summary_Noise_%d_TDC%d.png" % (run,tdc));
 
