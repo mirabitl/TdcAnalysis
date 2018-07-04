@@ -39,7 +39,7 @@ int main(int argc, char** argv )
   int n;
   std::cout<<"Pattern "<<spat.str()<<std::endl;
   //std::string dirp="/data/srv02/RAID6/TDCRET";
-  std::string dirp="/data/local/GIFPP";
+  std::string dirp="/data/local/FE1PR2";
   //dirp=".";
   n = scandir(dirp.c_str(), &namelist, NULL, alphasort);
   if (n < 0)
