@@ -199,41 +199,38 @@ def fitpos(run,tdc):
     print "fe1_2tr[%d]=%5.3f;" % (i,pos[i])
   #print pos
 
-def calcefn(run,tdc,hv=0):
+def calcefn(run,chamber,hv=0):
   f82=TFile("./histo%d_0.root" % run);
-  f82.cd("/run%d/TDC%d/LmAnalysis" % (run,tdc));
+  f82.cd("/run%d/Chamber%d/" % (run,chamber));
   c1=TCanvas();
   gStyle.SetOptFit();
 
-  hns=f82.Get("/run%d/TDC%d/LmAnalysis/NStrips" % (run,tdc));
-  hns2=f82.Get("/run%d/TDC%d/LmAnalysis/NStrips2" % (run,tdc));
-  hstrip=f82.Get("/run%d/TDC%d/LmAnalysis/DeltaT" % (run,tdc));
-  hrate=f82.Get("/run%d/TDC%d/LmAnalysis/rate" % (run,tdc));
+  hns=f82.Get("/run%d/Chamber%d/Efficiency" % (run,chamber));
+  #hns2=f82.Get("/run%d/TDC%d/LmAnalysis/NStrips2" % (run,tdc));
+  hstrip=f82.Get("/run%d/Chamber%d/NSTRIP" % (run,chamber));
+  hrate=f82.Get("/run%d/Chamber%d/Rate" % (run,chamber));
+
   #hstrip.Rebin(2)
-  scfit=TF1("scfit","gaus",hstrip.GetMean()-4.*hstrip.GetRMS(),hstrip.GetMean()+4.*hstrip.GetRMS())
-  hstrip.GetXaxis().SetRangeUser(hstrip.GetMean()-4.*hstrip.GetRMS(),hstrip.GetMean()+4.*hstrip.GetRMS())
-  hstrip.Fit("scfit","Q");
-  dtmean=scfit.GetParameter(1)
-  dtres=scfit.GetParameter(2)
 
-  ntrg=hns.GetEntries()
-  n1=ntrg-hns.GetBinContent(1)
-  n2=ntrg-hns2.GetBinContent(1)
 
-  hns.GetXaxis().SetRangeUser(1.,32.)
-  mul=hns.GetMean()
-  hns2.GetXaxis().SetRangeUser(1.,32.)
-  mul2=hns2.GetMean()
+  ntrg=hns.GetBinContent(3)
+  nall=hns.GetBinContent(4)
+  nxy=hns.GetBinContent(5)
+
+  hstrip.GetXaxis().SetRangeUser(0.5,9.5)
+  hrate.GetXaxis().SetRangeUser(0.1,60.)
+  mul=hstrip.GetMean()
+
   
   #print ntrg,hns.GetBinContent(1),hns2.GetBinContent(1)
-  eff=n1/ntrg
+  eff=nall*1./ntrg
   deff=math.sqrt(eff*(1-eff)/ntrg)
-  effp=n2/ntrg
+  effp=nxy*1./ntrg
   deffp=math.sqrt(effp*(1-effp)/ntrg)
   
-  print "|%d|%d|%7.1f|%d|%d|%d|%5.2f|%5.2f|%5.2f|%5.2f|%5.1f|%5.1f|%7.1f|" % (run,tdc,hv,int(ntrg),int(n1),int(n2),eff*100,deff*100,effp*100,deffp*100,mul,mul2,hrate.GetMean())
-  hstrip.Draw()
-  c1.Update()
+  print "|%d|%d|%7.1f|%d|%d|%d|%5.2f|%5.2f|%5.2f|%5.2f|%5.1f|%7.1f|" % (run,chamber,hv,int(ntrg),int(nall),int(nxy),eff*100,deff*100,effp*100,deffp*100,mul,hrate.GetMean())
+  #hstrip.Draw()
+  #c1.Update()
   #c1.SaveAs("Run%d_Strip_pos.png" % (run));
 
   #val = raw_input()
@@ -292,7 +289,7 @@ def fitped(run,tdc,vthmin,vthmax,old=defped):
   hpnoise=TH1F("hpnoise","Summary noise %d %d " %(run,tdc),32,0.,32.);
   scfit=TF1("scfit","[0]*TMath::Erfc((x-[1])/[2])",vthmin+1,vthmax);
   
-  for ip in range(0,24):
+  for ip in range(0,25):
       #c2.cd()
       hs=f82.Get("/run%d/TDC%d/vthc%d" % (run,tdc,ip));
       if (hs.GetEntries()==0):
@@ -328,7 +325,7 @@ def fitped(run,tdc,vthmin,vthmax,old=defped):
 
   val = raw_input()
       
-  for ip in range(0,24):
+  for ip in range(0,25):
       #c2.cd()
       hs=f82.Get("/run%d/TDC%d/vthc%d" % (run,tdc,ip));
       if (hs.GetEntries()==0):
@@ -383,8 +380,9 @@ def fitped(run,tdc,vthmin,vthmax,old=defped):
       else:
         ipr=31-ip/2
       firmwaret=[31,29,27,25,23,22,21,20,19,18,17,16,15,14,13,12,11,10,9,8,7,6]
-      firmwaco=[31,29,27,25,23,22,21,20,19,18,17,16,15,14,13,12,11,10,9,8,7,6,5,4]
-      firmware=firmwaco
+      #firmwaco=[31,29,27,25,23,22,21,20,19,18,17,16,15,14,13,12,11,10,9,8,7,6,5,4]
+      firmware2=[24,5,3,1,0,2,4,6,7,8,9,10,26,28,30,31,29,27,25,23,22,21,20,19]
+      firmware=firmware2
       if (ip>0):
         ipr=firmware[ip-1]
       else:
@@ -396,7 +394,7 @@ def fitped(run,tdc,vthmin,vthmax,old=defped):
       hpmean.SetBinContent(ip+1,rped);
       hpnoise.SetBinContent(ip+1,scfit.GetParameter(2))
       #c1.SaveAs("Run%d_Strip%d.root" % (run,ip));
-      #val = raw_input()
+      val = raw_input()
 
       #hder.Draw()
       

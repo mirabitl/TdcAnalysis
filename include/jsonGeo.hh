@@ -32,8 +32,8 @@ class jsonFebInfo
 public:
   uint32_t id;
   uint32_t chamber;
-  uint32_t tdc2strip[24];
-  uint32_t  tdc2side[24];
+  uint32_t tdc2strip[25];
+  uint32_t  tdc2side[25];
   uint32_t stripShift;
   float polarity;
   float triggerMin,triggerMax,triggerMean;
@@ -41,7 +41,7 @@ public:
   void dump()
   {
     printf("id %d Chamber %d Shift %d \n",id,chamber,stripShift);
-    for(int i=0;i<24;i++)
+    for(int i=0;i<25;i++)
       printf("%d ",tdc2strip[i]);
     printf("\n");
   }

@@ -76,7 +76,7 @@ void jsonGeo::fillFebs(uint32_t run)
       _jFebs[feb_id].stripShift=jfeb["stripShift"].asUInt();
       _jFebs[feb_id].polarity=jfeb["polarity"].asDouble();
       
-      for (int i=0;i<24;i++)
+      for (int i=0;i<25;i++)
 	{
 	  _jFebs[feb_id].tdc2strip[i]=jfeb["tdc2strip"][i].asUInt();
 	  _jFebs[feb_id].tdc2side[i]=jfeb["side"][i].asUInt();

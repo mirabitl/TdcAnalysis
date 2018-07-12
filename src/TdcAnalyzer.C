@@ -42,7 +42,7 @@ void lydaq::TdcAnalyzer::multiChambers(std::vector<lydaq::TdcChannel>& vChannel)
   std::stringstream sr;
   
 
-  uint32_t ndifread=4;
+  uint32_t ndifread=8;
   uint32_t triggerChannel=0;
   
   std::bitset<16> btrg(0);uint32_t ntrg=0;
@@ -237,8 +237,8 @@ void lydaq::TdcAnalyzer::multiChambers(std::vector<lydaq::TdcChannel>& vChannel)
 		if ((x.tdcTime()-tbcid)<dtmin) continue;
 		if ((x.tdcTime()-tbcid)>dtmax) continue;
 		if (x.detectorStrip(_geo->feb(x.feb()))!=i) continue;
-		if (x.side()==0 && t0==-1) 	    t0=x.tdcTime();
-		if (x.side()==1 && t1==-1) 	    t1=x.tdcTime();
+		if (x.side(_geo->feb(x.feb()))==0 && t0==-1) 	    t0=x.tdcTime();
+		if (x.side(_geo->feb(x.feb()))==1 && t1==-1) 	    t1=x.tdcTime();
 	      
 	
 		if(t0>0 && t1>0)
