@@ -13,6 +13,10 @@ def calV(V,P,T):
   print 1-(0.2+0.8*P/990.*293./T)
   return  V/(0.2+0.8*P/990.*293./T)
 
+def calValice(V,P,T):
+  print 1-(1*P/990.*293./T)
+  return  V/(1.0*P/990.*293./T)
+
 def calApp(V,P,T):
   print 1-(0.2+0.8*P/990.*293./T)
   return  V*(0.2+0.8*P/990.*293./T)
