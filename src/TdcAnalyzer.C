@@ -35,6 +35,9 @@ void lydaq::TdcAnalyzer::setInfo(uint32_t dif,uint32_t run,uint32_t ev,uint32_t 
   if (_abcid0==0 || _abcid<_abcid0) _abcid0=_abcid;
   
 }
+void lydaq::TdcAnalyzer::noiseStudy(std::vector<lydaq::TdcChannel>& vChannel)
+{
+}
 
 void lydaq::TdcAnalyzer::multiChambers(std::vector<lydaq::TdcChannel>& vChannel)
 {
