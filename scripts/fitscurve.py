@@ -222,7 +222,7 @@ def calcefn(run,chamber,hv=0):
   nxy=hns.GetBinContent(5)
 
   hstrip.GetXaxis().SetRangeUser(0.5,9.5)
-  hrate.GetXaxis().SetRangeUser(0.1,60.)
+  hrate.GetXaxis().SetRangeUser(0.1,600.)
   mul=hstrip.GetMean()
 
   
