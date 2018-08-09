@@ -37,23 +37,44 @@ void lydaq::TdcAnalyzer::setInfo(uint32_t dif,uint32_t run,uint32_t ev,uint32_t 
 }
 void lydaq::TdcAnalyzer::noiseStudy(std::vector<lydaq::TdcChannel>& vChannel)
 {
+  uint32_t triggerChannel=0;
+  for (uint32_t chamber=1;chamber<=2;chamber++)
+    {
+      std::vector<TdcChannel*> c_strip[128];
+      for (int i=0;i<128;i++) c_strip[i].clear();
+      float maxtime=0;uint32_t nch=0;
+      for (auto x=vChannel.begin();x!=vChannel.end();x++)
+	{
+	  if (_geo->feb(x->feb()).chamber!=chamber) continue;
+	  if (x->channel()==triggerChannel) continue;
+	  c_strip[x->detectorStrip(_geo->feb(x->feb()))].push_back(&(*x));
+	  if (x->tdcTime()>maxtime) maxtime=x->tdcTime();
+	  nch++;
+	}
+      maxtime=maxtime*1E-9;
+
+      fprintf(stderr," Maxtime %d %f %d %f \n",chamber,maxtime,nch,nch/maxtime/7500);
+    }
+  
 }
 
 void lydaq::TdcAnalyzer::multiChambers(std::vector<lydaq::TdcChannel>& vChannel)
 {
 
+  //this->noiseStudy(vChannel);
   std::stringstream sr;
   
 
-  uint32_t ndifread=8;
+  uint32_t ndifread=7;
   uint32_t triggerChannel=0;
   
-  std::bitset<16> btrg(0);uint32_t ntrg=0;
+  std::bitset<16> btrg(0);uint32_t ntrg=0,atbcid=0;
   for (auto x:vChannel)
     {
       if (x.channel()==triggerChannel) {
 	printf("Trigger found %d  %d %f\n",x.feb(),x.bcid(),x.tdcTime());
 	btrg.set(x.feb(),1);
+	atbcid=x.bcid();
 	ntrg++;
       }
     }
@@ -61,7 +82,7 @@ void lydaq::TdcAnalyzer::multiChambers(std::vector<lydaq::TdcChannel>& vChannel)
   if (btrg.count()==ndifread) _ntrigger++;
   if (ntrg!=ndifread) return;
   if (!_triggerFound) return;
-
+  if (atbcid<2) return;
 
   for (uint32_t chamber=1;chamber<=2;chamber++)
     {
@@ -96,10 +117,10 @@ void lydaq::TdcAnalyzer::multiChambers(std::vector<lydaq::TdcChannel>& vChannel)
 	  hnstrip=_rh->BookTH1(sr.str()+"NSTRIP",24,-0.1,23.9);
 	  heff=_rh->BookTH1(sr.str()+"Efficiency",10,-0.1,9.9);
 	  hbp2=_rh->BookTH1(sr.str()+"BeamProfile",128,0.1,128.1);
-	  hti=_rh->BookTH1(sr.str()+"MaxTime",20000,0.,0.25);
+	  hti=_rh->BookTH1(sr.str()+"MaxTime",200000,0.,0.25);
 	  htti=_rh->BookTH1(sr.str()+"TriggerTime",20000,0.,0.25);
 	  hnch=_rh->BookTH1(sr.str()+"Channels",4096,-0.1,4095.9);
-	  hrate=_rh->BookTH1(sr.str()+"Rate",10000,0.,2000.);
+	  hrate=_rh->BookTH1(sr.str()+"Rate",20000,0.,10000.);
 
 	}
 
@@ -229,6 +250,7 @@ void lydaq::TdcAnalyzer::multiChambers(std::vector<lydaq::TdcChannel>& vChannel)
 	    hbp2->Fill(i*1.);
 
 	  }
+      nstrip=0;
       for (int i=0;i<128;i++)
 	if (side[0][i]&&side[1][i])
 	  {
@@ -242,10 +264,13 @@ void lydaq::TdcAnalyzer::multiChambers(std::vector<lydaq::TdcChannel>& vChannel)
 		if (x.detectorStrip(_geo->feb(x.feb()))!=i) continue;
 		if (x.side(_geo->feb(x.feb()))==0 && t0==-1) 	    t0=x.tdcTime();
 		if (x.side(_geo->feb(x.feb()))==1 && t1==-1) 	    t1=x.tdcTime();
+		//if (x.side(_geo->feb(x.feb()))==0 ) 	    t0=x.tdcTime();
+		//if (x.side(_geo->feb(x.feb()))==1 ) 	    t1=x.tdcTime();
 	      
 	
-		if(t0>0 && t1>0)
+		if(t0>0 && t1>0 && abs(t0-t1)<11.5)
 		  {
+		    nstrip++;
 		    //printf("%f %f %f\n",t0,t1,t1-t0);
 		    hpos->Fill(t1-t0,x.detectorStrip(_geo->feb(x.feb())));
 		    std::stringstream s;
@@ -338,8 +363,78 @@ void lydaq::TdcAnalyzer::multiChambers(std::vector<lydaq::TdcChannel>& vChannel)
 	{
 	  DEBUG_PRINTF("================> Event %d Number of DIF found %d \n",_event,theNumberOfDIF);
 	  DEBUG_PRINTF(" ======================================> Strips \n");
-      
-      
+
+	  std::vector<lydaq::TdcCluster> vclus;
+	  vclus.clear();
+	  float step=2.;
+	  if (chamber==1) step=3.;
+	  for (auto it=_strips.begin();it!=_strips.end();it++)
+	    {
+	      if (it->chamber()!=chamber) continue;
+	      //	      if (it->ypos()<-10 || it->ypos()>-0.2) continue;
+	      bool found=false;
+	      for (auto ic=vclus.begin();ic!=vclus.end();ic++)
+		{
+		  if (ic->isAdjacent((*it),step))
+		    {
+		      ic->addStrip((*it));
+		      found=true;
+		      break;
+		    }
+		}
+	      if(!found)
+		{
+		  lydaq::TdcCluster c;
+		  c.addStrip((*it));
+		  vclus.push_back(c);
+		}
+	    }
+	  std::stringstream src;
+	  src<<"/run"<<_run<<"/Chamber"<<chamber<<"/Cluster/";
+		  
+	  TH2* hposc=_rh->GetTH2(src.str()+"XY");
+	  TH2* hposc1=_rh->GetTH2(src.str()+"XY1");
+	  TH2* hposcm=_rh->GetTH2(src.str()+"XYMore");
+	  TH2* hposcma=_rh->GetTH2(src.str()+"XYMax");
+	  TH1* hncl=_rh->GetTH1(src.str()+"Clusters");
+	  TH1* hmulc=_rh->GetTH1(src.str()+"ClusterSize");
+
+	  if (hposc==NULL)
+	    {
+	      
+	      hposc=_rh->BookTH2(src.str()+"XY",128,0.,128.,256,-15.,15.);
+	      hposc1=_rh->BookTH2(src.str()+"XY1",128,0.,128.,256,-15.,15.);
+	      hposcm=_rh->BookTH2(src.str()+"XYMore",128,0.,128.,256,-15.,15.);
+	      hposcma=_rh->BookTH2(src.str()+"XYMax",128,0.,128.,256,-15.,15.);
+	      hncl=_rh->BookTH1(src.str()+"Clusters",16,0.,16.);
+	      hmulc=_rh->BookTH1(src.str()+"ClusterSize",16,0.,16.);
+
+	    }
+	  printf(" %d  %d strips , Number of clusters %d \n",chamber,_strips.size(),vclus.size());
+	  hncl->Fill(vclus.size()*1.);
+	  uint32_t maxs=0;
+	  for (auto x:vclus)
+	    {
+	      if (x.size()>8) continue;
+	      hposc->Fill(x.X(),x.Y());
+	      if (vclus.size()==1)
+		hposc1->Fill(x.X(),x.Y());
+	      else
+		hposcm->Fill(x.X(),x.Y());
+	      hmulc->Fill(x.size()*1.);
+	      //printf("%d %f %f \n",x.size(),x.X(),x.Y());
+	      if (x.size()>maxs) maxs=x.size();
+	    }
+	  for (auto x:vclus)
+	    {
+	      if (x.size()>8) continue;
+	      if (x.size()==maxs)
+		hposcma->Fill(x.X(),x.Y());
+	    }
+
+	  
+	  //getchar();
+	    
 	  for (auto it=_strips.begin();it!=_strips.end();it++)
 	    {
 	      lydaq::TdcStrip& x=(*it);
@@ -384,7 +479,7 @@ void lydaq::TdcAnalyzer::multiChambers(std::vector<lydaq::TdcChannel>& vChannel)
 	  if (_strips.size()==4)
 	    hpos->Fill((_strips[2].xpos()+_strips[1].xpos())/2.,(_strips[2].ypos()+_strips[1].ypos())/2.);
 
-	  if (_strips.size()>=5 && _strips.size()<=12)
+	  if (_strips.size()>=5 && _strips.size()<=8)
 	    {
 	      double x=0,y=0;
 	      for (int i=2;i<_strips.size()-2;i++)

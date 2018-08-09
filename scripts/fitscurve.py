@@ -222,7 +222,7 @@ def calcefn(run,chamber,hv=0):
   nxy=hns.GetBinContent(5)
 
   hstrip.GetXaxis().SetRangeUser(0.5,9.5)
-  hrate.GetXaxis().SetRangeUser(0.1,600.)
+  hrate.GetXaxis().SetRangeUser(0.1,60000.)
   mul=hstrip.GetMean()
 
   
@@ -293,7 +293,7 @@ def fitped(run,tdc,vthmin,vthmax,old=defped):
   hpnoise=TH1F("hpnoise","Summary noise %d %d " %(run,tdc),32,0.,32.);
   scfit=TF1("scfit","[0]*TMath::Erfc((x-[1])/[2])",vthmin+1,vthmax);
   
-  for ip in range(0,25):
+  for ip in range(1,25):
       #c2.cd()
       hs=f82.Get("/run%d/TDC%d/vthc%d" % (run,tdc,ip));
       if (hs.GetEntries()==0):
@@ -452,3 +452,18 @@ def calcped(oldpr,ped,median):
     dac[i]=int(round(oldpr[i]+(median-ped[i])*1./2.97))
   print dac
   return dac
+import os
+def process(runs,proc=True):
+  if (proc):  
+    for run in runs:
+      os.system("./bin/tdcr %d " % run)
+
+  v=6700
+  for run in runs:
+    calcefn(run,1,v)
+    v=v+100
+
+  v=6700
+  for run in runs:
+    calcefn(run,2,v)
+    v=v+100

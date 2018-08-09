@@ -312,9 +312,9 @@ void tdcrb::read()
 	  
 	  int ier=::read(_fdIn,&_event,sizeof(uint32_t));
 	  _nread++;
-if (ier<0 || ((last==_event)&_nread>20))
+if (ier<0 || ((last==_event)&_nread>200))
 	    {
-printf("Cannot read Event anymore %d  %d %d\n ",ier,last,_event);return;
+	      printf("Cannot read Event anymore %d  %d %d read %d \n ",ier,last,_event,_nread);return;
 	    }
 	  //else
 	  last=_event;
@@ -329,7 +329,7 @@ printf("Cannot read Event anymore %d  %d %d\n ",ier,last,_event);return;
 	  else
 	    if (_event%100==0)
 	      DEBUG_PRINTF("================> Event %d Number of DIF found %d \n",_event,theNumberOfDIF);
-	  INFO_PRINTF("================> Event %d Number of DIF found %d \n",_event,theNumberOfDIF);
+	  INFO_PRINTF("================> %d %d Event %d Number of DIF found %d \n",ier,_fdIn,_event,theNumberOfDIF);
 	  uint32_t difFound[256];
 	  memset(difFound,0,256*sizeof(uint32_t));
 	  uint32_t trigFound[256];

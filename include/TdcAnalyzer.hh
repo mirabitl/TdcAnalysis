@@ -36,6 +36,50 @@ namespace lydaq
     double _t0,_t1,_shift;
 
   };
+  class TdcCluster
+  {
+  public:
+    TdcCluster(): _x(0),_y(0) { _strips.clear();}
+    bool isAdjacent(TdcStrip& s,float step=2)
+    {
+
+      for (auto x:_strips)
+	if (abs(x.xpos()-s.xpos())<step && abs(x.ypos()-s.ypos())<5)
+	  {
+	    return true;
+	  }
+      return false;
+    }
+    void addStrip(TdcStrip& s){
+	_strips.push_back(s);
+	this->calcpos();}
+    void calcpos()
+    {
+      if (_strips.size()==1)	{_x=_strips[0].xpos(); _y=_strips[0].ypos();}
+      if (_strips.size()==2){_x=(_strips[0].xpos()+_strips[1].xpos())/2.;_y=(_strips[0].ypos()+_strips[1].ypos())/2.;}
+      if (_strips.size()==3)       if (_strips.size()==1)	{_x=_strips[1].xpos(); _y=_strips[1].ypos();}
+      if (_strips.size()==4){_x=(_strips[2].xpos()+_strips[1].xpos())/2.;_y=(_strips[2].ypos()+_strips[1].ypos())/2.;}
+      if (_strips.size()>=5 && _strips.size()<=12)
+	{
+	  _x=0;_y=0;
+	  for (int i=2;i<_strips.size()-2;i++)
+	    {
+	      _x+=_strips[i].xpos();
+	      _y+=_strips[i].ypos();
+	    }
+	  _x/=(_strips.size()-4);
+	  _y/=(_strips.size()-4);
+
+	}
+    }
+    double X(){return _x;}
+    double Y(){return _y;}
+    uint32_t size(){return _strips.size();}
+  private:
+    double _x,_y;
+    std::vector<lydaq::TdcStrip> _strips;
+
+  };
   class TdcAnalyzer {
   public:
     TdcAnalyzer(DCHistogramHandler* r);
@@ -45,6 +89,7 @@ namespace lydaq
     void LmAnalysis(uint32_t mezId,std::vector<lydaq::TdcChannel>& vChannel);
     void fullAnalysis(std::vector<lydaq::TdcChannel>& vChannel);
     void multiChambers(std::vector<lydaq::TdcChannel>& vChannel);
+    void noiseStudy(std::vector<lydaq::TdcChannel>& vChannel);
 
     void end();
     void setInfo(uint32_t dif,uint32_t run,uint32_t ev,uint32_t gt,uint64_t ab,uint16_t trgchan,uint32_t vth,uint32_t dac);
