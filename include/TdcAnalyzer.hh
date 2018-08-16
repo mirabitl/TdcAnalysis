@@ -44,7 +44,7 @@ namespace lydaq
     {
 
       for (auto x:_strips)
-	if (abs(x.xpos()-s.xpos())<step && abs(x.ypos()-s.ypos())<5)
+	if (abs(x.xpos()-s.xpos())<step && abs(x.ypos()-s.ypos())<3)
 	  {
 	    return true;
 	  }
@@ -75,6 +75,7 @@ namespace lydaq
     double X(){return _x;}
     double Y(){return _y;}
     uint32_t size(){return _strips.size();}
+    lydaq::TdcStrip& strip(int n) {return _strips[n];}
   private:
     double _x,_y;
     std::vector<lydaq::TdcStrip> _strips;
@@ -89,8 +90,8 @@ namespace lydaq
     void LmAnalysis(uint32_t mezId,std::vector<lydaq::TdcChannel>& vChannel);
     void fullAnalysis(std::vector<lydaq::TdcChannel>& vChannel);
     void multiChambers(std::vector<lydaq::TdcChannel>& vChannel);
-    void noiseStudy(std::vector<lydaq::TdcChannel>& vChannel);
-
+    bool noiseStudy(std::vector<lydaq::TdcChannel>& vChannel);
+    void drawHits(int nch);
     void end();
     void setInfo(uint32_t dif,uint32_t run,uint32_t ev,uint32_t gt,uint64_t ab,uint16_t trgchan,uint32_t vth,uint32_t dac);
     double acquisitionTime(){ return (_abcid-_abcid0)*2E-7;}

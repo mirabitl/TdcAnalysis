@@ -1,6 +1,12 @@
 from ROOT import *
 import math
 import time
+
+class prettyfloat(float):
+    def __repr__(self):
+        return "%0.2f" % self
+
+
 defped=[31,31,31,31,31,31,31,31,31,31,31,31,31,31,31,31,31,31,31,31,31,31,31,31,31,31,31,31,31,31,31,31]
 #defped=[30, 30, 34, 29, 32, 32, 37, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 33, 27, 31, 29, 25, 35, 33, 9]
 #defped=[39,38,42,37,41,40,46,0,43,48,37,49,0,0,0,0,0,0,0,0,39,39,36,35,41,35,40,34,32,44,43,34]
@@ -21,7 +27,33 @@ def calApp(V,P,T):
   print 1-(0.2+0.8*P/990.*293./T)
   return  V*(0.2+0.8*P/990.*293./T)
 
+def getdt(run,chamber,feb):
+  f82=TFile("./histo%d_0.root" % run);
+  r=[]
+  for i in range(0,25):
+    r.append(0)
+  for i in range(1,25):
+    #print "/run%d/Chamber%d/FEB/%d/Side0/channel%d" % (run,chamber,feb,i)
+    f82.cd("/run%d/Chamber%d/FEB/%d/Side0/" % (run,chamber,feb))
+    hch=f82.Get("/run%d/Chamber%d/FEB/%d/Side0/channel%d" % (run,chamber,feb,i))
+    #print hch
+    if (hch!=None):
+      print i,hch.GetEntries(),hch.GetMean();
+      if (hch.GetEntries()>5):
+        r[i]=hch.GetMean()
+      continue
+    f82.cd("/run%d/Chamber%d/FEB/%d/Side1/" % (run,chamber,feb))
+    hch1=f82.Get("/run%d/Chamber%d/FEB/%d/Side1/channel%d" % (run,chamber,feb,i))
+    #print hch1
+    if (hch1!=None):
+      print i,hch1.GetEntries(),hch1.GetMean();
+      if (hch1.GetEntries()>5):
+        r[i]=hch1.GetMean()
+      continue
 
+  print r
+  r = map(prettyfloat, r)
+  print r
 def fitProfile(run,sel=92):
   f82=TFile("./histo%d_0.root" % run);
   #f82.cd("/run%d/TDC%d/LmAnalysis/Timing" % (run,tdc));
@@ -157,7 +189,7 @@ def fitdif(run):
 def fitpos(run,tdc):
   f82=TFile("./histo%d_0.root" % run);
   #f82.cd("/run%d/TDC%d/LmAnalysis/Timing" % (run,tdc));
-  f82.cd("/run%d/Timing" % (run));
+  f82.cd("/run%d/Chamber%d/Timing" % (run,tdc));
   c1=TCanvas();
   gStyle.SetOptFit();
   pos=[]
@@ -166,17 +198,19 @@ def fitpos(run,tdc):
     pos.append(0)
     pmean.append(0)
     #hstrip=f82.Get("/run%d/TDC%d/LmAnalysis/Timing/hdtpos%d" % (run,tdc,i+71));
-    hstrip=f82.Get("/run%d/Timing/All/hdtpos%d" % (run,i+71));
+    hstrip=f82.Get("/run%d/Chamber%d/Timing/All/hdtpos%d" % (run,tdc,i+71));
     if (hstrip == None):
       continue
-    hstrip.Rebin(5)
+    hstrip.Rebin(2)
     
     hstrip.Draw()
     c1.Update()
 
     print "Enter min max"
-    hmin = float(raw_input())
-    hmax = float(raw_input())
+    #hmin = float(raw_input())
+    #hmax = float(raw_input())
+    hmin=-20.
+    hmax=20.
     print hmin,hmax
     #scfit=TF1("scfit","gaus",hstrip.GetMean()-3.*hstrip.GetRMS(),hstrip.GetMean()+3.*hstrip.GetRMS())
     #hstrip.GetXaxis().SetRangeUser(hstrip.GetMean()-3.*hstrip.GetRMS(),hstrip.GetMean()+3.*hstrip.GetRMS())
@@ -214,9 +248,19 @@ def calcefn(run,chamber,hv=0):
   hstrip=f82.Get("/run%d/Chamber%d/NSTRIP" % (run,chamber));
   hrate=f82.Get("/run%d/Chamber%d/Rate" % (run,chamber));
 
+  hclusters=f82.Get("/run%d/Chamber%d/ClusterNew/Clusters" % (run,chamber));
+  hclusterm=f82.Get("/run%d/Chamber%d/ClusterNew/ClusterSize1" % (run,chamber));
   #hstrip.Rebin(2)
-
-
+  csize=0.1
+  effc=0.0
+  deffc=0.0
+  ncev=0
+  if (hclusterm!=None):
+    csize=hclusterm.GetMean()
+    ncev=hclusters.GetEntries()
+    nc=ncev-hclusters.GetBinContent(1)
+    effc=nc*1./ncev
+    deffc=math.sqrt(effc*(1-effc)/ncev)
   ntrg=hns.GetBinContent(3)
   nall=hns.GetBinContent(4)
   nxy=hns.GetBinContent(5)
@@ -232,7 +276,7 @@ def calcefn(run,chamber,hv=0):
   effp=nxy*1./ntrg
   deffp=math.sqrt(effp*(1-effp)/ntrg)
   
-  print "|%d|%d|%7.1f|%d|%d|%d|%5.2f|%5.2f|%5.2f|%5.2f|%5.1f|%7.1f|" % (run,chamber,hv,int(ntrg),int(nall),int(nxy),eff*100,deff*100,effp*100,deffp*100,mul,hrate.GetMean())
+  print "|%d|%d|%7.1f|%d|%d|%d|%5.2f|%5.2f|%5.2f|%5.2f|%5.1f|%7.1f|%d|%5.2f|%5.2f|%5.2f|" % (run,chamber,hv,int(ntrg),int(nall),int(nxy),eff*100,deff*100,effp*100,deffp*100,mul,hrate.GetMean(),ncev,effc*100,deffc*100,csize)
   #hstrip.Draw()
   #c1.Update()
   #c1.SaveAs("Run%d_Strip_pos.png" % (run));
@@ -458,12 +502,27 @@ def process(runs,proc=True):
     for run in runs:
       os.system("./bin/tdcr %d " % run)
 
-  v=6700
+  v=6800
   for run in runs:
     calcefn(run,1,v)
-    v=v+100
+    v=v+200
 
-  v=6700
+  v=6800
   for run in runs:
     calcefn(run,2,v)
-    v=v+100
+    v=v+200
+
+def proclist(first,last,proc=True,vf=6700,step=100):
+  if (proc):  
+    for run in range(first,last+1):
+      os.system("./bin/tdcr %d " % run)
+
+  v=vf
+  for run in range(first,last+1):
+    calcefn(run,1,v)
+    v=v+step
+
+  v=vf
+  for run in range(first,last+1):
+    calcefn(run,2,v)
+    v=v+step

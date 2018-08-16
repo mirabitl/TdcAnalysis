@@ -38,6 +38,7 @@ public:
   float polarity;
   float triggerMin,triggerMax,triggerMean;
   float timePedestal[12];
+  float dtc[25];
   void dump()
   {
     printf("id %d Chamber %d Shift %d \n",id,chamber,stripShift);

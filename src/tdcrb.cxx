@@ -352,7 +352,7 @@ if (ier<0 || ((last==_event)&_nread>200))
 		}
 	      else
 		if (_event%100<100)
-		  INFO_PRINTF("\t DIF size %d \n",bsize);
+		  DEBUG_PRINTF("\t DIF size %d \n",bsize);
 	  
 	      ier=::read(_fdIn,b.ptr(),bsize);
 	      if (ier<0)
@@ -409,12 +409,12 @@ if (ier<0 || ((last==_event)&_nread>200))
 		   //     printf("%d ",ibuf[i]);
 		   //  }
 		  uint32_t nch=ibuf[6];
-		  printf("\n channels -> %d \n",nch);
+		  //printf("\n channels -> %d \n",nch);
 		  _mezzanine=ibuf[4];
 		  _difId=(ibuf[5]>>24)&0xFF;
 		  _gtc=ibuf[1];
 
-		  INFO_PRINTF("\t \t \t %d %d GTC %d NCH %d \n",_mezzanine,_difId,_gtc,nch);
+		  DEBUG_PRINTF("\t \t \t %d %d GTC %d NCH %d \n",_mezzanine,_difId,_gtc,nch);
 		  std::vector<lydaq::TdcChannel> vch;
 		  vch.clear();
 		  _analyzer->setInfo(_difId,_run,_event,_gtc,_bxId,TDC_TRIGGER_CHANNEL,_vthSet,_dacSet);
@@ -452,7 +452,7 @@ if (ier<0 || ((last==_event)&_nread>200))
 		      //if (!tfound && _runType==0 && _event%10000!=0 ) continue;
 		      if (_runType==1) _analyzer->pedestalAnalysis(_difId,vch);
 		      if (_runType==2) _analyzer->scurveAnalysis(_difId,vch);
-		      if (_runType==0) _analyzer->normalAnalysis(_difId,vch);
+		      //if (_runType==0) _analyzer->normalAnalysis(_difId,vch);
 		    }
 		  difFound[ _difId]+=vch.size();
 		  if (_event%100==0)
