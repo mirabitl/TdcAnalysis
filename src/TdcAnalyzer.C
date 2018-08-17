@@ -79,7 +79,7 @@ void lydaq::TdcAnalyzer::drawHits(int ch)
  *
  */
 using namespace std;
-lydaq::TdcAnalyzer::TdcAnalyzer(DCHistogramHandler*r ) : _rh(r),_pedestalProcessed(false),_nevt(0),_ntrigger(0),_nfound(0),_nbside(0),_triggerFound(false),_geo(NULL)
+lydaq::TdcAnalyzer::TdcAnalyzer(DCHistogramHandler*r ) : _rh(r),_pedestalProcessed(false),_nevt(0),_ntrigger(0),_nfound(0),_nbside(0),_triggerFound(false),_geo(NULL),_display(false),_noise(false)
 {
 }
 void lydaq::TdcAnalyzer::setInfo(uint32_t dif,uint32_t run,uint32_t ev,uint32_t gt,uint64_t ab,uint16_t trgchan,uint32_t vth,uint32_t dac)
@@ -166,6 +166,7 @@ ch2_dt[	101	]=	-3.07	;
  dtm[14][1]=-597;
   uint32_t triggerChannel=0;
   float dtmin=-615,dtmax=-585;
+  bool noisy=false;
   //dtmin+=100;dtmax+=100;
   for (uint32_t chamber=1;chamber<=2;chamber++)
     {
@@ -218,16 +219,18 @@ ch2_dt[	101	]=	-3.07	;
 	      
 	      hdt=_rh->BookTH1(src.str(),50,-25,25);
 	      hdtr=_rh->BookTH2(srcp.str()+"DeltaTrigger",4000,-2000.,1500.,32,0.,32.);
-	      hdtrp=_rh->BookTH1(srcp.str()+"DTall",4000,-2000.,1500.);
+	      hdtrp=_rh->BookTH1(srcp.str()+"DTall",2000,-1000.,0.);
 
 	    }
 	  float dt=_geo->feb(x->feb()).dtc[x->channel()];
 	  hdtr->Fill(x->tdcTime()-ttime[x->feb()]-dt,x->channel());
 	  hdtrp->Fill(x->tdcTime()-ttime[x->feb()]-dt);
 	  //printf("%f %f %f \n",x->tdcTime(),ttime[x->feb()],x->tdcTime()-ttime[x->feb()]);
-	  //dtmin+=200;
-	  //dtmax+=200;
-	  
+	  if (_noise)
+	    {
+	      dtmin+=200;
+	      dtmax+=200;
+	    }
 	  if (x->tdcTime()>maxtime) maxtime=x->tdcTime();
 	  if (x->tdcTime()-ttime[x->feb()]<dtmin) continue;
 	  if (x->tdcTime()-ttime[x->feb()]>dtmax) continue;
@@ -242,6 +245,7 @@ ch2_dt[	101	]=	-3.07	;
       bool dostop=false;int nstrip=0;
       uint16_t febc[24];
       memset(febc,0,48);
+      std::bitset<49> stb(0);
       for (int i=0;i<128;i++)
 	{
 	  if (c_strip[i].size()>0)
@@ -249,6 +253,7 @@ ch2_dt[	101	]=	-3.07	;
 	      //fprintf(stderr,"Chamber %d Strip %d # %d \n",chamber,i,c_strip[i].size());
 	      nstrip++;
 	      febc[c_strip[i][0]->feb()]++;
+	      stb.set(i-70,1);
 	    }
 	  if (c_strip[i].size()>2) dostop=true;
 
@@ -292,11 +297,11 @@ ch2_dt[	101	]=	-3.07	;
 	    }
 	}
       if (dostop) return true;
-    
+      if (stb.count()>20) return true;
+      noisy=(stb.count()>20);
       //for (int i=0;i<24;i++)
       // if (febc[i]>=10) return true;
-          this->drawHits(chamber);
-	  if (chamber==2) getchar();
+      std::cout<<stb<<std::endl;
       std::vector<lydaq::TdcCluster> vclus;
       vclus.clear();
       float step=2.;
@@ -365,7 +370,14 @@ ch2_dt[	101	]=	-3.07	;
 	{
 	  // if (vclus.size()>1)
 	  //   {
-	  //     fprintf(stderr,"\t %f %f %d \n",x.X(),x.Y(),x.size());
+	  if (_display)
+	    {
+	      fprintf(stderr,"\t %f %f %d \n",x.X(),x.Y(),x.size());
+	  for (int i=0;i<x.size();i++)
+	    {
+	      fprintf(stderr,"\t \t  %5.1f %5.3f %5.3f %5.3f %5.3f %5.3f \n",x.strip(i).xpos(),x.strip(i).ypos(),x.strip(i).t0(),x.strip(i).t1(),(x.strip(i).t0()+x.strip(i).t1())/2.-ttime[x.strip(i).dif()],ttime[x.strip(i).dif()]);
+	    }
+	    }
 	  //   }
 	  if (x.size()>10) continue;
 	  hposc->Fill(x.X(),x.Y());
@@ -407,8 +419,12 @@ ch2_dt[	101	]=	-3.07	;
 	  if (ncp==nc) continue;
 	  hposcm->Fill(x.X(),x.Y());  
 	}
-      
-      
+      if (_display)
+	{
+	  this->drawHits(chamber);
+	  if (chamber==2 ) getchar();
+	}
+
     }
   return false;
 }

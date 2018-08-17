@@ -44,7 +44,8 @@ namespace lydaq
     {
 
       for (auto x:_strips)
-	if (abs(x.xpos()-s.xpos())<step && abs(x.ypos()-s.ypos())<3)
+	//if (abs(x.xpos()-s.xpos())<step && abs(x.ypos()-s.ypos())<2)
+	if (abs(x.xpos()-s.xpos())<step && abs((x.t0()+x.t1())/2-(s.t0()+s.t1())/2)<2 && abs(x.ypos()-s.ypos())<2)
 	  {
 	    return true;
 	  }
@@ -110,7 +111,7 @@ namespace lydaq
     uint32_t _dif,_run,_event,_gtc,_vthSet,_dacSet,_nevt,_ntrigger,_nfound,_nbside;
     uint64_t _abcid,_abcid0;
     uint16_t _triggerChannel;
-    bool _pedestalProcessed,_triggerFound;
+    bool _pedestalProcessed,_triggerFound,_display,_noise;
     jsonGeo* _geo;
   };
 };
