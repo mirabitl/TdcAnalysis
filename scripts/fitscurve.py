@@ -38,7 +38,7 @@ def getdt(run,chamber,feb):
     hch=f82.Get("/run%d/Chamber%d/FEB/%d/Side0/channel%d" % (run,chamber,feb,i))
     #print hch
     if (hch!=None):
-      print i,hch.GetEntries(),hch.GetMean();
+      #print i,hch.GetEntries(),hch.GetMean();
       if (hch.GetEntries()>5):
         r[i]=hch.GetMean()
       continue
@@ -46,14 +46,14 @@ def getdt(run,chamber,feb):
     hch1=f82.Get("/run%d/Chamber%d/FEB/%d/Side1/channel%d" % (run,chamber,feb,i))
     #print hch1
     if (hch1!=None):
-      print i,hch1.GetEntries(),hch1.GetMean();
+      #print i,hch1.GetEntries(),hch1.GetMean();
       if (hch1.GetEntries()>5):
         r[i]=hch1.GetMean()
       continue
 
-  print r
+  #print r
   r = map(prettyfloat, r)
-  print r
+  print '"dtc":',r
 def fitProfile(run,sel=92):
   f82=TFile("./histo%d_0.root" % run);
   #f82.cd("/run%d/TDC%d/LmAnalysis/Timing" % (run,tdc));

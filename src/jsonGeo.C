@@ -62,38 +62,84 @@ void jsonGeo::fillFebs(uint32_t run)
 {
   if (_jroot.isMember("febs"))
     {
-   const Json::Value& books = _jroot["febs"];
+      const Json::Value& books = _jroot["febs"];
 
-   for (Json::ValueConstIterator it = books.begin(); it != books.end(); ++it)
-    {
-      const Json::Value& jfeb = *it;
-      std::cout<<jfeb["first"].asUInt()<<" "<<jfeb["last"].asUInt()<<" "<<jfeb["id"].asUInt()<<std::endl;
-      if (jfeb["first"].asUInt()>run) continue;
-      if (jfeb["last"].asUInt()<run) continue;
-      uint32_t feb_id=jfeb["id"].asUInt();
-      _jFebs[feb_id].id=feb_id;
-      _jFebs[feb_id].chamber=jfeb["chamber"].asUInt();
-      _jFebs[feb_id].stripShift=jfeb["stripShift"].asUInt();
-      _jFebs[feb_id].polarity=jfeb["polarity"].asDouble();
-      
-      for (int i=0;i<25;i++)
+      for (Json::ValueConstIterator it = books.begin(); it != books.end(); ++it)
 	{
-	  _jFebs[feb_id].tdc2strip[i]=jfeb["tdc2strip"][i].asUInt();
-	  _jFebs[feb_id].tdc2side[i]=jfeb["side"][i].asUInt();
+	  const Json::Value& jfeb = *it;
+	  std::cout<<jfeb["first"].asUInt()<<" "<<jfeb["last"].asUInt()<<" "<<jfeb["id"].asUInt()<<std::endl;
+	  if (jfeb["first"].asUInt()>run) continue;
+	  if (jfeb["last"].asUInt()<run) continue;
+	  uint32_t feb_id=jfeb["id"].asUInt();
+	  _jFebs[feb_id].id=feb_id;
+	  _jFebs[feb_id].chamber=jfeb["chamber"].asUInt();
+	  _jFebs[feb_id].stripShift=jfeb["stripShift"].asUInt();
+	  _jFebs[feb_id].polarity=jfeb["polarity"].asDouble();
+      
+	  for (int i=0;i<25;i++)
+	    {
+	      _jFebs[feb_id].tdc2strip[i]=jfeb["tdc2strip"][i].asUInt();
+	      _jFebs[feb_id].tdc2side[i]=jfeb["side"][i].asUInt();
 	  
-	  if (jfeb.isMember("dtc"))
-	    _jFebs[feb_id].dtc[i]=jfeb["dtc"][i].asDouble();
-	  else
-	    _jFebs[feb_id].dtc[i]=0.0;
+	      if (jfeb.isMember("dtc"))
+		_jFebs[feb_id].dtc[i]=jfeb["dtc"][i].asDouble();
+	      else
+		_jFebs[feb_id].dtc[i]=0.0;
+	    }
+	  _jFebs[feb_id].triggerMin=jfeb["triggerMin"].asDouble();
+	  _jFebs[feb_id].triggerMax=jfeb["triggerMax"].asDouble();
+	  _jFebs[feb_id].triggerMean=jfeb["triggerMean"].asDouble();
+	  _jFebs[feb_id].dt[0]=jfeb["dt0"].asDouble();
+	  _jFebs[feb_id].dt[1]=jfeb["dt1"].asDouble();
+
+	  for (int i=0;i<12;i++)
+	    _jFebs[feb_id].timePedestal[i]=jfeb["delta"][i].asDouble();
 	}
-      _jFebs[feb_id].triggerMin=jfeb["triggerMin"].asDouble();
-      _jFebs[feb_id].triggerMax=jfeb["triggerMax"].asDouble();
-      _jFebs[feb_id].triggerMean=jfeb["triggerMean"].asDouble();
-      for (int i=0;i<12;i++)
-	  _jFebs[feb_id].timePedestal[i]=jfeb["delta"][i].asDouble();
-    }
     }
 }
+void jsonGeo::fillAlign(uint32_t run)
+{
+  //printf("On rentre dasn fillAlign\n");
+  if (_jroot.isMember("align"))
+    {
+      const Json::Value& books = _jroot["align"];
+
+      for (Json::ValueConstIterator it = books.begin(); it != books.end(); ++it)
+	{
+	  const Json::Value& jalg = *it;
+	  std::cout<<jalg["first"].asUInt()<<" "<<jalg["last"].asUInt()<<std::endl;
+	  if (jalg["first"].asUInt()>run) continue;
+	  if (jalg["last"].asUInt()<run) continue;
+	  if (jalg.isMember("febs"))
+	    {
+	      const Json::Value& bks = jalg["febs"];
+
+	      for (Json::ValueConstIterator jt = bks.begin(); jt != bks.end(); ++jt)
+		{
+		  const Json::Value& jfeb = *jt;
+		  uint32_t feb_id=jfeb["id"].asUInt();
+		  for (int i=0;i<25;i++)
+		    {
+		      if (jfeb.isMember("dtc"))
+			_jFebs[feb_id].dtc[i]=jfeb["dtc"][i].asDouble();
+		      else
+			_jFebs[feb_id].dtc[i]=0.0;
+		    }
+		  _jFebs[feb_id].triggerMin=jfeb["triggerMin"].asDouble();
+		  _jFebs[feb_id].triggerMax=jfeb["triggerMax"].asDouble();
+		  _jFebs[feb_id].triggerMean=jfeb["triggerMean"].asDouble();
+		  _jFebs[feb_id].dt[0]=jfeb["dt0"].asDouble();
+		  _jFebs[feb_id].dt[1]=jfeb["dt1"].asDouble();
+		}
+	    }
+	}
+    }
+}
+
+
+
+
+
 void jsonGeo::convert(uint32_t difid,uint32_t asicid,uint32_t ipad,ROOT::Math::XYZPoint* p)
 {
       //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////

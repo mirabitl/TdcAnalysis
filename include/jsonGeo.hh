@@ -36,7 +36,7 @@ public:
   uint32_t  tdc2side[25];
   uint32_t stripShift;
   float polarity;
-  float triggerMin,triggerMax,triggerMean;
+  float triggerMin,triggerMax,triggerMean,dt[2];
   float timePedestal[12];
   float dtc[25];
   void dump()
@@ -67,6 +67,7 @@ class jsonGeo
 public:
   jsonGeo(std::string config);
   void fillFebs(uint32_t run);
+  void fillAlign(uint32_t run);
   inline Json::Value cuts()  {return _jroot["cuts"];}
   inline Json::Value difGeo(uint32_t k)  {return _jroot["difs"][itoa(k)];}
   inline Json::Value chamberGeo(uint32_t k)  {return _jroot["chambers"][itoa(k)];}

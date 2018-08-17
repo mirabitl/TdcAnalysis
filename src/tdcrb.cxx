@@ -109,6 +109,7 @@ void tdcrb::read()
   std::vector<lydaq::TdcChannel> _vAll;
   uint32_t _eventChannels;
   _geo->fillFebs(_run);
+  _geo->fillAlign(_run);
   while (_started)
     {
       if (!_started) return;
@@ -300,6 +301,7 @@ void tdcrb::read()
   std::vector<lydaq::TdcChannel> _vAll;
   uint32_t _eventChannels;
   _geo->fillFebs(_run);
+  _geo->fillAlign(_run);
   while (_started)
     {
       if (!_started) return;
@@ -363,7 +365,7 @@ if (ier<0 || ((last==_event)&_nread>200))
 	      b.uncompress();
 	      memcpy(&_buf[_idx], b.payload(),b.payloadSize());
 	      b.setDetectorId(b.detectorId()&0xFF);
-	      INFO_PRINTF("\t \t det %d source %d event %d bx %x payload %d size  %d %d\n",b.detectorId()&0XFF,b.dataSourceId(),b.eventId(),b.bxId(),b.payloadSize(),bsize,_idx);
+	      DEBUG_PRINTF("\t \t det %d source %d event %d bx %x payload %d size  %d %d\n",b.detectorId()&0XFF,b.dataSourceId(),b.eventId(),b.bxId(),b.payloadSize(),bsize,_idx);
 	      _bxId=b.bxId();
 	      if (_bxId0==0) _bxId0=_bxId;
 	      uint32_t _detId=b.detectorId()&0xFF;

@@ -97,73 +97,27 @@ void lydaq::TdcAnalyzer::setInfo(uint32_t dif,uint32_t run,uint32_t ev,uint32_t 
 bool lydaq::TdcAnalyzer::noiseStudy(std::vector<lydaq::TdcChannel>& vChannel)
 {
   float ch1_dt[128];
-  memset(ch1_dt,0,128*sizeof(float));
   float ch2_dt[128];
-  memset(ch2_dt,0,128*sizeof(float));
-  for (int i=72;i<=116;i++) ch1_dt[i]=-7.6;
-  ch1_dt[102]= -7.611;
-  ch1_dt[101]=	-7.627;
- ch1_dt[101]=	-7.627;
- ch1_dt[ 100]=	-7.732;
- ch1_dt[99]=	-7.782;
- ch1_dt[ 98]=	-7.788;
- ch1_dt[ 97]=	-7.613;
- ch1_dt[ 96]=	-7.953;
- ch1_dt[ 95]=	-7.843;
- ch1_dt[ 94]=	-8.052;
- ch1_dt[ 92]=	-6.901;
- ch1_dt[91]=	-6.804;
- ch1_dt[90]=	-6.791;
- ch1_dt[89]=	-7.27;
 
- ch2_dt[	89	]=	-0.268	;
- ch2_dt[	90	]=	-0.2503	;
-ch2_dt[	91	]=	-0.2644	;
-ch2_dt[	92	]=	-0.3366	;
-ch2_dt[	93	]=	-0.297	;
-ch2_dt[	94	]=	-0.269	;
-ch2_dt[	95	]=	-0.283	;
-ch2_dt[	96	]=	-1.126	;
-ch2_dt[	97	]=	-1.021	;
-ch2_dt[	98	]=	-1.216	;
-ch2_dt[	99	]=	-1.57	;
-ch2_dt[	100	]=	-3.488	;
-ch2_dt[	101	]=	-3.07	;
- ch2_dt[	102	]=	-1.096	;
- ch2_dt[	103	]=	-1.51	;
- ch2_dt[104]=-0.7532;
- ch2_dt[105]=-1.247;
- ch2_dt[106]=-1.418;
- ch2_dt[107]=-0.9535;
- ch2_dt[108]=-2.951;
- ch2_dt[109]=-4.684;
- ch2_dt[110]=-4.835;
- ch2_dt[111]=-5.734; 
- ch2_dt[112]=-5.641;
- ch2_dt[113]=-5.428;
- ch2_dt[114]=-4.736;
- ch2_dt[115]=-5.693;
- ch2_dt[116]=-5.868;
- ch2_dt[117]=-5.816;
- ch2_dt[118]=-5.51;
- ch2_dt[119]=-5.818;
- //memset(ch2_dt,0,128*sizeof(float));
- //memset(ch1_dt,0,128*sizeof(float));
- float dtm[24][2];
- dtm[6][0]=-607;
- dtm[6][1]=-606;
- dtm[7][0]=-608;
- dtm[7][1]=-602;
- dtm[8][0]=-606;
- dtm[8][1]=-606;
- dtm[9][0]=-603;
- dtm[9][1]=-598;
- dtm[10][0]=-602;
- dtm[10][1]=-596;
- dtm[11][0]=-606;
- dtm[11][1]=-598;
- dtm[14][0]=-604;
- dtm[14][1]=-597;
+ memset(ch2_dt,0,128*sizeof(float));
+ memset(ch1_dt,0,128*sizeof(float));
+
+#define RUN743079
+#ifdef RUN743065
+ float alg1[45]={0.000, 0.000, 0.000, 0.000, 0.000, 0.000, 0.000, 0.000, 0.000, 0.000, 0.000, 0.000, 0.000, -5.951, -5.836, -5.586, 0.000, -5.932, -5.518, -5.538, -5.583, 0.000, -6.518, -6.195, -5.831, -5.572, -6.000, -6.076, -5.975, -6.086, -5.966, -5.547, -7.015, 0.000, 0.000, 0.000, 0.000, 0.000, 0.000, 0.000, 0.000, 0.000, 0.000, 0.000, 0.000};
+
+ for (int i=0;i<45;i++) {
+   ch1_dt[72+i]=alg1[i];}
+ float alg2[49]={0.000, 0.000, 0.000, 0.000, 0.000, 0.000, 0.000, 0.000, 0.000, 0.000, 0.000, 0.000, 0.000, 0.000, 0.970, 1.697, 0.485, 0.729, -0.419, -1.690, -2.601, -1.783, -1.922, -2.199, -2.046, -2.089, -2.064, -2.621, -4.695, -4.766, -1.886, -2.313, -2.396, -1.830, -2.271, 0.000, 0.000, 0.000, 0.000, 0.000, 0.000, 0.000, 0.000, 0.000, 0.000, 0.000, 0.000, 0.000, 0.000};
+ for (int i=0;i<49;i++) {
+   ch2_dt[72+i]=alg2[i];}
+#endif
+#ifdef RUN743079
+ float alg1[45]={0.000, 0.000, -6.572, -5.284, -4.974, -5.085, 0.000, -4.329, -4.858, -5.385, -4.898, -6.042, -6.749, -6.021, -6.035, -5.759, 0.000, -5.863, -5.516, -5.449, -5.467, 0.000, -6.745, -6.107, -5.797, -5.555, -5.856, -5.925, -5.829, -6.056, -5.897, -5.669, -7.332, -4.162, -3.824, -4.705, -4.881, 0.000, -5.893, 0.000, 0.000, 0.000, 0.000, 0.000, 0.000};
+ float alg2[49]={0.000, 0.000, 0.000, 0.000, 0.000, 0.000, 0.000, 0.000, 0.000, 0.000, 0.000, 0.000, 7.167, 1.371, 1.293, 1.741, 0.559, 0.756, -0.408, -1.673, -2.624, -1.695, -1.853, -2.149, -1.987, -1.961, -1.817, -2.609, -4.628, -5.021, -2.207, -2.201, -2.281, -1.775, -2.401, -2.072, 0.000, -4.127, -4.165, -3.657, -4.816, -4.676, -5.599, -6.948, -7.514, -7.008, -6.912, -6.900, 0.000};
+  for (int i=0;i<45;i++) {   ch1_dt[72+i]=alg1[i];}
+   for (int i=0;i<49;i++) {   ch2_dt[72+i]=alg2[i];}
+#endif
   uint32_t triggerChannel=0;
   float dtmin=-615,dtmax=-585;
   bool noisy=false;
@@ -201,9 +155,12 @@ ch2_dt[	101	]=	-3.07	;
 	  //   {
 	  //     dtmin=-615.; dtmax=-585;
 	  //   }
-	  dtmin=dtm[x->feb()][ x->side(_geo->feb(x->feb()))]-10.;
-	  dtmax=dtm[x->feb()][ x->side(_geo->feb(x->feb()))]+10.;
-			       
+	  //dtmin=dtm[x->feb()][ x->side(_geo->feb(x->feb()))]-10.;
+	  //dtmax=dtm[x->feb()][ x->side(_geo->feb(x->feb()))]+10.;
+	  dtmin=_geo->feb(x->feb()).dt[x->side(_geo->feb(x->feb()))]-10.;
+	  dtmax=_geo->feb(x->feb()).dt[x->side(_geo->feb(x->feb()))]+10.;
+	  // printf("%f %f \n",dtmin,dtmax);
+	  // getchar();
 	  // Book and fill time to trigger
 	  std::stringstream src;
 	  src<<"/run"<<_run<<"/Chamber"<<chamber<<"/FEB/"<<x->feb()<<"/Side"<<(int) x->side(_geo->feb(x->feb()))<<"/channel"<<(int) x->channel();
@@ -231,10 +188,13 @@ ch2_dt[	101	]=	-3.07	;
 	      dtmin+=200;
 	      dtmax+=200;
 	    }
+
 	  if (x->tdcTime()>maxtime) maxtime=x->tdcTime();
 	  if (x->tdcTime()-ttime[x->feb()]<dtmin) continue;
 	  if (x->tdcTime()-ttime[x->feb()]>dtmax) continue;
-	  hdt->Fill(x->tdcTime()-ttime[x->feb()]-dtm[x->feb()][ x->side(_geo->feb(x->feb()))]);	  
+	  hdt->Fill(x->tdcTime()-ttime[x->feb()]-
+		    _geo->feb(x->feb()).dt[x->side(_geo->feb(x->feb()))]);	  
+	  //dtm[x->feb()][ 
 	  c_strip[x->detectorStrip(_geo->feb(x->feb()))].push_back(&(*x));
 	  nch++;
 	}
@@ -406,7 +366,16 @@ ch2_dt[	101	]=	-3.07	;
 	    hposx->Fill(x.X(),xl);
 
 	    for (int i=0;i<x.size();i++)
+	      {
 	      hposs->Fill(x.strip(i).xpos(),x.strip(i).ypos());
+	      std::stringstream srcs;
+	      srcs<<src.str()<<"align/strip"<<int(x.strip(i).xpos());
+	      std:cout<<srcs.str()<<std::endl;
+	      TH1* hdts=_rh->GetTH1(srcs.str());
+	      if (hdts==NULL)
+		hdts=_rh->BookTH1(srcs.str(),100,-20,20.);
+	      hdts->Fill(x.strip(i).ypos());
+	      }
 	    break;
 	    }
 	}
