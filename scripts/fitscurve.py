@@ -1,6 +1,8 @@
+import sqlite3
 from ROOT import *
 import math
 import time
+from array import array
 
 class prettyfloat(float):
     def __repr__(self):
@@ -255,10 +257,20 @@ def calcefn(run,chamber,hv=0):
   effc=0.0
   deffc=0.0
   ncev=0
+  ncl=0
   if (hclusterm!=None):
     csize=hclusterm.GetMean()
     ncev=hclusters.GetEntries()
     nc=ncev-hclusters.GetBinContent(1)
+    ncl=0
+    nevcl=0
+    for i in range(2,16):
+        x=i-1.;
+        y=hclusters.GetBinContent(i)
+        nevcl=nevcl+y
+        ncl=ncl+x*y
+    if (nevcl>0):
+        ncl=ncl*1./nevcl
     effc=nc*1./ncev
     deffc=math.sqrt(effc*(1-effc)/ncev)
   ntrg=hns.GetBinContent(3)
@@ -276,13 +288,15 @@ def calcefn(run,chamber,hv=0):
   effp=nxy*1./ntrg
   deffp=math.sqrt(effp*(1-effp)/ntrg)
   
-  print "|%d|%d|%7.1f|%d|%d|%d|%5.2f|%5.2f|%5.2f|%5.2f|%5.1f|%7.1f|%d|%5.2f|%5.2f|%5.2f|" % (run,chamber,hv,int(ntrg),int(nall),int(nxy),eff*100,deff*100,effp*100,deffp*100,mul,hrate.GetMean(),ncev,effc*100,deffc*100,csize)
+  print "|%d|%d|%7.1f|%d|%d|%d|%5.2f|%5.2f|%5.2f|%5.2f|%5.1f|%7.1f|%d|%5.2f|%5.2f|%5.2f|%5.2f|" % (run,chamber,hv,int(ntrg),int(nall),int(nxy),eff*100,deff*100,effp*100,deffp*100,mul,hrate.GetMean(),ncev,effc*100,deffc*100,csize,ncl)
   #hstrip.Draw()
   #c1.Update()
   #c1.SaveAs("Run%d_Strip_pos.png" % (run));
 
   #val = raw_input()
-
+  r=(run,chamber,hv,int(ntrg),int(nall),int(nxy),eff*100,deff*100,effp*100,deffp*100,mul,hrate.GetMean(),ncev,effc*100,deffc*100,csize,ncl)
+  #r = map(prettyfloat, r)
+  return r
 
 def calceff(run,tdc,strip=71):
   f82=TFile("./histo%d_0.root" % run);
@@ -526,3 +540,109 @@ def proclist(first,last,proc=True,vf=6700,step=100):
   for run in range(first,last+1):
     calcefn(run,2,v)
     v=v+step
+
+def processDCS(fdb,webdcs,proc=True):
+    conn = sqlite3.connect(fdb)
+    conn.text_factory = str
+    curs = conn.cursor()
+    curs.execute("SELECT RUN,HV,ATT,DEAD,TRET,POSITION FROM runs WHERE DCS=%d" % webdcs)
+    v=curs.fetchall()
+    #print v[0]
+    #print v[0][0]
+    #return
+    if (proc):  
+        for x in v:
+            os.system("./bin/tdcr %d " % x[0])
+            
+    res=[]        
+    for x in v:
+        res.append(calcefn(x[0],1,x[1]))
+    for x in v:
+        res.append(calcefn(x[0],2,x[1]))
+    return res
+
+def storeResults(fdbi,fdbo,webdcs):
+    conn = sqlite3.connect(fdbo)
+    conn.text_factory = str
+    curs = conn.cursor()
+    res=processDCS(fdbi,webdcs,False)
+    #run,chamber,hv,int(ntrg),int(nall),int(nxy),eff*100,deff*100,effp*100,deffp*100,mul,hrate.GetMean(),ncev,effc*100,deffc*100,csize,ncl]
+    for r in res:
+        print len(r)
+        sql_ins='''INSERT INTO INTIME(run,chamber,hv,ntrg,nall,nxy,eff,deff,effp,deffp,mul,rate,ncev,effc,deffc,csize,ncl,dcs) VALUES(%d,%d,%d,%d,%d,%d,%5.2f,%5.2f,%5.2f,%5.2f,%5.2f,%7.1f,%d,%5.2f,%5.2f,%5.2f,%5.2f,%d)''' % (r[0],r[1],r[2],r[3],r[4],r[5],r[6],r[7],r[8],r[9],r[10],r[11],r[12],r[13],r[14],r[15],r[16],webdcs)
+        #print sql_ins
+        curs.execute(sql_ins)
+    conn.commit()
+    
+def buildTGraph(title,vx,dvx,vy,dvy,tx,ty):
+    r_ti, r_p = array( 'd' ), array( 'd' )
+    er_ti, er_p = array( 'd' ), array( 'd' )
+    for x in vx:
+      r_ti.append(x)
+    for y in vy:
+      r_p.append(y)
+    for x in dvx:
+      er_ti.append(x)
+    for y in dvy:
+      er_p.append(y)
+
+    gr = TGraphErrors( len(vx), r_ti, r_p,er_ti,er_p )
+    gr.SetLineColor( 1 )
+    gr.SetLineWidth( 1 )
+    gr.SetMarkerColor( 2 )
+    gr.SetMarkerStyle( 21 )
+    gr.SetMarkerSize( 0.4 )
+    gr.SetTitle(title)
+    gr.GetXaxis().SetTitle(tx )
+    gr.GetYaxis().SetTitle( ty )
+    return gr
+
+def  drawDCS(fdbi,fdbo,webdcs,chamber,c=None):
+    if (c==None):
+        c=TCanvas()
+    gStyle.SetOptFit(1)
+
+    conn = sqlite3.connect(fdbi)
+    conn.text_factory = str
+    curs = conn.cursor()
+    curs.execute("select DISTINCT(DCS),ATT,TRET,DEAD from runs WHERE DCS=%d" % webdcs);
+    v=curs.fetchall()
+    if (len(v)==0):
+        return
+    att=v[0][1]
+    dthr=v[0][2]-500
+    dead=v[0][3]
+    print att,dthr,dead
+    connr = sqlite3.connect(fdbo)
+    connr.text_factory = str
+    cursr = connr.cursor()
+    cursr.execute("select hv,effc,deffc from INTIME where DCS=%d AND CHAMBER=%d" % (webdcs,chamber));
+    vo=cursr.fetchall()
+    if (len(vo)<6):
+        return;
+    hv=[]
+    eff=[]
+    dhv=[]
+    deff=[]
+    for x in vo:
+        hv.append(x[0])
+        dhv.append(10.)
+        eff.append(x[1])
+        deff.append(x[2])
+    title="DCS%d_ATT%3.1f_THR%d_DT%d_CH%d" % (webdcs,att,dthr,dead,chamber)
+    gr=buildTGraph("effi",hv,dhv,eff,deff,"HV effective (V)","efficiency (%)")
+
+    func = TF1("func", "([0]/(1+ TMath::Exp(-[1]*(x-[2]))))", 6500,8200)
+    func.SetParameters(100, 9.E-3, 7000)
+    gr.Fit(func,"","",6700,8200)
+    hv95=func.GetX(func.GetParameter(0)*0.95)
+    print "HV95",hv95,hv95+150
+    title=title+"_HV95_%4.0f_WP_%4.0f" % (hv95,hv95+150)
+    gr.SetTitle(title)
+    gStyle.SetStatX(0.85)
+    gStyle.SetStatY(0.7)
+    c.cd()
+    gr.Draw("AP")
+    c.Update()
+    c.SaveAs("%s.png" % title)
+    val=raw_input()
