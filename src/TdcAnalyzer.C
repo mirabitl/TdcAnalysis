@@ -79,7 +79,7 @@ void lydaq::TdcAnalyzer::drawHits(int ch)
  *
  */
 using namespace std;
-lydaq::TdcAnalyzer::TdcAnalyzer(DCHistogramHandler*r ) : _rh(r),_pedestalProcessed(false),_nevt(0),_ntrigger(0),_nfound(0),_nbside(0),_triggerFound(false),_geo(NULL),_display(false),_noise(false)
+lydaq::TdcAnalyzer::TdcAnalyzer(DCHistogramHandler*r ) : _rh(r),_pedestalProcessed(false),_nevt(0),_ntrigger(0),_nfound(0),_nbside(0),_triggerFound(false),_geo(NULL),_display(false),_noise(true)
 {
 }
 void lydaq::TdcAnalyzer::setInfo(uint32_t dif,uint32_t run,uint32_t ev,uint32_t gt,uint64_t ab,uint16_t trgchan,uint32_t vth,uint32_t dac)
