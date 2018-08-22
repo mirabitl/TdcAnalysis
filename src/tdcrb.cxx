@@ -483,7 +483,7 @@ void tdcrb::end()
 
   _analyzer->end();
   std::stringstream sr;
-  sr<<"./histo"<<_run<<"_0.root";
+  sr<<_geo->general()["directory"].asString()<<"/histo"<<_run<<"_0.root";
   
   _rh->writeHistograms(sr.str());
 

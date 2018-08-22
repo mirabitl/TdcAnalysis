@@ -79,7 +79,7 @@ void lydaq::TdcAnalyzer::drawHits(int ch)
  *
  */
 using namespace std;
-lydaq::TdcAnalyzer::TdcAnalyzer(DCHistogramHandler*r ) : _rh(r),_pedestalProcessed(false),_nevt(0),_ntrigger(0),_nfound(0),_nbside(0),_triggerFound(false),_geo(NULL),_display(false),_noise(true)
+lydaq::TdcAnalyzer::TdcAnalyzer(DCHistogramHandler*r ) : _rh(r),_pedestalProcessed(false),_nevt(0),_ntrigger(0),_nfound(0),_nbside(0),_triggerFound(false),_geo(NULL),_display(false),_noise(false)
 {
 }
 void lydaq::TdcAnalyzer::setInfo(uint32_t dif,uint32_t run,uint32_t ev,uint32_t gt,uint64_t ab,uint16_t trgchan,uint32_t vth,uint32_t dac)
@@ -92,6 +92,8 @@ void lydaq::TdcAnalyzer::setInfo(uint32_t dif,uint32_t run,uint32_t ev,uint32_t 
   _vthSet=vth;
   _dacSet=dac;
   if (_abcid0==0 || _abcid<_abcid0) _abcid0=_abcid;
+  _display=_geo->general()["display"].asUInt()==1;
+  _noise=_geo->general()["noise"].asUInt()==1;
   
 }
 bool lydaq::TdcAnalyzer::noiseStudy(std::vector<lydaq::TdcChannel>& vChannel)
@@ -409,6 +411,7 @@ void lydaq::TdcAnalyzer::multiChambers(std::vector<lydaq::TdcChannel>& vChannel)
 {
 
   if (this->noiseStudy(vChannel)) return;
+  if (_noise) return;
   std::stringstream sr;
   
 

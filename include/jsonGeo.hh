@@ -69,6 +69,7 @@ public:
   void fillFebs(uint32_t run);
   void fillAlign(uint32_t run);
   inline Json::Value cuts()  {return _jroot["cuts"];}
+  inline Json::Value general()  {return _jroot["general"];}
   inline Json::Value difGeo(uint32_t k)  {return _jroot["difs"][itoa(k)];}
   inline Json::Value chamberGeo(uint32_t k)  {return _jroot["chambers"][itoa(k)];}
   void convert(uint32_t dif,uint32_t asic,uint32_t channel,ROOT::Math::XYZPoint* point);

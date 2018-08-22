@@ -22,16 +22,81 @@
 #include "TCanvas.h"
 #include <dirent.h>
 #include <fnmatch.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <getopt.h>
 
-int main(int argc, char** argv )
+int main(int argc, char **argv )
 {
   static tdcrb bs("/tmp");
   TApplication theApp("tapp", &argc, argv);
-  bs.geometry("gifpp_geom.json");
+  std::string geom_file;
+  int32_t runask=0;
+  char c;
+   while ( (c = getopt(argc, argv, "g:r:hv")) != -1 ) {
+     fprintf(stderr,"%c read\n",c);
+     
+        switch ( c ) {
+            case 'g':
+                /* Chaque fois que l'option -v est utilisée,
+                 * on augmente le degré de verbosité. */
+	      
+	      geom_file.assign(optarg);
+	      fprintf(stderr, "Geometry %s \n",optarg);
+                break;
 
+            case 'r':
+                /* Ici, on convertit la valeur de optarg
+                 * en entier. Il conviendrait de gérer les
+                 * cas où la conversion est impossible (si
+                 * l'utilisateur a fait n'importe quoi...). */
+                runask = atoi(optarg);
+		fprintf(stderr, "Run %s \n",optarg);
+
+                break;
+
+            case 'h':
+                /* On affiche l'aide et on termine. */
+                fprintf(stderr, "Usage: tdcr [options] \n"
+                                "Options:\n"
+                                "  -v         Augmente la verbosité.\n"
+                                "  -V n       Définit le niveau de verbosité à n.\n"
+                                "  -h         Affiche ce message d'aide.\n"
+                                "  -f FICHIER Écrit dans FICHIER plutôt que sur la sortie standard.\n"
+                       );
+                return 0;
+
+            case 'v':
+                /* On stocke le pointeur vers l'argument
+                 * (car sa valeur pourrait être écrasée
+                 * au prochain tour de boucle). */
+	      fprintf(stderr, "On serait verbose Usage: tdcr [options] \n");
+                break;
+
+            case '?':
+                /* getopt renvoie (par défaut) '?' en cas
+                 * d'erreur, si une option non acceptée
+                 * est utilisée ou si une option attendant
+                 * un argument n'est pas suivi de son argument. */
+                fprintf(stderr, "Ligne de commande incorrecte.\n");
+                return 1;
+        }
+    }
+
+
+
+
+
+
+
+  
+   //bs.geometry("gifpp_geom.json");
+   std::cout<<geom_file<<" " <<runask<<std::endl;
+   bs.geometry(geom_file);
+   //getchar();
   std::stringstream spat;
-  int runask=atol(argv[1]);
-  spat<<"SMM*"<<atol(argv[1])<<"*.dat";
+  //int runask=atol(argv[1]);
+  spat<<"SMM*"<<runask<<"*.dat";
   //spat<<"SMM*"<<argv[1]<<"*.dat";
  #define UNTEST
  #ifdef UNTEST

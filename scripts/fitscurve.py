@@ -239,8 +239,8 @@ def fitpos(run,tdc):
     print "fe1_2tr[%d]=%5.3f;" % (i,pos[i])
   #print pos
 
-def calcefn(run,chamber,hv=0):
-  f82=TFile("./histo%d_0.root" % run);
+def calcefn(run,chamber,hv=0,dirp="."):
+  f82=TFile("%s/histo%d_0.root" % (dirp,run));
   f82.cd("/run%d/Chamber%d/" % (run,chamber));
   c1=TCanvas();
   gStyle.SetOptFit();
@@ -514,7 +514,7 @@ import os
 def process(runs,proc=True):
   if (proc):  
     for run in runs:
-      os.system("./bin/tdcr %d " % run)
+      os.system("./bin/tdcr -ggifpp_geom.json -r%d " % run)
 
   v=6800
   for run in runs:
@@ -529,7 +529,7 @@ def process(runs,proc=True):
 def proclist(first,last,proc=True,vf=6700,step=100):
   if (proc):  
     for run in range(first,last+1):
-      os.system("./bin/tdcr %d " % run)
+      os.system("./bin/tdcr -ggifpp_geom.json -r%d " % run)
 
   v=vf
   for run in range(first,last+1):
@@ -541,7 +541,7 @@ def proclist(first,last,proc=True,vf=6700,step=100):
     calcefn(run,2,v)
     v=v+step
 
-def processDCS(fdb,webdcs,proc=True):
+def processDCS(fdb,webdcs,proc=True,diro="."):
     conn = sqlite3.connect(fdb)
     conn.text_factory = str
     curs = conn.cursor()
@@ -552,20 +552,20 @@ def processDCS(fdb,webdcs,proc=True):
     #return
     if (proc):  
         for x in v:
-            os.system("./bin/tdcr %d " % x[0])
+            os.system("./bin/tdcr -ggifpp_geom.json -r%d " % x[0])
             
     res=[]        
     for x in v:
-        res.append(calcefn(x[0],1,x[1]))
+        res.append(calcefn(x[0],1,x[1],dirp=diro))
     for x in v:
-        res.append(calcefn(x[0],2,x[1]))
+        res.append(calcefn(x[0],2,x[1],dirp=diro))
     return res
 
-def storeResults(fdbi,fdbo,webdcs):
+def storeResults(fdbi,fdbo,webdcs,histod="."):
     conn = sqlite3.connect(fdbo)
     conn.text_factory = str
     curs = conn.cursor()
-    res=processDCS(fdbi,webdcs,False)
+    res=processDCS(fdbi,webdcs,False,diro=histod)
     #run,chamber,hv,int(ntrg),int(nall),int(nxy),eff*100,deff*100,effp*100,deffp*100,mul,hrate.GetMean(),ncev,effc*100,deffc*100,csize,ncl]
     for r in res:
         print len(r)
