@@ -152,6 +152,7 @@ bool lydaq::TdcAnalyzer::noiseStudy(std::vector<lydaq::TdcChannel>& vChannel)
       //if (chamber==1 && ntrg!=4) return true;
       mttime=mttime/ntrg;
       if (mttime<abs(dtmin)+50) return true;
+      std::bitset<24> stfeb(0);
       for (auto x=vChannel.begin();x!=vChannel.end();x++)
 	{
 	  if (_geo->feb(x->feb()).chamber!=chamber) continue;
@@ -168,6 +169,12 @@ bool lydaq::TdcAnalyzer::noiseStudy(std::vector<lydaq::TdcChannel>& vChannel)
 	  //dtmax=dtm[x->feb()][ x->side(_geo->feb(x->feb()))]+10.;
 	  dtmin=_geo->feb(x->feb()).dt[x->side(_geo->feb(x->feb()))]-10.;
 	  dtmax=_geo->feb(x->feb()).dt[x->side(_geo->feb(x->feb()))]+10.;
+
+	  if (x->tdcTime()-ttime[x->feb()]>dtmin-200 && x->tdcTime()-ttime[x->feb()]<dtmax-200)
+	    {
+	      stfeb.set(x->feb(),1);
+	      //std::cout<<"================================> bit set \n";
+	    }
 	  // printf("%f %f \n",dtmin,dtmax);
 	  // getchar();
 	  // Book and fill time to trigger
@@ -194,8 +201,8 @@ bool lydaq::TdcAnalyzer::noiseStudy(std::vector<lydaq::TdcChannel>& vChannel)
 	  //printf("%f %f %f \n",x->tdcTime(),ttime[x->feb()],x->tdcTime()-ttime[x->feb()]);
 	  if (_noise)
 	    {
-	      dtmin+=200;
-	      dtmax+=200;
+	      dtmin-=200;
+	      dtmax-=200;
 	    }
 
 	  if (x->tdcTime()>maxtime) maxtime=x->tdcTime();
@@ -207,6 +214,27 @@ bool lydaq::TdcAnalyzer::noiseStudy(std::vector<lydaq::TdcChannel>& vChannel)
 	  c_strip[x->detectorStrip(_geo->feb(x->feb()))].push_back(&(*x));
 	  nch++;
 	}
+
+      std::stringstream srcc;
+      srcc<<"/run"<<_run<<"/Chamber"<<chamber<<"/";
+      
+      TH1* hfr=_rh->GetTH1(srcc.str()+"FebCount");
+      TH1* hfrs=_rh->GetTH1(srcc.str()+"FebCountSel");
+
+      
+      if (hfr==NULL)
+	    {
+	      
+	      hfr=_rh->BookTH1(srcc.str()+"FebCount",25,0.,25.);
+	      hfrs=_rh->BookTH1(srcc.str()+"FebCountSel",25,0.,25.);
+
+	    }
+      hfr->Fill(24.);
+      hfrs->Fill(24.);
+      for (int i=0;i<24;i++)
+	if (stfeb[i]>0) hfr->Fill(i*1.);
+
+      
       maxtime=maxtime*1E-9;
 
       fprintf(stderr," Maxtime %d %f %d %f \n",chamber,maxtime,nch,nch/maxtime/6500);
@@ -221,7 +249,7 @@ bool lydaq::TdcAnalyzer::noiseStudy(std::vector<lydaq::TdcChannel>& vChannel)
 	    {
 	      //fprintf(stderr,"Chamber %d Strip %d # %d \n",chamber,i,c_strip[i].size());
 	      nstrip++;
-	      febc[c_strip[i][0]->feb()]++;
+
 	      stb.set(i-70,1);
 	    }
 	  if (c_strip[i].size()>2) dostop=true;
@@ -238,6 +266,8 @@ bool lydaq::TdcAnalyzer::noiseStudy(std::vector<lydaq::TdcChannel>& vChannel)
 		  if (t1<0 &&  x->side(_geo->feb(x->feb()))==1) t1=x->tdcTime()-dt;
 		  if(t0>0 && t1>0 )
 		    {
+		      febc[x->feb()]++;
+		      //std::cout<<x->feb()<<" FEBC "<< febc[x->feb()]<<std::endl;
 		      if (_geo->feb(x->feb()).polarity==-1)
 			{
 			  double tt=t1;
@@ -265,6 +295,9 @@ bool lydaq::TdcAnalyzer::noiseStudy(std::vector<lydaq::TdcChannel>& vChannel)
 	    
 	    }
 	}
+      for (int i=0;i<24;i++)
+	if (febc[i]>0) hfrs->Fill(i*1.);
+
       if (dostop) return true;
       if (stb.count()>20) return true;
       noisy=(stb.count()>20);
@@ -411,7 +444,7 @@ void lydaq::TdcAnalyzer::multiChambers(std::vector<lydaq::TdcChannel>& vChannel)
 {
 
   if (this->noiseStudy(vChannel)) return;
-  if (_noise) return;
+  //if (_noise) return;
   std::stringstream sr;
   
 

@@ -251,8 +251,40 @@ def calcefn(run,chamber,hv=0,dirp="."):
   hrate=f82.Get("/run%d/Chamber%d/Rate" % (run,chamber));
 
   hclusters=f82.Get("/run%d/Chamber%d/ClusterNew/Clusters" % (run,chamber));
+  hfr=f82.Get("/run%d/Chamber%d/FebCount" % (run,chamber));
+  hfrs=f82.Get("/run%d/Chamber%d/FebCountSel" % (run,chamber));
   hclusterm=f82.Get("/run%d/Chamber%d/ClusterNew/ClusterSize1" % (run,chamber));
-  #hstrip.Rebin(2)
+  #hstrip.Rebin(2)nCont(I)
+  febrate=0
+  febs=(0,6500./4,7500./4)
+  #print hfr
+  febratesel=0
+  if (hfr!=None):
+    nevt_fr=hfr.GetBinContent(25);
+    nmax=0
+    nfb=0
+    for i in range(0,24):
+      #print i,hfr.GetBinContent(i),nevt_fr
+      if (hfr.GetBinContent(i)>0):
+        nmax=nmax+hfr.GetBinContent(i)
+        nfb=nfb+1
+    #print nevt_fr,nfb,nmax
+    if (nevt_fr>0 and nfb>0):
+      febrate=nmax*1./nfb/(nevt_fr*20E-9)
+  if (hfrs!=None):
+    nevt_frs=hfrs.GetBinContent(25);
+    nmaxs=0
+    nfbs=0
+    for i in range(0,24):
+      #print i,hfr.GetBinContent(i),nevt_fr
+      if (hfrs.GetBinContent(i)>0):
+        nmaxs=nmaxs+hfrs.GetBinContent(i)
+        nfbs=nfbs+1
+    #print nevt_frs,nfbs,nmaxs
+    if (nevt_frs>0 and nfbs>0):
+      febratesel=nmaxs*1./nfbs/(nevt_frs*20E-9)
+
+
   csize=0.1
   effc=0.0
   deffc=0.0
@@ -288,13 +320,13 @@ def calcefn(run,chamber,hv=0,dirp="."):
   effp=nxy*1./ntrg
   deffp=math.sqrt(effp*(1-effp)/ntrg)
   
-  print "|%d|%d|%7.1f|%d|%d|%d|%5.2f|%5.2f|%5.2f|%5.2f|%5.1f|%7.1f|%d|%5.2f|%5.2f|%5.2f|%5.2f|" % (run,chamber,hv,int(ntrg),int(nall),int(nxy),eff*100,deff*100,effp*100,deffp*100,mul,hrate.GetMean(),ncev,effc*100,deffc*100,csize,ncl)
+  print "|%d|%d|%7.1f|%d|%d|%d|%5.2f|%5.2f|%5.2f|%5.2f|%5.1f|%7.1f|%d|%5.2f|%5.2f|%5.2f|%5.2f|%5.1f|%5.2f|%5.1f" % (run,chamber,hv,int(ntrg),int(nall),int(nxy),eff*100,deff*100,effp*100,deffp*100,mul,hrate.GetMean(),ncev,effc*100,deffc*100,csize,ncl,febrate/febs[chamber],-febrate*10E-7,febratesel/febs[chamber])
   #hstrip.Draw()
   #c1.Update()
   #c1.SaveAs("Run%d_Strip_pos.png" % (run));
 
   #val = raw_input()
-  r=(run,chamber,hv,int(ntrg),int(nall),int(nxy),eff*100,deff*100,effp*100,deffp*100,mul,hrate.GetMean(),ncev,effc*100,deffc*100,csize,ncl)
+  r=(run,chamber,hv,int(ntrg),int(nall),int(nxy),eff*100,deff*100,effp*100,deffp*100,mul,hrate.GetMean(),ncev,effc*100,deffc*100,csize,ncl,febrate/febs[chamber],-febrate*10E-7,febratesel/febs[chamber])
   #r = map(prettyfloat, r)
   return r
 
