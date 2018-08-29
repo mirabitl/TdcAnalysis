@@ -657,6 +657,8 @@ def  drawDCS(fdbi,fdbo,webdcs,chamber,c=None):
     dhv=[]
     deff=[]
     for x in vo:
+        if (x[1]==0):
+            continue
         hv.append(x[0])
         dhv.append(10.)
         eff.append(x[1])
@@ -665,7 +667,8 @@ def  drawDCS(fdbi,fdbo,webdcs,chamber,c=None):
     gr=buildTGraph("effi",hv,dhv,eff,deff,"HV effective (V)","efficiency (%)")
 
     func = TF1("func", "([0]/(1+ TMath::Exp(-[1]*(x-[2]))))", 6500,8200)
-    func.SetParameters(100, 9.E-3, 7000)
+    func.SetParameters(90, 9.E-3, 7000)
+    print 100, 9.E-3, 7100
     gr.Fit(func,"","",6700,8200)
     hv95=func.GetX(func.GetParameter(0)*0.95)
     print "HV95",hv95,hv95+150
