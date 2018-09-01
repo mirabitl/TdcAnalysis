@@ -330,6 +330,93 @@ def calcefn(run,chamber,hv=0,dirp="."):
   #r = map(prettyfloat, r)
   return r
 
+
+def extractEfficiency(run,chamber,hv=0,dirp="."):
+  f82=TFile("%s/histo%d_0.root" % (dirp,run));
+  f82.cd("/run%d/InTime/Chamber%d/" % (run,chamber));
+  c1=TCanvas();
+  gStyle.SetOptFit();
+
+  hclusters=f82.Get("/run%d/InTime/Chamber%d/ClusterNew/Clusters" % (run,chamber));
+  hclustero=f82.Get("/run%d/OffTime/Chamber%d/ClusterNew/Clusters" % (run,chamber));
+
+  hfr=f82.Get("/run%d/InTime/Chamber%d/FebCount" % (run,chamber));
+  hfrs=f82.Get("/run%d/OffTime/Chamber%d/FebCountSel" % (run,chamber));
+  hclusterm=f82.Get("/run%d/InTime/Chamber%d/ClusterNew/ClusterSize1" % (run,chamber));
+  #hstrip.Rebin(2)nCont(I)
+  febrate=0
+  febs=(0,6500./4,7500./4)
+  #print hfr
+  febratesel=0
+  if (hfr!=None):
+    nevt_fr=hfr.GetBinContent(25);
+    nmax=0
+    nfb=0
+    for i in range(0,24):
+      #print i,hfr.GetBinContent(i),nevt_fr
+      if (hfr.GetBinContent(i)>0):
+        nmax=nmax+hfr.GetBinContent(i)
+        nfb=nfb+1
+    #print nevt_fr,nfb,nmax
+    if (nevt_fr>0 and nfb>0):
+      febrate=nmax*1./nfb/(nevt_fr*20E-9)
+  if (hfrs!=None):
+    nevt_frs=hfrs.GetBinContent(25);
+    nmaxs=0
+    nfbs=0
+    for i in range(0,24):
+      #print i,hfr.GetBinContent(i),nevt_fr
+      if (hfrs.GetBinContent(i)>0):
+        nmaxs=nmaxs+hfrs.GetBinContent(i)
+        nfbs=nfbs+1
+    #print nevt_frs,nfbs,nmaxs
+    if (nevt_frs>0 and nfbs>0):
+      febratesel=nmaxs*1./nfbs/(nevt_frs*20E-9)
+
+
+  csize=0.1
+  effc=0.0
+  deffc=0.0
+  effco=0.0
+  deffco=0.0
+  ncevo=0
+  ncev=0
+  ncl=0
+  if (hclusterm!=None):
+    csize=hclusterm.GetMean()
+    ncev=hclusters.GetEntries()
+    nc=ncev-hclusters.GetBinContent(1)
+    ncl=0
+    nevcl=0
+    for i in range(2,32):
+        x=i-1.;
+        y=hclusters.GetBinContent(i)
+        nevcl=nevcl+y
+        ncl=ncl+x*y
+    if (nevcl>0):
+        ncl=ncl*1./nevcl
+    effc=nc*1./ncev
+    deffc=math.sqrt(effc*(1-effc)/ncev)
+    ncevo=hclustero.GetEntries()
+    nco=ncevo-hclustero.GetBinContent(1)
+    effco=nco*1./ncevo
+    if (ncevo>0 and effco>0):
+        #print ncevo,effco
+        deffco=math.sqrt(effco*(1-effco)/ncevo)
+
+  
+  print "|%d|%d|%7.1f|%d|%5.2f|%5.2f|%5.2f|%5.2f|%5.1f|%5.2f|%5.1f|%5.2f|%5.2f|" % (run,chamber,hv,ncev,effc*100,deffc*100,csize,ncl,febrate/febs[chamber],-febrate*10E-7,febratesel/febs[chamber],effco*100,100*(effc-effco)/(1.-effco))
+  #hstrip.Draw()
+  #c1.Update()
+  #c1.SaveAs("Run%d_Strip_pos.png" % (run));
+
+  #val = raw_input()
+  r=(run,chamber,hv,ncev,effc*100,deffc*100,csize,ncl,febrate/febs[chamber],-febrate*10E-7,febratesel/febs[chamber],effco,100*(effc-effco)/(1.-effco))
+  #r = map(prettyfloat, r)
+  return r
+
+
+
 def calceff(run,tdc,strip=71):
   f82=TFile("./histo%d_0.root" % run);
   f82.cd("/run%d/TDC%d/LmAnalysis" % (run,tdc));
@@ -572,7 +659,6 @@ def proclist(first,last,proc=True,vf=6700,step=100):
   for run in range(first,last+1):
     calcefn(run,2,v)
     v=v+step
-
 def processDCS(fdb,webdcs,proc=True,diro="."):
     conn = sqlite3.connect(fdb)
     conn.text_factory = str
@@ -588,23 +674,57 @@ def processDCS(fdb,webdcs,proc=True,diro="."):
             
     res=[]        
     for x in v:
-        res.append(calcefn(x[0],1,x[1],dirp=diro))
+        res.append(extractEfficiency(x[0],1,x[1],dirp=diro))
     for x in v:
-        res.append(calcefn(x[0],2,x[1],dirp=diro))
+        res.append(extractEfficiency(x[0],2,x[1],dirp=diro))
     return res
 
-def storeResults(fdbi,fdbo,webdcs,histod="."):
+def storeResults(fdbi,fdbo,webdcs,histod=".",runtype=1):
     conn = sqlite3.connect(fdbo)
     conn.text_factory = str
+
+    sql_create_res_table = """CREATE TABLE IF NOT EXISTS corana (
+                                    ID integer PRIMARY KEY,
+                                    RUN INTEGER NOT NULL,
+                                    CHAMBER INTEGER NOT NULL,
+                                    TYPE INTEGER NOT NULL,
+                                    HV REAL,
+                                    NCEVT REAL,
+                                    EFFC REAL,
+                                    DEFFC REAL,
+                                    CSIZE REAL,
+                                    NCLUS REAL,
+                                    DAQFEBRATE REAL,
+                                    DAQEFFLOSS REAL,
+                                    XYFEBRATE REAL,
+                                    EFFBACK REAL,
+                                    EFFCOR  REAL
+
+                                );"""
+
+#febrate/febs[chamber],-febrate*10E-7,febratesel/febs[chamber])
+    try:
+        c = conn.cursor()
+        c.execute(sql_create_res_table)
+        conn.commit()
+    except Error as e:
+        print(e)
+
+
+
+
+
+
+    
     curs = conn.cursor()
     res=processDCS(fdbi,webdcs,False,diro=histod)
     #run,chamber,hv,int(ntrg),int(nall),int(nxy),eff*100,deff*100,effp*100,deffp*100,mul,hrate.GetMean(),ncev,effc*100,deffc*100,csize,ncl]
     for r in res:
-        print len(r)
-        sql_ins='''INSERT INTO INTIME(run,chamber,hv,ntrg,nall,nxy,eff,deff,effp,deffp,mul,rate,ncev,effc,deffc,csize,ncl,dcs) VALUES(%d,%d,%d,%d,%d,%d,%5.2f,%5.2f,%5.2f,%5.2f,%5.2f,%7.1f,%d,%5.2f,%5.2f,%5.2f,%5.2f,%d)''' % (r[0],r[1],r[2],r[3],r[4],r[5],r[6],r[7],r[8],r[9],r[10],r[11],r[12],r[13],r[14],r[15],r[16],webdcs)
-        #print sql_ins
+        #print len(r)
+        sql_ins='''INSERT INTO corana(run,chamber,type,hv,ncevt,effc,deffc,csize,nclus,daqfebrate,daqeffloss,xyfebrate,effback,effcor) VALUES(%d,%d,%d,%d,%5.1f,%5.2f,%5.2f,%5.2f,%5.2f,%5.2f,%5.2f,%5.2f,%5.2f,%5.2f)''' % (r[0],r[1],runtype,r[2],r[3],r[4],r[5],r[6],r[7],r[8],r[9],r[10],r[11],r[12])
+        print sql_ins
         curs.execute(sql_ins)
-    conn.commit()
+        conn.commit()
     
 def buildTGraph(title,vx,dvx,vy,dvy,tx,ty):
     r_ti, r_p = array( 'd' ), array( 'd' )
@@ -629,7 +749,7 @@ def buildTGraph(title,vx,dvx,vy,dvy,tx,ty):
     gr.GetYaxis().SetTitle( ty )
     return gr
 
-def  drawDCS(fdbi,fdbo,webdcs,chamber,c=None):
+def  drawDCS(fdbi,webdcs,chamber,c=None):
     if (c==None):
         c=TCanvas()
     gStyle.SetOptFit(1)
@@ -637,33 +757,39 @@ def  drawDCS(fdbi,fdbo,webdcs,chamber,c=None):
     conn = sqlite3.connect(fdbi)
     conn.text_factory = str
     curs = conn.cursor()
-    curs.execute("select DISTINCT(DCS),ATT,TRET,DEAD from runs WHERE DCS=%d" % webdcs);
+    sql_dcs="select ATT,DEAD,TRET,TCOAX from webdcs WHERE dcs=%d" % webdcs
+    curs.execute(sql_dcs)
     v=curs.fetchall()
-    if (len(v)==0):
+    att=-1
+    dthr=-1
+    dead=-1
+    if (len(v)<1):
         return
-    att=v[0][1]
-    dthr=v[0][2]-500
-    dead=v[0][3]
-    print att,dthr,dead
-    connr = sqlite3.connect(fdbo)
-    connr.text_factory = str
-    cursr = connr.cursor()
-    cursr.execute("select hv,effc,deffc from INTIME where DCS=%d AND CHAMBER=%d" % (webdcs,chamber));
-    vo=cursr.fetchall()
+    for x in v:
+        att=x[0]
+        dead=x[1]
+        dthr=x[2]-500
+    sql_query=" select EFFCOR,DEFFC,(SELECT HV FROM runs WHERE runs.RUN=corana.RUN),DAQFEBRATE,DAQEFFLOSS  from corana WHERE RUN IN (SELECT RUN FROM runs WHERE DCS=%d) AND CHAMBER=%d" % (webdcs,chamber)
+    curs.execute(sql_query)
+    vo=curs.fetchall()
     if (len(vo)<6):
         return;
     hv=[]
     eff=[]
     dhv=[]
     deff=[]
+    febrate=[]
+    dfebrate=[]
     for x in vo:
         if (x[1]==0):
             continue
-        hv.append(x[0])
+        hv.append(x[2])
         dhv.append(10.)
-        eff.append(x[1])
-        deff.append(x[2])
-    title="DCS%d_ATT%3.1f_THR%d_DT%d_CH%d" % (webdcs,att,dthr,dead,chamber)
+        eff.append(x[0])
+        deff.append(x[1])
+        febrate.append(x[3])
+        dfebrate.append(1.)
+    stitle="DCS%d_ATT%3.1f_THR%d_DT%d_CH%d" % (webdcs,att,dthr,dead,chamber)
     gr=buildTGraph("effi",hv,dhv,eff,deff,"HV effective (V)","efficiency (%)")
 
     func = TF1("func", "([0]/(1+ TMath::Exp(-[1]*(x-[2]))))", 6500,8200)
@@ -672,7 +798,7 @@ def  drawDCS(fdbi,fdbo,webdcs,chamber,c=None):
     gr.Fit(func,"","",6700,8200)
     hv95=func.GetX(func.GetParameter(0)*0.95)
     print "HV95",hv95,hv95+150
-    title=title+"_HV95_%4.0f_WP_%4.0f" % (hv95,hv95+150)
+    title=stitle+"_HV95_%4.0f_WP_%4.0f" % (hv95,hv95+150)
     gr.SetTitle(title)
     gStyle.SetStatX(0.85)
     gStyle.SetStatY(0.7)
@@ -680,4 +806,26 @@ def  drawDCS(fdbi,fdbo,webdcs,chamber,c=None):
     gr.Draw("AP")
     c.Update()
     c.SaveAs("%s.png" % title)
+    
+    
     val=raw_input()
+    grb=buildTGraph("background",hv,dhv,febrate,dfebrate,"HV effective (V)","FEB rate (Hz/cm^2)")
+    title=stitle
+    grb.SetTitle(title)
+    gStyle.SetStatX(0.85)
+    gStyle.SetStatY(0.7)
+    c.cd()
+    grb.Draw("AP")
+    c.Update()
+    val=raw_input()
+
+def processAllDCS(fdb,dbo,proc=True,diro="."):
+    conn = sqlite3.connect(fdb)
+    conn.text_factory = str
+    curs = conn.cursor()
+    curs.execute("select distinct(dcs) from runs")
+    v=curs.fetchall()
+    for x in v:
+        if (proc):
+            processDCS(fdb,x[0],proc,diro)
+        storeResults(fdb,dbo,x[0],diro)

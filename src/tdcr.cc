@@ -31,9 +31,10 @@ int main(int argc, char **argv )
   static tdcrb bs("/tmp");
   TApplication theApp("tapp", &argc, argv);
   std::string geom_file;
+  std::string dirp="/home/acqilc/backup_aug2018";
   int32_t runask=0;
   char c;
-   while ( (c = getopt(argc, argv, "g:r:hv")) != -1 ) {
+   while ( (c = getopt(argc, argv, "g:r:d:hv")) != -1 ) {
      fprintf(stderr,"%c read\n",c);
      
         switch ( c ) {
@@ -44,6 +45,14 @@ int main(int argc, char **argv )
 	      geom_file.assign(optarg);
 	      fprintf(stderr, "Geometry %s \n",optarg);
                 break;
+	case 'd':
+                /* Chaque fois que l'option -v est utilisée,
+                 * on augmente le degré de verbosité. */
+	      
+	      dirp.assign(optarg);
+	      fprintf(stderr, "Directory %s \n",optarg);
+                break;
+
 
             case 'r':
                 /* Ici, on convertit la valeur de optarg
@@ -104,7 +113,7 @@ int main(int argc, char **argv )
   int n;
   std::cout<<"Pattern "<<spat.str()<<std::endl;
   //std::string dirp="/data/srv02/RAID6/Dome0718";
-  std::string dirp="/home/acqilc/backup_aug2018";
+
   //dirp=".";
   n = scandir(dirp.c_str(), &namelist, NULL, alphasort);
   if (n < 0)

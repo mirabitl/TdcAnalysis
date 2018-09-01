@@ -18,6 +18,7 @@ namespace lydaq
     inline uint16_t dif() const {return _dif;}
     inline double t0() const {return _t0;}
     inline double t1() const {return _t1;}
+    inline double shift() const {return _shift;}
     #ifdef SMALLPCB
     inline double ypos() const {return (_t0-_t1-_shift)/0.125;}
     inline double xpos() const {
@@ -44,11 +45,15 @@ namespace lydaq
     {
 
       for (auto x:_strips)
+	{
 	//if (abs(x.xpos()-s.xpos())<step && abs(x.ypos()-s.ypos())<2)
-	if (abs(x.xpos()-s.xpos())<step && abs((x.t0()+x.t1())/2-(s.t0()+s.t1())/2)<2 && abs(x.ypos()-s.ypos())<2)
+	float dta=2.5;
+	if (x.dif()!=s.dif()) dta=3*2.5;
+	if (abs(x.xpos()-s.xpos())<step && abs((x.t0()+x.t1())/2-(s.t0()+s.t1())/2)<dta && abs(x.ypos()-s.ypos())<1.5)
 	  {
 	    return true;
 	  }
+	}
       return false;
     }
     void addStrip(TdcStrip& s){
@@ -91,7 +96,7 @@ namespace lydaq
     void LmAnalysis(uint32_t mezId,std::vector<lydaq::TdcChannel>& vChannel);
     void fullAnalysis(std::vector<lydaq::TdcChannel>& vChannel);
     void multiChambers(std::vector<lydaq::TdcChannel>& vChannel);
-    bool noiseStudy(std::vector<lydaq::TdcChannel>& vChannel);
+    bool noiseStudy(std::vector<lydaq::TdcChannel>& vChannel,std::string stubdir="InTime");
     void drawHits(int nch);
     void end();
     void setInfo(uint32_t dif,uint32_t run,uint32_t ev,uint32_t gt,uint64_t ab,uint16_t trgchan,uint32_t vth,uint32_t dac);

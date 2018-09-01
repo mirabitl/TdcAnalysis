@@ -96,7 +96,7 @@ void lydaq::TdcAnalyzer::setInfo(uint32_t dif,uint32_t run,uint32_t ev,uint32_t 
   _noise=_geo->general()["noise"].asUInt()==1;
   
 }
-bool lydaq::TdcAnalyzer::noiseStudy(std::vector<lydaq::TdcChannel>& vChannel)
+bool lydaq::TdcAnalyzer::noiseStudy(std::vector<lydaq::TdcChannel>& vChannel,std::string subdir)
 {
   float ch1_dt[128];
   float ch2_dt[128];
@@ -179,13 +179,14 @@ bool lydaq::TdcAnalyzer::noiseStudy(std::vector<lydaq::TdcChannel>& vChannel)
 	  // getchar();
 	  // Book and fill time to trigger
 	  std::stringstream src;
-	  src<<"/run"<<_run<<"/Chamber"<<chamber<<"/FEB/"<<x->feb()<<"/Side"<<(int) x->side(_geo->feb(x->feb()))<<"/channel"<<(int) x->channel();
+	  src<<"/run"<<_run<<"/"<<subdir<<"/Chamber"<<chamber<<"/FEB/"<<x->feb()<<"/Side"<<(int) x->side(_geo->feb(x->feb()))<<"/channel"<<(int) x->channel();
 	  std::stringstream srcp;
-	  srcp<<"/run"<<_run<<"/Chamber"<<chamber<<"/FEB/"<<x->feb()<<"/Side"<<(int) x->side(_geo->feb(x->feb()))<<"/";
+	  srcp<<"/run"<<_run<<"/"<<subdir<<"/Chamber"<<chamber<<"/FEB/"<<x->feb()<<"/Side"<<(int) x->side(_geo->feb(x->feb()))<<"/";
 		  
 	  TH1* hdt=_rh->GetTH1(src.str());
 	  TH2* hdtr=_rh->GetTH2(srcp.str()+"DeltaTrigger");
 	  TH1* hdtrp=_rh->GetTH1(srcp.str()+"DTall");
+	  //TH1* hfi=_rh->GetTH1(srcp.str()+"Fine");
 	  
 	  if (hdt==NULL)
 	    {
@@ -193,8 +194,12 @@ bool lydaq::TdcAnalyzer::noiseStudy(std::vector<lydaq::TdcChannel>& vChannel)
 	      hdt=_rh->BookTH1(src.str(),50,-25,25);
 	      hdtr=_rh->BookTH2(srcp.str()+"DeltaTrigger",4000,-2000.,1500.,32,0.,32.);
 	      hdtrp=_rh->BookTH1(srcp.str()+"DTall",2000,-1000.,0.);
+	      //hfi=_rh->BookTH1(srcp.str()+"Fine",100,-2.5,2.5);
 
 	    }
+	  // hfi->Fill(x->fine()/256.0*TDC_COARSE_TIME);
+	  // printf("%d %d %d %d %f \n",x->feb(),x->channel(),x->coarse(),x->fine(),x->tdcTime());
+	  // getchar();
 	  float dt=_geo->feb(x->feb()).dtc[x->channel()];
 	  hdtr->Fill(x->tdcTime()-ttime[x->feb()]-dt,x->channel());
 	  hdtrp->Fill(x->tdcTime()-ttime[x->feb()]-dt);
@@ -216,7 +221,7 @@ bool lydaq::TdcAnalyzer::noiseStudy(std::vector<lydaq::TdcChannel>& vChannel)
 	}
 
       std::stringstream srcc;
-      srcc<<"/run"<<_run<<"/Chamber"<<chamber<<"/";
+      srcc<<"/run"<<_run<<"/"<<subdir<<"/Chamber"<<chamber<<"/";
       
       TH1* hfr=_rh->GetTH1(srcc.str()+"FebCount");
       TH1* hfrs=_rh->GetTH1(srcc.str()+"FebCountSel");
@@ -256,14 +261,23 @@ bool lydaq::TdcAnalyzer::noiseStudy(std::vector<lydaq::TdcChannel>& vChannel)
 
 	  if (c_strip[i].size()==2)
 	    {
-	      float t0=-1,t1=-1;
+	      double t0=-1,t1=-1;
 	      for (auto x:c_strip[i])
 		{
 
 		  //fprintf(stderr,"\t %d %d %f %f \n",x->channel(), x->side(_geo->feb(x->feb())),x->tdcTime(),x->tdcTime()-ttime);
-		   float dt=_geo->feb(x->feb()).dtc[x->channel()];
-		  if (t0<0 &&  x->side(_geo->feb(x->feb()))==0) t0=x->tdcTime()-dt;
-		  if (t1<0 &&  x->side(_geo->feb(x->feb()))==1) t1=x->tdcTime()-dt;
+		   double dt=_geo->feb(x->feb()).dtc[x->channel()];
+		  if (t0<0 &&  x->side(_geo->feb(x->feb()))==0)
+		    {
+		      t0=x->tdcTime()-dt;
+
+		      //printf("T0 %d %d %d %d %f %f dt=%f \n",x->feb(),x->channel(),x->coarse(),x->fine(),x->tdcTime(),t0,dt);
+		    }
+		  if (t1<0 &&  x->side(_geo->feb(x->feb()))==1)
+		    {
+		      t1=x->tdcTime()-dt;
+		      //printf("T1 %d %d %d %d %f %f \n",x->feb(),x->channel(),x->coarse(),x->fine(),x->tdcTime(),t1);
+		    }
 		  if(t0>0 && t1>0 )
 		    {
 		      febc[x->feb()]++;
@@ -299,11 +313,11 @@ bool lydaq::TdcAnalyzer::noiseStudy(std::vector<lydaq::TdcChannel>& vChannel)
 	if (febc[i]>0) hfrs->Fill(i*1.);
 
       if (dostop) return true;
-      if (stb.count()>20) return true;
-      noisy=(stb.count()>20);
+      if (stb.count()>24) return true;
+      noisy=(stb.count()>24);
       //for (int i=0;i<24;i++)
       // if (febc[i]>=10) return true;
-      std::cout<<stb<<std::endl;
+      //std::cout<<stb<<std::endl;
       std::vector<lydaq::TdcCluster> vclus;
       vclus.clear();
       float step=2.;
@@ -330,9 +344,39 @@ bool lydaq::TdcAnalyzer::noiseStudy(std::vector<lydaq::TdcChannel>& vChannel)
 	      vclus.push_back(c);
 	    }
 	}
-      //getchar();
+
+      // Merge adjacent cluster
+      bool merged=false;
+      //printf("vclus size %d \n",vclus.size());
+      for (auto it=vclus.begin();it!=vclus.end();it++)
+	{
+	  for (auto jt=it+1;jt!=vclus.end();)
+	    {
+	      bool adj=false;
+	      for (int i=0;i<jt->size();i++)
+		{
+		  if (it->isAdjacent(jt->strip(i),step))
+		    {adj=true;break;}
+		}
+	      if (adj)
+		{
+		  merged=true;
+		  printf("Merigng cluster \n");
+		  for (int i=0;i<jt->size();i++)
+		    {
+		      it->addStrip(jt->strip(i));
+		    }
+		  vclus.erase(jt);
+		}
+	      else
+		++jt;
+	    }
+	}
+      //printf("vclus size after %d \n",vclus.size());
+      //if (merged)
+      //	getchar();
       std::stringstream src;
-      src<<"/run"<<_run<<"/Chamber"<<chamber<<"/ClusterNew/";
+      src<<"/run"<<_run<<"/"<<subdir<<"/Chamber"<<chamber<<"/ClusterNew/";
 		  
       TH2* hposs=_rh->GetTH2(src.str()+"XYStrip");
       TH2* hposc=_rh->GetTH2(src.str()+"XY");
@@ -345,6 +389,7 @@ bool lydaq::TdcAnalyzer::noiseStudy(std::vector<lydaq::TdcChannel>& vChannel)
       TH1* hmulc1=_rh->GetTH1(src.str()+"ClusterSize1");
       TH1* hns=_rh->GetTH1(src.str()+"nstrip");
       TH1* hns2=_rh->GetTH1(src.str()+"nstrip2");
+      TH1* htoa=_rh->GetTH1(src.str()+"TOA");
 
       if (hposc==NULL)
 	{
@@ -355,11 +400,12 @@ bool lydaq::TdcAnalyzer::noiseStudy(std::vector<lydaq::TdcChannel>& vChannel)
 	  hposcm=_rh->BookTH2(src.str()+"XYMore",128,0.,128.,256,-15.,15.);
 	  hposcma=_rh->BookTH2(src.str()+"XYMax",128,0.,128.,3000,-15.,15.);
 	  hposx=_rh->BookTH2(src.str()+"XYX",128,0.,128.,600,-160.,160.);
-	  hncl=_rh->BookTH1(src.str()+"Clusters",16,0.,16.);
-	  hmulc=_rh->BookTH1(src.str()+"ClusterSize",16,0.,16.);
-	  hmulc1=_rh->BookTH1(src.str()+"ClusterSize1",16,0.,16.);
+	  hncl=_rh->BookTH1(src.str()+"Clusters",32,0.,32.);
+	  hmulc=_rh->BookTH1(src.str()+"ClusterSize",32,0.,32.);
+	  hmulc1=_rh->BookTH1(src.str()+"ClusterSize1",32,0.,32.);
 	  hns=_rh->BookTH1(src.str()+"nstrip",48,0.,48.);
 	  hns2=_rh->BookTH1(src.str()+"nstrip2",48,0.,48.);
+	  htoa=_rh->BookTH1(src.str()+"TOA",100,-570.,-600.);
 
 	}
       hns->Fill(nstrip);
@@ -377,11 +423,18 @@ bool lydaq::TdcAnalyzer::noiseStudy(std::vector<lydaq::TdcChannel>& vChannel)
 	      fprintf(stderr,"\t %f %f %d \n",x.X(),x.Y(),x.size());
 	  for (int i=0;i<x.size();i++)
 	    {
-	      fprintf(stderr,"\t \t  %5.1f %5.3f %5.3f %5.3f %5.3f %5.3f \n",x.strip(i).xpos(),x.strip(i).ypos(),x.strip(i).t0(),x.strip(i).t1(),(x.strip(i).t0()+x.strip(i).t1())/2.-ttime[x.strip(i).dif()],ttime[x.strip(i).dif()]);
+	      fprintf(stderr,"\t \t  %5.1f %5.3f %5.3f %5.3f %5.3f %5.3f %5.3f \n",x.strip(i).xpos(),x.strip(i).ypos(),x.strip(i).shift(),x.strip(i).t0(),x.strip(i).t1(),(x.strip(i).t0()+x.strip(i).t1())/2.-ttime[x.strip(i).dif()],ttime[x.strip(i).dif()]);
 	    }
 	    }
 	  //   }
-	  if (x.size()>10) continue;
+	  if (vclus.size()==1)
+	  for (int i=0;i<x.size();i++)
+	    {
+	      htoa->Fill(
+			 (x.strip(i).t0()+x.strip(i).t1())/2.-ttime[x.strip(i).dif()]);
+	    }
+
+	  if (x.size()>30) continue;
 	  hposc->Fill(x.X(),x.Y());
 	  if (vclus.size()==1)
 	    {hposc1->Fill(x.X(),x.Y());
@@ -398,7 +451,7 @@ bool lydaq::TdcAnalyzer::noiseStudy(std::vector<lydaq::TdcChannel>& vChannel)
       for (auto x:vclus)
 	{
 	  nc++;
-	  if (x.size()>10) continue;
+	  if (x.size()>16) continue;
 	  if (x.size()==maxs)
 	    {
 	    hposcma->Fill(x.X(),x.Y());
@@ -425,7 +478,7 @@ bool lydaq::TdcAnalyzer::noiseStudy(std::vector<lydaq::TdcChannel>& vChannel)
       for (auto x:vclus)
 	{
 	  ncp++;
-	  if (x.size()>10) continue;
+	  if (x.size()>16) continue;
 
 	  if (ncp==nc) continue;
 	  hposcm->Fill(x.X(),x.Y());  
@@ -442,9 +495,12 @@ bool lydaq::TdcAnalyzer::noiseStudy(std::vector<lydaq::TdcChannel>& vChannel)
 
 void lydaq::TdcAnalyzer::multiChambers(std::vector<lydaq::TdcChannel>& vChannel)
 {
-
-  if (this->noiseStudy(vChannel)) return;
+  _noise=true;
+  this->noiseStudy(vChannel,"OffTime");
+  _noise=false;
+  if (this->noiseStudy(vChannel,"InTime")) return;
   //if (_noise) return;
+  return;
   std::stringstream sr;
   
 
