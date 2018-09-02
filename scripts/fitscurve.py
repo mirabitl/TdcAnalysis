@@ -663,7 +663,7 @@ def processDCS(fdb,webdcs,proc=True,diro="."):
     conn = sqlite3.connect(fdb)
     conn.text_factory = str
     curs = conn.cursor()
-    curs.execute("SELECT RUN,HV,ATT,DEAD,TRET,POSITION FROM runs WHERE DCS=%d" % webdcs)
+    curs.execute("SELECT RUN,HV FROM runs WHERE DCS=%d" % webdcs)
     v=curs.fetchall()
     #print v[0]
     #print v[0][0]
@@ -823,7 +823,7 @@ def processAllDCS(fdb,dbo,proc=True,diro="."):
     conn = sqlite3.connect(fdb)
     conn.text_factory = str
     curs = conn.cursor()
-    curs.execute("select distinct(dcs) from runs")
+    curs.execute("select distinct(dcs) from webdcs")
     v=curs.fetchall()
     for x in v:
         if (proc):
