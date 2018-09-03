@@ -1,5 +1,6 @@
 import sqlite3
 from ROOT import *
+import json
 import math
 import time
 from array import array
@@ -749,6 +750,25 @@ def buildTGraph(title,vx,dvx,vy,dvy,tx,ty):
     gr.GetYaxis().SetTitle( ty )
     return gr
 
+def buildTGraph1(title,vx,vy,tx,ty):
+    r_ti, r_p = array( 'd' ), array( 'd' )
+    er_ti, er_p = array( 'd' ), array( 'd' )
+    for x in vx:
+      r_ti.append(x)
+    for y in vy:
+      r_p.append(y)
+   
+    
+    gr = TGraph( len(vx), r_ti, r_p)
+    gr.SetLineColor( 1 )
+    gr.SetLineWidth( 1 )
+    gr.SetMarkerColor( 2 )
+    gr.SetMarkerStyle( 21 )
+    gr.SetMarkerSize( 0.4 )
+    gr.SetTitle(title)
+    gr.GetXaxis().SetTitle(tx )
+    gr.GetYaxis().SetTitle( ty )
+    return gr
 def  drawDCS(fdbi,webdcs,chamber,c=None):
     if (c==None):
         c=TCanvas()
@@ -757,18 +777,20 @@ def  drawDCS(fdbi,webdcs,chamber,c=None):
     conn = sqlite3.connect(fdbi)
     conn.text_factory = str
     curs = conn.cursor()
-    sql_dcs="select ATT,DEAD,TRET,TCOAX from webdcs WHERE dcs=%d" % webdcs
+    sql_dcs="select ATT,DEAD,TRET,TCOAX,TRIGGER from webdcs WHERE dcs=%d" % webdcs
     curs.execute(sql_dcs)
     v=curs.fetchall()
     att=-1
     dthr=-1
     dead=-1
+    trig="UNKNOwN"
     if (len(v)<1):
         return
     for x in v:
         att=x[0]
         dead=x[1]
         dthr=x[2]-500
+        trig=x[4]
     sql_query=" select EFFCOR,DEFFC,(SELECT HV FROM runs WHERE runs.RUN=corana.RUN),DAQFEBRATE,DAQEFFLOSS  from corana WHERE RUN IN (SELECT RUN FROM runs WHERE DCS=%d) AND CHAMBER=%d" % (webdcs,chamber)
     curs.execute(sql_query)
     vo=curs.fetchall()
@@ -789,7 +811,7 @@ def  drawDCS(fdbi,webdcs,chamber,c=None):
         deff.append(x[1])
         febrate.append(x[3])
         dfebrate.append(1.)
-    stitle="DCS%d_ATT%3.1f_THR%d_DT%d_CH%d" % (webdcs,att,dthr,dead,chamber)
+    stitle="DCS%d_TRG%s_ATT%3.1f_THR%d_DT%d_CH%d" % (webdcs,trig,att,dthr,dead,chamber)
     gr=buildTGraph("effi",hv,dhv,eff,deff,"HV effective (V)","efficiency (%)")
 
     func = TF1("func", "([0]/(1+ TMath::Exp(-[1]*(x-[2]))))", 6500,8200)
@@ -802,10 +824,10 @@ def  drawDCS(fdbi,webdcs,chamber,c=None):
     gr.SetTitle(title)
     gStyle.SetStatX(0.85)
     gStyle.SetStatY(0.7)
-    c.cd()
+    c.cd(1)
     gr.Draw("AP")
     c.Update()
-    c.SaveAs("%s.png" % title)
+    
     
     
     val=raw_input()
@@ -814,12 +836,67 @@ def  drawDCS(fdbi,webdcs,chamber,c=None):
     grb.SetTitle(title)
     gStyle.SetStatX(0.85)
     gStyle.SetStatY(0.7)
-    c.cd()
+    c.cd(2)
     grb.Draw("AP")
     c.Update()
     val=raw_input()
 
-def processAllDCS(fdb,dbo,proc=True,diro="."):
+    sql_query="select * from RESULTS WHERE  CTIME>=(SELECT CFIRST FROM webdcs WHERE DCS=%d) AND CTIME<=(SELECT CLAST FROM webdcs WHERE DCS=%d)-200 AND HARDWARE='SY1527'" % (webdcs,webdcs)
+    curs.execute(sql_query)
+    v=curs.fetchall()
+
+    a=[]
+    for x in v:
+        a.append([x[3],json.loads(x[4].decode('latin-1').encode("utf-8"))])
+    print a
+    val=raw_input()
+    chan=[1,2,4,5]
+    idx=0
+    tgr=[]
+    for ch in chan:
+          x_t=[]
+          y_vs=[]
+          z_vm=[]
+          w_im=[]
+          g_g=[]
+          chname=""
+          first=0
+          for x in a:
+            if (x[1]['channels'][ch]['rampup']==0):
+              continue
+            if (float(x[1]['channels'][ch]['vset']) < 5500.0):
+              continue
+            #print float(x[1]['channels'][ch]['vset'])
+            if (first==0):
+              first=x[0]
+            x_t.append(x[0]-first)
+            y_vs.append(x[1]['channels'][ch]['vset'])
+            z_vm.append(x[1]['channels'][ch]['vout'])
+            w_im.append(x[1]['channels'][ch]['iout'])
+            g_g.append( x[1]['channels'][ch]['iout']/ x[1]['channels'][ch]['vout'])
+            #print ch,x
+            chname=x[1]['channels'][ch]['name']
+          if (len(x_t)<1):
+            continue
+          dy_vs=[]
+          for i in range(0,len(y_vs)):
+            if (i==0):
+              dy_vs.append(y_vs[i+1]-y_vs[i])
+              continue
+            if (i==len(y_vs)-1):
+              dy_vs.append(y_vs[i]-y_vs[i-1])
+              continue
+            dy_vs.append((y_vs[i+1]-y_vs[i-1])/2.)
+          tgr.append(buildTGraph1('V set vs t (h) %s' % chname,x_t,dy_vs,'t(h)','V set (V)'))
+          tgr.append(buildTGraph1('V Mon vs t (h) %s' % chname,x_t,z_vm,'t(h)','V mon (V)'))
+          tgr.append(buildTGraph1('I Mon vs t (h) %s' % chname,x_t,w_im,'t(h)','I mon ([m]A)'))
+    for x in tgr:
+      x.Draw("AP")
+      c.Update()
+      val=raw_input()      
+    c.SaveAs("%s.png" % title)
+
+def processAllDCS(fdb,dbo,diro=".",proc=True,store=True,draw=False,canvas=None):
     conn = sqlite3.connect(fdb)
     conn.text_factory = str
     curs = conn.cursor()
@@ -828,4 +905,8 @@ def processAllDCS(fdb,dbo,proc=True,diro="."):
     for x in v:
         if (proc):
             processDCS(fdb,x[0],proc,diro)
-        storeResults(fdb,dbo,x[0],diro)
+        if (store):
+          storeResults(fdb,dbo,x[0],diro)
+        if (draw):
+          drawDCS(fdb,x[0],1,canvas)
+          drawDCS(fdb,x[0],2,canvas)
