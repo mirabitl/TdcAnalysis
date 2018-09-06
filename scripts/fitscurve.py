@@ -19,7 +19,7 @@ def calP(p0,alt):
   return p0*(1-0.0065*alt/288.15)**5.255
 
 def calV(V,P,T):
-  print 1-(0.2+0.8*P/990.*293./T)
+  #print 1-(0.2+0.8*P/990.*293./T)
   return  V/(0.2+0.8*P/990.*293./T)
 
 def calValice(V,P,T):
@@ -335,8 +335,8 @@ def calcefn(run,chamber,hv=0,dirp="."):
 def extractEfficiency(run,chamber,hv=0,dirp="."):
   f82=TFile("%s/histo%d_0.root" % (dirp,run));
   f82.cd("/run%d/InTime/Chamber%d/" % (run,chamber));
-  c1=TCanvas();
-  gStyle.SetOptFit();
+  #c1=TCanvas();
+  #gStyle.SetOptFit();
 
   hclusters=f82.Get("/run%d/InTime/Chamber%d/ClusterNew/Clusters" % (run,chamber));
   hclustero=f82.Get("/run%d/OffTime/Chamber%d/ClusterNew/Clusters" % (run,chamber));
@@ -412,7 +412,7 @@ def extractEfficiency(run,chamber,hv=0,dirp="."):
   #c1.SaveAs("Run%d_Strip_pos.png" % (run));
 
   #val = raw_input()
-  r=(run,chamber,hv,ncev,effc*100,deffc*100,csize,ncl,febrate/febs[chamber],-febrate*10E-7,febratesel/febs[chamber],effco,100*(effc-effco)/(1.-effco))
+  r=(run,chamber,hv,ncev,effc*100,deffc*100,csize,ncl,febrate/febs[chamber],-febrate*10E-7,febratesel/febs[chamber],effco*100,100*(effc-effco)/(1.-effco))
   #r = map(prettyfloat, r)
   return r
 
@@ -772,12 +772,15 @@ def buildTGraph1(title,vx,vy,tx,ty):
 def  drawDCS(fdbi,webdcs,chamber,c=None):
     if (c==None):
         c=TCanvas()
+    jdict={}
+    jdict['settings']={}
     gStyle.SetOptFit(1)
-
+    c.Clear()
+    #c.Divide(2,4)
     conn = sqlite3.connect(fdbi)
     conn.text_factory = str
     curs = conn.cursor()
-    sql_dcs="select ATT,DEAD,TRET,TCOAX,TRIGGER from webdcs WHERE dcs=%d" % webdcs
+    sql_dcs="select ATT,DEAD,TRET,TCOAX,TRIGGER,ACTIVE,START from webdcs WHERE dcs=%d" % webdcs
     curs.execute(sql_dcs)
     v=curs.fetchall()
     att=-1
@@ -786,15 +789,28 @@ def  drawDCS(fdbi,webdcs,chamber,c=None):
     trig="UNKNOwN"
     if (len(v)<1):
         return
+    jdict['settings']['dcs']=webdcs
+    jdict['settings']['att']=v[0][0]
+    jdict['settings']['dead']=v[0][1]
+    jdict['settings']['tret']=v[0][2]
+    jdict['settings']['tcoax']=v[0][3]
+    jdict['settings']['trigger']=v[0][4]
+    jdict['settings']['active']=v[0][5]
+    jdict['settings']['start']=v[0][6]
+
+    dirout="./results/dcs/%d_ATT%3.1f_DT%d_THR%d_%s/chamber%d/" % (webdcs,v[0][0],v[0][1],v[0][2]-500,v[0][4].replace('"','').replace(' ','_'),chamber)
+    os.system("mkdir -p %s" % dirout)
+    fout=open(dirout+"summary%d_ATT%3.1f_DT%d_THR%d_%s.txt" % (webdcs,v[0][0],v[0][1],v[0][2]-500,v[0][4].replace('"','').replace(' ','_')),"w")
     for x in v:
+        fout.write("Cuts: %5.2f %d %d %d %s %d %s\n" % x)
         att=x[0]
         dead=x[1]
         dthr=x[2]-500
         trig=x[4]
-    sql_query=" select EFFCOR,DEFFC,(SELECT HV FROM runs WHERE runs.RUN=corana.RUN),DAQFEBRATE,DAQEFFLOSS  from corana WHERE RUN IN (SELECT RUN FROM runs WHERE DCS=%d) AND CHAMBER=%d" % (webdcs,chamber)
+    sql_query=" select EFFCOR,DEFFC,(SELECT HV FROM runs WHERE runs.RUN=corana.RUN),DAQFEBRATE,DAQEFFLOSS,RUN,NCEVT,EFFC,CSIZE,NCLUS,XYFEBRATE,EFFBACK  from corana WHERE RUN IN (SELECT RUN FROM runs WHERE DCS=%d) AND CHAMBER=%d" % (webdcs,chamber)
     curs.execute(sql_query)
     vo=curs.fetchall()
-    if (len(vo)<6):
+    if (len(vo)<1):
         return;
     hv=[]
     eff=[]
@@ -802,15 +818,49 @@ def  drawDCS(fdbi,webdcs,chamber,c=None):
     deff=[]
     febrate=[]
     dfebrate=[]
+    effloss=[]
+    csize=[]
+    nclus=[]
+    effback=[]
+    jdict['runs']={}
+    jdict['runs']['effcor']=[]
+    jdict['runs']['hv']=[]
+    jdict['runs']['febrate']=[]
+    jdict['runs']['effloss']=[]
+    jdict['runs']['runid']=[]
+    jdict['runs']['nevt']=[]
+    jdict['runs']['effclu']=[]
+    jdict['runs']['csize']=[]
+    jdict['runs']['nclus']=[]
+    jdict['runs']['xyrate']=[]
+    jdict['runs']['effback']=[]
+
+    
     for x in vo:
         if (x[1]==0):
             continue
+        fout.write("Results: %5.2f %5.2f %5.2f %5.2f %5.2f %d %d %5.2f %5.2f %5.2f %5.2f %5.2f \n" % x)
         hv.append(x[2])
         dhv.append(10.)
         eff.append(x[0])
         deff.append(x[1])
         febrate.append(x[3])
         dfebrate.append(1.)
+        effloss.append(x[4])
+        csize.append(x[8])
+        nclus.append(x[9])
+        effback.append(x[11])
+        jdict['runs']['effcor'].append(x[0])
+        jdict['runs']['hv'].append(x[2])
+        jdict['runs']['febrate'].append(x[3])
+        jdict['runs']['effloss'].append(x[4])
+        jdict['runs']['runid'].append(x[5])
+        jdict['runs']['nevt'].append(x[6])
+        jdict['runs']['effclu'].append(x[7])
+        jdict['runs']['csize'].append(x[8])
+        jdict['runs']['nclus'].append(x[9])
+        jdict['runs']['xyrate'].append(x[10])
+        jdict['runs']['effback'].append(x[11])
     stitle="DCS%d_TRG%s_ATT%3.1f_THR%d_DT%d_CH%d" % (webdcs,trig,att,dthr,dead,chamber)
     gr=buildTGraph("effi",hv,dhv,eff,deff,"HV effective (V)","efficiency (%)")
 
@@ -819,40 +869,81 @@ def  drawDCS(fdbi,webdcs,chamber,c=None):
     print 100, 9.E-3, 7100
     gr.Fit(func,"","",6700,8200)
     hv95=func.GetX(func.GetParameter(0)*0.95)
-    print "HV95",hv95,hv95+150
-    title=stitle+"_HV95_%4.0f_WP_%4.0f" % (hv95,hv95+150)
+    hv99=func.GetX(func.GetParameter(0)*0.99)
+    print "HV95",hv95,hv95+150,hv99,hv99-hv95
+    wp=hv99
+    jdict['fit']={}
+    jdict['fit']['Efficiency']=func.GetParameter(0)
+    jdict['fit']['Slope']=func.GetParameter(1)
+    jdict['fit']['HV50']=func.GetParameter(2)
+    jdict['fit']['HV95']=hv95
+    jdict['fit']['HV99']=wp
+
+    fout.write("FIT results: %f %f %f %f %f \n" % (func.GetParameter(0),func.GetParameter(1),func.GetParameter(2),hv95,wp))
+    title=stitle+"_HV95_%4.0f_WP_%4.0f" % (hv95,wp)
     gr.SetTitle(title)
     gStyle.SetStatX(0.85)
     gStyle.SetStatY(0.7)
     c.cd(1)
     gr.Draw("AP")
     c.Update()
-    
-    
-    
-    val=raw_input()
-    grb=buildTGraph("background",hv,dhv,febrate,dfebrate,"HV effective (V)","FEB rate (Hz/cm^2)")
-    title=stitle
-    grb.SetTitle(title)
-    gStyle.SetStatX(0.85)
-    gStyle.SetStatY(0.7)
-    c.cd(2)
-    grb.Draw("AP")
-    c.Update()
-    val=raw_input()
+    #val=raw_input()
+    c.SaveAs(dirout+"%s.png" % title)
 
+    tgr=[]
+    tgr.append(buildTGraph1('FEB Rate',hv,febrate,'HV eff (V)','Rate (Hz/cm^2)'))
+    tgr.append(buildTGraph1('Dead Time Loss',hv,effloss,'HV eff (V)','Dead time loss (%)'))
+    tgr.append(buildTGraph1('Cluster Size',hv,csize,'HV eff (V)','Cluster size'))
+    tgr.append(buildTGraph1('Cluster Number',hv,nclus,'HV eff (V)','Clusters'))
+    tgr.append(buildTGraph1('Background Efficiency',hv,effback,'HV eff (V)','Efficiency (%)'))
+    #val=raw_input()
+    # grb=buildTGraph("background",hv,dhv,febrate,dfebrate,"HV effective (V)","FEB rate (Hz/cm^2)")
+    # title=stitle
+    # grb.SetTitle(title)
+    # gStyle.SetStatX(0.85)
+    # gStyle.SetStatY(0.7)
+    # c.cd(2)
+    # grb.Draw("AP")
+    # c.Update()
+    # c.SaveAs(dirout+"%s.png" % title)
+    #val=raw_input()
+    sql_query="select * from RESULTS WHERE  CTIME>=(SELECT CFIRST FROM webdcs WHERE DCS=%d) AND CTIME<=(SELECT CLAST FROM webdcs WHERE DCS=%d)-200 AND HARDWARE='BMP'" % (webdcs,webdcs)
+    curs.execute(sql_query)
+    v=curs.fetchall()
+    bmp=[]
+    for x in v:
+        bmp.append([x[3],json.loads(x[4].decode('latin-1').encode("utf-8"))])
+    #print bmp
+    PB=0
+    TB=0
+    NB=0
+    for x in bmp:
+      PB=PB+x[1]['pressure']
+      TB=TB+x[1]['temperature']
+      NB=NB+1
+    if (NB>0):
+      PB=PB/NB
+      TB=TB/NB+273.15
+    fout.write("Pressure: %d %5.2f %5.2f \n" % (NB,PB,TB))
+    jdict['BMP']={"P":PB,"T":TB}
+
+    #val=raw_input()
     sql_query="select * from RESULTS WHERE  CTIME>=(SELECT CFIRST FROM webdcs WHERE DCS=%d) AND CTIME<=(SELECT CLAST FROM webdcs WHERE DCS=%d)-200 AND HARDWARE='SY1527'" % (webdcs,webdcs)
     curs.execute(sql_query)
     v=curs.fetchall()
-
+    
     a=[]
     for x in v:
         a.append([x[3],json.loads(x[4].decode('latin-1').encode("utf-8"))])
-    print a
-    val=raw_input()
-    chan=[1,2,4,5]
+    #print a
+    #val=raw_input()
+    if (chamber==1):
+      chan=[4,5]
+    else:
+      chan=[1,2] 
     idx=0
-    tgr=[]
+    #tgr=[]
+    jdict['HV']={}
     for ch in chan:
           x_t=[]
           y_vs=[]
@@ -879,22 +970,141 @@ def  drawDCS(fdbi,webdcs,chamber,c=None):
           if (len(x_t)<1):
             continue
           dy_vs=[]
+          if (len(y_vs)>1):
+            for i in range(0,len(y_vs)):
+              if (i==0 and i!=len(y_vs)-1):
+                dy_vs.append(y_vs[i+1]-y_vs[i])
+                continue
+              if (i==len(y_vs)-1 and i!=0):
+                dy_vs.append(y_vs[i]-y_vs[i-1])
+                continue
+              dy_vs.append((y_vs[i+1]-y_vs[i-1])/2.)
+          else:
+            dy_vs.append(0)
+          vset=[]
+          vmon=[]
+          veff=[]
+          imon=[]
+          nval=0
+          vmon_sum=0
+          vset_sum=0
+          imon_sum=0
           for i in range(0,len(y_vs)):
-            if (i==0):
-              dy_vs.append(y_vs[i+1]-y_vs[i])
+            if (abs(dy_vs[i])>10):
+              if (nval>0):
+                vmon.append(vmon_sum/nval)
+                vset.append(vset_sum/nval)
+                imon.append(imon_sum/nval)
+                if (NB>0):
+                  veff.append(calV(vmon_sum/nval,PB,TB))
+                else:
+                  veff.append(vmon_sum/nval)
+              nval=0
+              vmon_sum=0
+              vset_sum=0
+              imon_sum=0
               continue
-            if (i==len(y_vs)-1):
-              dy_vs.append(y_vs[i]-y_vs[i-1])
-              continue
-            dy_vs.append((y_vs[i+1]-y_vs[i-1])/2.)
-          tgr.append(buildTGraph1('V set vs t (h) %s' % chname,x_t,dy_vs,'t(h)','V set (V)'))
-          tgr.append(buildTGraph1('V Mon vs t (h) %s' % chname,x_t,z_vm,'t(h)','V mon (V)'))
-          tgr.append(buildTGraph1('I Mon vs t (h) %s' % chname,x_t,w_im,'t(h)','I mon ([m]A)'))
+            nval=nval+1
+            vmon_sum=vmon_sum+z_vm[i]
+            vset_sum=vset_sum+y_vs[i]
+            imon_sum=imon_sum+w_im[i]
+          if (nval>0):
+            vmon.append(vmon_sum/nval)
+            vset.append(vset_sum/nval)
+            imon.append(imon_sum/nval)
+            if (NB>0):
+              veff.append(calV(vmon_sum/nval,PB,TB))
+            else:
+              veff.append(vmon_sum/nval)
+          #print chname,"VSET",vset
+          #print chname,"VMON",vmon
+          #print chname,"VEFF",veff
+          #print chname,"IMON",imon
+          fout.write(chname+"\n")
+          jdict['HV'][chname]={}
+          jdict['HV'][chname]['vset']=vset
+          jdict['HV'][chname]['vmon']=vmon
+          jdict['HV'][chname]['imon']=imon
+          jdict['HV'][chname]['veff']=veff
+
+          for ip in range(0,len(vmon)):
+            fout.write("%5.2f %5.2f %5.2f %5.2f \n" % (vset[ip],vmon[ip],veff[ip],imon[ip]))
+          #tgr.append(buildTGraph1('V set vs t  %s' % chname,x_t,y_vs,'t(s)','V set (V)'))
+          tgr.append(buildTGraph1('V Mon vs t  %s' % chname,x_t,z_vm,'t(s)','V mon (V)'))
+          tgr.append(buildTGraph1('I Mon vs t  %s' % chname,x_t,w_im,'t(s)','I mon ([m]A)'))
+          tgr.append(buildTGraph1('I Mon vs V eff %s' % chname,veff,imon,'V eff(V)','I mon ([m]A)'))
+    icd=3
     for x in tgr:
+      c.cd(icd)
+      icd=icd+1
       x.Draw("AP")
       c.Update()
-      val=raw_input()      
-    c.SaveAs("%s.png" % title)
+      c.SaveAs(dirout+"%s.png" % x.GetTitle().replace(" ","_"))
+      #val=raw_input()      
+    # resume
+    chans=[]
+    if (chamber == 2):
+      chans=["COAX-BOT","COAX-TOP"]
+    else:
+      chans=["RETURN-BOT","RETURN-TOP"]
+    jdict['AWP']={}
+    jdict['AWP']['hv']=wp
+    ihv=-1
+    for i in range(0,len(jdict['runs']['hv'])-1):
+      if (wp>jdict['runs']['hv'][i] and wp<=jdict['runs']['hv'][i+1]):
+        ihv=i
+        break
+    if (ihv!=-1):
+      jdict['AWP']['plateau']=jdict['fit']['Efficiency']
+      jdict['AWP']['febrate']=approx(wp,jdict['runs']['hv'][ihv],jdict['runs']['hv'][ihv+1],jdict['runs']['febrate'][ihv],jdict['runs']['febrate'][ihv+1])
+      jdict['AWP']['effloss']=approx(wp,jdict['runs']['hv'][ihv],jdict['runs']['hv'][ihv+1],jdict['runs']['effloss'][ihv],jdict['runs']['effloss'][ihv+1])
+      jdict['AWP']['effcor']=approx(wp,jdict['runs']['hv'][ihv],jdict['runs']['hv'][ihv+1],jdict['runs']['effcor'][ihv],jdict['runs']['effcor'][ihv+1])
+      jdict['AWP']['csize']=approx(wp,jdict['runs']['hv'][ihv],jdict['runs']['hv'][ihv+1],jdict['runs']['csize'][ihv],jdict['runs']['csize'][ihv+1])
+      jdict['AWP']['nclus']=approx(wp,jdict['runs']['hv'][ihv],jdict['runs']['hv'][ihv+1],jdict['runs']['nclus'][ihv],jdict['runs']['nclus'][ihv+1])
+    for x in chans:
+      ihv=-1
+      if (x in jdict['HV']):
+        for i in range(0,len(jdict['HV'][x]['veff'])-1):
+          if (wp>jdict['HV'][x]['veff'][i] and wp<=jdict['HV'][x]['veff'][i+1]):
+            ihv=i
+            break
+      if (ihv!=-1):
+         jdict['AWP'][x]=approx(wp,jdict['HV'][x]['veff'][ihv],jdict['HV'][x]['veff'][ihv+1],jdict['HV'][x]['imon'][ihv],jdict['HV'][x]['imon'][ihv+1])
+    itot=0
+    surf=0
+    if (chamber==1):
+      surf=13000
+      if ('RETURN-TOP' in jdict['AWP']):
+        itot=itot+jdict['AWP']['RETURN-TOP']
+      if ('RETURN-BOT' in jdict['AWP']):
+        itot=itot+jdict['AWP']['RETURN-BOT']
+    if (chamber==2):
+      surf=15000
+      if ('COAX-TOP' in jdict['AWP']):
+        itot=itot+jdict['AWP']['COAX-TOP']
+      if ('COAX-BOT' in jdict['AWP']):
+        itot=itot+jdict['AWP']['COAX-BOT']
+    if ('febrate' in jdict['AWP']):
+      if (jdict['AWP']['febrate']!=0):
+        jdict['AWP']['ITOT']=itot
+        jdict['AWP']['QSEEN']=itot/jdict['AWP']['febrate']/surf*1E6
+        fout.write("%d|%5.1f|%5.0f|%5.2f|%5.2f|%5.2f|%5.2f|%5.1f|%5.1f|%5.1f|%5.1f\n" % 
+        (webdcs,
+        jdict['settings']['att'],
+        jdict['AWP']['hv'],
+        jdict['AWP']['plateau'],
+        jdict['AWP']['effcor'],
+        jdict['AWP']['effloss'],
+        jdict['AWP']['plateau']-jdict['AWP']['effloss'],
+        jdict['AWP']['febrate'],
+        jdict['AWP']['ITOT'],
+        jdict['AWP']['QSEEN'],jdict['AWP']['csize']))
+    with open(dirout+'summary.json', 'w') as outfile:
+      dd= json.dumps(jdict,sort_keys=True, indent=2,separators=(',', ': '))
+      outfile.write(dd)
+      outfile.close()
+    fout.close()
+
 
 def processAllDCS(fdb,dbo,diro=".",proc=True,store=True,draw=False,canvas=None):
     conn = sqlite3.connect(fdb)
@@ -910,3 +1120,6 @@ def processAllDCS(fdb,dbo,diro=".",proc=True,store=True,draw=False,canvas=None):
         if (draw):
           drawDCS(fdb,x[0],1,canvas)
           drawDCS(fdb,x[0],2,canvas)
+
+def approx(v,v1,v2,a1,a2):
+  return a1+(v-v1)*(a2-a1)*1./(v2-v1)
