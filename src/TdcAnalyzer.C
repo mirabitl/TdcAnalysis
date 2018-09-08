@@ -61,10 +61,10 @@ void lydaq::TdcAnalyzer::drawHits(int ch)
       hpx->Draw("P");
     else
       {
-	hpy->Draw("P");
-	TCHits->Modified();
-	TCHits->Draw();
-	TCHits->Update();
+				hpy->Draw("P");
+				TCHits->Modified();
+				TCHits->Draw();
+				TCHits->Update();
       }
   
 }
@@ -174,6 +174,17 @@ bool lydaq::TdcAnalyzer::noiseStudy(std::vector<lydaq::TdcChannel>& vChannel,std
 	    {
 	      stfeb.set(x->feb(),1);
 	      //std::cout<<"================================> bit set \n";
+				std::stringstream sraw;
+	  		sraw<<"/run"<<_run<<"/"<<subdir<<"/Chamber"<<chamber<<"/Raw/";
+				TH1* hchan=_rh->GetTH1(sraw+"Channels");
+				TH1* hstrips=_rh->GetTH1(sraw+"Strips");
+				 if (hchan==NULL)
+	    		{
+	      		hchan=_rh->BookTH1(sraw.str()+"Channels",24,0.,24.);
+						hstrips=_rh->BookTH1(sraw.str()+"Strips",48,72,120);
+	    		}
+					hchan->Fill(x->channel())
+					hstrips->Fill(x->detectorStrip(_geo->feb(x->feb())))
 	    }
 	  // printf("%f %f \n",dtmin,dtmax);
 	  // getchar();

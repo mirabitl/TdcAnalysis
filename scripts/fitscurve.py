@@ -845,7 +845,6 @@ def  drawDCS(fdbi,webdcs,chamber,c=None):
         eff.append(x[0])
         deff.append(x[1])
         febrate.append(x[3])
-        dfebrate.append(1.)
         effloss.append(x[4])
         csize.append(x[8])
         nclus.append(x[9])
