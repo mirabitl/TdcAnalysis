@@ -1104,13 +1104,15 @@ def  drawDCS(fdbi,webdcs,chamber,c=None):
       outfile.write(dd)
       outfile.close()
     fout.close()
+    return jdict
 
 
-def processAllDCS(fdb,dbo,diro=".",proc=True,store=True,draw=False,canvas=None):
+def processAllDCS(fdb,dbo,diro=".",proc=True,store=True,draw=False,canvas=None,first=0,last=100000):
+    fout=open('resume.txt','w')
     conn = sqlite3.connect(fdb)
     conn.text_factory = str
     curs = conn.cursor()
-    curs.execute("select distinct(dcs) from webdcs")
+    curs.execute("select distinct(dcs) from webdcs where dcs>=%d and dcs<=%d" % (first,last))
     v=curs.fetchall()
     for x in v:
         if (proc):
@@ -1118,8 +1120,34 @@ def processAllDCS(fdb,dbo,diro=".",proc=True,store=True,draw=False,canvas=None):
         if (store):
           storeResults(fdb,dbo,x[0],diro)
         if (draw):
-          drawDCS(fdb,x[0],1,canvas)
-          drawDCS(fdb,x[0],2,canvas)
-
+          jdict=drawDCS(fdb,x[0],1,canvas)
+          if ('QSEEN' in jdict['AWP']):
+            fout.write("%d|%d|%s|%5.1f|%5.1f|%5.0f|%5.2f|%5.2f|%5.2f|%5.2f|%5.1f|%5.1f|%5.1f\n" % 
+            (jdict['settings']['dcs'],1,
+            jdict['settings']['trigger'],
+            jdict['AWP']['febrate'],
+            jdict['settings']['att'],
+            jdict['AWP']['hv'],
+            jdict['AWP']['plateau'],
+            jdict['AWP']['effcor'],
+            jdict['AWP']['effloss'],
+            jdict['AWP']['plateau']-jdict['AWP']['effloss'],
+            jdict['AWP']['ITOT'],
+            jdict['AWP']['QSEEN'],jdict['AWP']['csize']))
+          jdict=drawDCS(fdb,x[0],2,canvas)
+          if ('QSEEN' in jdict['AWP']):
+            fout.write("%d|%d|%s|%5.1f|%5.1f|%5.0f|%5.2f|%5.2f|%5.2f|%5.2f|%5.1f|%5.1f|%5.1f\n" % 
+            (jdict['settings']['dcs'],2,
+            jdict['settings']['trigger'],
+            jdict['AWP']['febrate'],
+            jdict['settings']['att'],
+            jdict['AWP']['hv'],
+            jdict['AWP']['plateau'],
+            jdict['AWP']['effcor'],
+            jdict['AWP']['effloss'],
+            jdict['AWP']['plateau']-jdict['AWP']['effloss'],
+            jdict['AWP']['ITOT'],
+            jdict['AWP']['QSEEN'],jdict['AWP']['csize']))
+    fout.close()
 def approx(v,v1,v2,a1,a2):
   return a1+(v-v1)*(a2-a1)*1./(v2-v1)
