@@ -473,7 +473,7 @@ def fitped(run,tdc,vthmin,vthmax,old=defped):
   
   for ip in range(1,25):
       #c2.cd()
-      hs=f82.Get("/run%d/TDC%d/vthc%d" % (run,tdc,ip));
+      hs=f82.Get("/run%d/TDC%d/vth%d" % (run,tdc,ip));
       if (hs.GetEntries()==0):
         continue
       nmax=0

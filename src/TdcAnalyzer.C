@@ -19,53 +19,53 @@ void lydaq::TdcAnalyzer::drawHits(int ch)
  
   
   if (hpx==NULL)
-  {
+    {
  
-    hpx =_rh->BookTH2("Return",96,0.1,48.1,256,-15.,15.);
-    hpy =_rh->BookTH2("Coaxial",96,0.1,48.1,256,-15.,15.);
-    hpx->SetMarkerStyle(25);
-    hpx->SetMarkerColor(kRed);
-    hpy->SetMarkerStyle(25);
-    hpy->SetMarkerColor(kBlue);
+      hpx =_rh->BookTH2("Return",96,0.1,48.1,256,-15.,15.);
+      hpy =_rh->BookTH2("Coaxial",96,0.1,48.1,256,-15.,15.);
+      hpx->SetMarkerStyle(25);
+      hpx->SetMarkerColor(kRed);
+      hpy->SetMarkerStyle(25);
+      hpy->SetMarkerColor(kBlue);
 
-  }
+    }
   else
-  {
-    if (ch==1)
-      hpx->Reset();
-    else
-      hpy->Reset();
+    {
+      if (ch==1)
+	hpx->Reset();
+      else
+	hpy->Reset();
 
-  }
+    }
 
-    if (TCHits==NULL)
+  if (TCHits==NULL)
     {
       TCHits=new TCanvas("TCHits","tChits1",900,900);
       TCHits->Modified();
       TCHits->Draw();
       TCHits->Divide(1,2);
     }
-    TCHits->cd(3-ch);
-    for (auto x:_strips)
-      {
-	if (ch==1)
-	  hpx->Fill(x.xpos()-70,x.ypos());
-	else
-	  {
-	    float dx=48-(x.xpos()-70);
-	    std::cout<<dx<<std::endl;
+  TCHits->cd(3-ch);
+  for (auto x:_strips)
+    {
+      if (ch==1)
+	hpx->Fill(x.xpos()-70,x.ypos());
+      else
+	{
+	  float dx=48-(x.xpos()-70);
+	  std::cout<<dx<<std::endl;
 	  hpy->Fill(dx,x.ypos());
-	  }
-      }
-    if (ch==1)
-      hpx->Draw("P");
-    else
-      {
-				hpy->Draw("P");
-				TCHits->Modified();
-				TCHits->Draw();
-				TCHits->Update();
-      }
+	}
+    }
+  if (ch==1)
+    hpx->Draw("P");
+  else
+    {
+      hpy->Draw("P");
+      TCHits->Modified();
+      TCHits->Draw();
+      TCHits->Update();
+    }
   
 }
 /**
@@ -101,31 +101,31 @@ bool lydaq::TdcAnalyzer::noiseStudy(std::vector<lydaq::TdcChannel>& vChannel,std
   float ch1_dt[128];
   float ch2_dt[128];
 
- memset(ch2_dt,0,128*sizeof(float));
- memset(ch1_dt,0,128*sizeof(float));
+  memset(ch2_dt,0,128*sizeof(float));
+  memset(ch1_dt,0,128*sizeof(float));
 
 #define RUN743134
 #ifdef RUN743065
- float alg1[45]={0.000, 0.000, 0.000, 0.000, 0.000, 0.000, 0.000, 0.000, 0.000, 0.000, 0.000, 0.000, 0.000, -5.951, -5.836, -5.586, 0.000, -5.932, -5.518, -5.538, -5.583, 0.000, -6.518, -6.195, -5.831, -5.572, -6.000, -6.076, -5.975, -6.086, -5.966, -5.547, -7.015, 0.000, 0.000, 0.000, 0.000, 0.000, 0.000, 0.000, 0.000, 0.000, 0.000, 0.000, 0.000};
+  float alg1[45]={0.000, 0.000, 0.000, 0.000, 0.000, 0.000, 0.000, 0.000, 0.000, 0.000, 0.000, 0.000, 0.000, -5.951, -5.836, -5.586, 0.000, -5.932, -5.518, -5.538, -5.583, 0.000, -6.518, -6.195, -5.831, -5.572, -6.000, -6.076, -5.975, -6.086, -5.966, -5.547, -7.015, 0.000, 0.000, 0.000, 0.000, 0.000, 0.000, 0.000, 0.000, 0.000, 0.000, 0.000, 0.000};
 
- for (int i=0;i<45;i++) {
-   ch1_dt[72+i]=alg1[i];}
- float alg2[49]={0.000, 0.000, 0.000, 0.000, 0.000, 0.000, 0.000, 0.000, 0.000, 0.000, 0.000, 0.000, 0.000, 0.000, 0.970, 1.697, 0.485, 0.729, -0.419, -1.690, -2.601, -1.783, -1.922, -2.199, -2.046, -2.089, -2.064, -2.621, -4.695, -4.766, -1.886, -2.313, -2.396, -1.830, -2.271, 0.000, 0.000, 0.000, 0.000, 0.000, 0.000, 0.000, 0.000, 0.000, 0.000, 0.000, 0.000, 0.000, 0.000};
- for (int i=0;i<49;i++) {
-   ch2_dt[72+i]=alg2[i];}
+  for (int i=0;i<45;i++) {
+    ch1_dt[72+i]=alg1[i];}
+  float alg2[49]={0.000, 0.000, 0.000, 0.000, 0.000, 0.000, 0.000, 0.000, 0.000, 0.000, 0.000, 0.000, 0.000, 0.000, 0.970, 1.697, 0.485, 0.729, -0.419, -1.690, -2.601, -1.783, -1.922, -2.199, -2.046, -2.089, -2.064, -2.621, -4.695, -4.766, -1.886, -2.313, -2.396, -1.830, -2.271, 0.000, 0.000, 0.000, 0.000, 0.000, 0.000, 0.000, 0.000, 0.000, 0.000, 0.000, 0.000, 0.000, 0.000};
+  for (int i=0;i<49;i++) {
+    ch2_dt[72+i]=alg2[i];}
 #endif
 #ifdef RUN743079
- float alg1[45]={0.000, 0.000, -6.572, -5.284, -4.974, -5.085, 0.000, -4.329, -4.858, -5.385, -4.898, -6.042, -6.749, -6.021, -6.035, -5.759, 0.000, -5.863, -5.516, -5.449, -5.467, 0.000, -6.745, -6.107, -5.797, -5.555, -5.856, -5.925, -5.829, -6.056, -5.897, -5.669, -7.332, -4.162, -3.824, -4.705, -4.881, 0.000, -5.893, 0.000, 0.000, 0.000, 0.000, 0.000, 0.000};
- float alg2[49]={0.000, 0.000, 0.000, 0.000, 0.000, 0.000, 0.000, 0.000, 0.000, 0.000, 0.000, 0.000, 7.167, 1.371, 1.293, 1.741, 0.559, 0.756, -0.408, -1.673, -2.624, -1.695, -1.853, -2.149, -1.987, -1.961, -1.817, -2.609, -4.628, -5.021, -2.207, -2.201, -2.281, -1.775, -2.401, -2.072, 0.000, -4.127, -4.165, -3.657, -4.816, -4.676, -5.599, -6.948, -7.514, -7.008, -6.912, -6.900, 0.000};
+  float alg1[45]={0.000, 0.000, -6.572, -5.284, -4.974, -5.085, 0.000, -4.329, -4.858, -5.385, -4.898, -6.042, -6.749, -6.021, -6.035, -5.759, 0.000, -5.863, -5.516, -5.449, -5.467, 0.000, -6.745, -6.107, -5.797, -5.555, -5.856, -5.925, -5.829, -6.056, -5.897, -5.669, -7.332, -4.162, -3.824, -4.705, -4.881, 0.000, -5.893, 0.000, 0.000, 0.000, 0.000, 0.000, 0.000};
+  float alg2[49]={0.000, 0.000, 0.000, 0.000, 0.000, 0.000, 0.000, 0.000, 0.000, 0.000, 0.000, 0.000, 7.167, 1.371, 1.293, 1.741, 0.559, 0.756, -0.408, -1.673, -2.624, -1.695, -1.853, -2.149, -1.987, -1.961, -1.817, -2.609, -4.628, -5.021, -2.207, -2.201, -2.281, -1.775, -2.401, -2.072, 0.000, -4.127, -4.165, -3.657, -4.816, -4.676, -5.599, -6.948, -7.514, -7.008, -6.912, -6.900, 0.000};
   for (int i=0;i<45;i++) {   ch1_dt[72+i]=alg1[i];}
-   for (int i=0;i<49;i++) {   ch2_dt[72+i]=alg2[i];}
+  for (int i=0;i<49;i++) {   ch2_dt[72+i]=alg2[i];}
 #endif
 #ifdef RUN743134
-   float alg1[45]={0.000, 0.000, -6.161, -5.713, -5.275, -4.911, 0.000, -4.309, -4.803, -5.357, -4.827, -5.955, -6.649, -5.904, -5.986, -5.782, 0.000, -5.835, -5.494, -5.430, -5.425, -4.701, -6.648, -6.014, -5.770, -5.537, -5.851, -5.887, -5.830, -6.019, -5.924, -5.680, -7.326, -3.991, -3.796, -4.641, -4.825, 0.000, -5.961, -5.593, -6.831, -6.694, -5.650, 0.000, 0.000};
+  float alg1[45]={0.000, 0.000, -6.161, -5.713, -5.275, -4.911, 0.000, -4.309, -4.803, -5.357, -4.827, -5.955, -6.649, -5.904, -5.986, -5.782, 0.000, -5.835, -5.494, -5.430, -5.425, -4.701, -6.648, -6.014, -5.770, -5.537, -5.851, -5.887, -5.830, -6.019, -5.924, -5.680, -7.326, -3.991, -3.796, -4.641, -4.825, 0.000, -5.961, -5.593, -6.831, -6.694, -5.650, 0.000, 0.000};
 
-   float alg2[49]={0.000, 0.000, 0.000, 0.000, 0.000, 0.000, 0.000, 0.000, 0.000, 0.000, 0.000, 0.000, 7.251, 1.260, 1.334, 1.705, 0.474, 0.727, -0.513, -1.777, -2.623, -1.778, -1.943, -2.188, -2.119, -1.867, -2.075, -2.640, -4.647, -5.065, -2.271, -2.221, -2.303, -1.887, -2.338, -2.136, -29.730, -4.138, -4.045, -3.788, -4.752, -4.816, -5.459, -6.912, -7.614, -7.012, -7.248, -7.764, 0.000};
+  float alg2[49]={0.000, 0.000, 0.000, 0.000, 0.000, 0.000, 0.000, 0.000, 0.000, 0.000, 0.000, 0.000, 7.251, 1.260, 1.334, 1.705, 0.474, 0.727, -0.513, -1.777, -2.623, -1.778, -1.943, -2.188, -2.119, -1.867, -2.075, -2.640, -4.647, -5.065, -2.271, -2.221, -2.303, -1.887, -2.338, -2.136, -29.730, -4.138, -4.045, -3.788, -4.752, -4.816, -5.459, -6.912, -7.614, -7.012, -7.248, -7.764, 0.000};
   for (int i=0;i<45;i++) {   ch1_dt[72+i]=alg1[i];}
-   for (int i=0;i<49;i++) {   ch2_dt[72+i]=alg2[i];}
+  for (int i=0;i<49;i++) {   ch2_dt[72+i]=alg2[i];}
 #endif
   uint32_t triggerChannel=0;
   float dtmin=-615,dtmax=-585;
@@ -174,17 +174,17 @@ bool lydaq::TdcAnalyzer::noiseStudy(std::vector<lydaq::TdcChannel>& vChannel,std
 	    {
 	      stfeb.set(x->feb(),1);
 	      //std::cout<<"================================> bit set \n";
-				std::stringstream sraw;
-	  		sraw<<"/run"<<_run<<"/"<<subdir<<"/Chamber"<<chamber<<"/Raw/";
-				TH1* hchan=_rh->GetTH1(sraw+"Channels");
-				TH1* hstrips=_rh->GetTH1(sraw+"Strips");
-				 if (hchan==NULL)
-	    		{
-	      		hchan=_rh->BookTH1(sraw.str()+"Channels",24,0.,24.);
-						hstrips=_rh->BookTH1(sraw.str()+"Strips",48,72,120);
-	    		}
-					hchan->Fill(x->channel())
-					hstrips->Fill(x->detectorStrip(_geo->feb(x->feb())))
+	      std::stringstream sraw;
+	      sraw<<"/run"<<_run<<"/"<<subdir<<"/Chamber"<<chamber<<"/Raw/";
+	      TH1* hchan=_rh->GetTH1(sraw.str()+"Channels");
+	      TH1* hstrips=_rh->GetTH1(sraw.str()+"Strips");
+	      if (hchan==NULL)
+		{
+		  hchan=_rh->BookTH1(sraw.str()+"Channels",24*16,0.,24.*16);
+		  hstrips=_rh->BookTH1(sraw.str()+"Strips",96,0,96);
+		}
+	      hchan->Fill(x->feb()*24+x->channel());
+	      hstrips->Fill( x->side(_geo->feb(x->feb()))*48+x->detectorStrip(_geo->feb(x->feb()))-72);
 	    }
 	  // printf("%f %f \n",dtmin,dtmax);
 	  // getchar();
@@ -228,6 +228,22 @@ bool lydaq::TdcAnalyzer::noiseStudy(std::vector<lydaq::TdcChannel>& vChannel,std
 		    _geo->feb(x->feb()).dt[x->side(_geo->feb(x->feb()))]);	  
 	  //dtm[x->feb()][ 
 	  c_strip[x->detectorStrip(_geo->feb(x->feb()))].push_back(&(*x));
+
+	  	      std::stringstream sraw;
+	      sraw<<"/run"<<_run<<"/"<<subdir<<"/Chamber"<<chamber<<"/Raw/";
+	      TH1* hchan=_rh->GetTH1(sraw.str()+"SelChannels");
+	      TH1* hstrips=_rh->GetTH1(sraw.str()+"SelStrips");
+	      if (hchan==NULL)
+		{
+		  hchan=_rh->BookTH1(sraw.str()+"SelChannels",24*16,0.,24.*16);
+		  hstrips=_rh->BookTH1(sraw.str()+"SelStrips",96,0,96);
+		}
+	      hchan->Fill(x->feb()*24+x->channel());
+	      hstrips->Fill( x->side(_geo->feb(x->feb()))*48+x->detectorStrip(_geo->feb(x->feb()))-72);
+
+
+
+	  
 	  nch++;
 	}
 
@@ -239,12 +255,12 @@ bool lydaq::TdcAnalyzer::noiseStudy(std::vector<lydaq::TdcChannel>& vChannel,std
 
       
       if (hfr==NULL)
-	    {
+	{
 	      
-	      hfr=_rh->BookTH1(srcc.str()+"FebCount",25,0.,25.);
-	      hfrs=_rh->BookTH1(srcc.str()+"FebCountSel",25,0.,25.);
+	  hfr=_rh->BookTH1(srcc.str()+"FebCount",25,0.,25.);
+	  hfrs=_rh->BookTH1(srcc.str()+"FebCountSel",25,0.,25.);
 
-	    }
+	}
       hfr->Fill(24.);
       hfrs->Fill(24.);
       for (int i=0;i<24;i++)
@@ -277,7 +293,7 @@ bool lydaq::TdcAnalyzer::noiseStudy(std::vector<lydaq::TdcChannel>& vChannel,std
 		{
 
 		  //fprintf(stderr,"\t %d %d %f %f \n",x->channel(), x->side(_geo->feb(x->feb())),x->tdcTime(),x->tdcTime()-ttime);
-		   double dt=_geo->feb(x->feb()).dtc[x->channel()];
+		  double dt=_geo->feb(x->feb()).dtc[x->channel()];
 		  if (t0<0 &&  x->side(_geo->feb(x->feb()))==0)
 		    {
 		      t0=x->tdcTime()-dt;
@@ -303,13 +319,13 @@ bool lydaq::TdcAnalyzer::noiseStudy(std::vector<lydaq::TdcChannel>& vChannel,std
 		      //lydaq::TdcStrip ts(_geo->feb(x->feb()).chamber,x->feb(),x->detectorStrip(_geo->feb(x->feb())),t0,t1,_geo->feb(x->feb()).timePedestal[x->detectorStrip( _geo->feb(x->feb()))-70]);
 		      if (chamber==1)
 			{
-			lydaq::TdcStrip ts(_geo->feb(x->feb()).chamber,x->feb(),x->detectorStrip(_geo->feb(x->feb())),t0,t1,ch1_dt[x->detectorStrip( _geo->feb(x->feb()))+1]);
-		      _strips.push_back(ts);
+			  lydaq::TdcStrip ts(_geo->feb(x->feb()).chamber,x->feb(),x->detectorStrip(_geo->feb(x->feb())),t0,t1,ch1_dt[x->detectorStrip( _geo->feb(x->feb()))+1]);
+			  _strips.push_back(ts);
 			}
 		      else
 			{
-			lydaq::TdcStrip ts(_geo->feb(x->feb()).chamber,x->feb(),x->detectorStrip(_geo->feb(x->feb())),t0,t1,ch2_dt[x->detectorStrip( _geo->feb(x->feb()))+1]);
-			_strips.push_back(ts);
+			  lydaq::TdcStrip ts(_geo->feb(x->feb()).chamber,x->feb(),x->detectorStrip(_geo->feb(x->feb())),t0,t1,ch2_dt[x->detectorStrip( _geo->feb(x->feb()))+1]);
+			  _strips.push_back(ts);
 			}
 
 		    }
@@ -432,18 +448,18 @@ bool lydaq::TdcAnalyzer::noiseStudy(std::vector<lydaq::TdcChannel>& vChannel,std
 	  if (_display)
 	    {
 	      fprintf(stderr,"\t %f %f %d \n",x.X(),x.Y(),x.size());
-	  for (int i=0;i<x.size();i++)
-	    {
-	      fprintf(stderr,"\t \t  %5.1f %5.3f %5.3f %5.3f %5.3f %5.3f %5.3f \n",x.strip(i).xpos(),x.strip(i).ypos(),x.strip(i).shift(),x.strip(i).t0(),x.strip(i).t1(),(x.strip(i).t0()+x.strip(i).t1())/2.-ttime[x.strip(i).dif()],ttime[x.strip(i).dif()]);
-	    }
+	      for (int i=0;i<x.size();i++)
+		{
+		  fprintf(stderr,"\t \t  %5.1f %5.3f %5.3f %5.3f %5.3f %5.3f %5.3f \n",x.strip(i).xpos(),x.strip(i).ypos(),x.strip(i).shift(),x.strip(i).t0(),x.strip(i).t1(),(x.strip(i).t0()+x.strip(i).t1())/2.-ttime[x.strip(i).dif()],ttime[x.strip(i).dif()]);
+		}
 	    }
 	  //   }
 	  if (vclus.size()==1)
-	  for (int i=0;i<x.size();i++)
-	    {
-	      htoa->Fill(
-			 (x.strip(i).t0()+x.strip(i).t1())/2.-ttime[x.strip(i).dif()]);
-	    }
+	    for (int i=0;i<x.size();i++)
+	      {
+		htoa->Fill(
+			   (x.strip(i).t0()+x.strip(i).t1())/2.-ttime[x.strip(i).dif()]);
+	      }
 
 	  if (x.size()>30) continue;
 	  hposc->Fill(x.X(),x.Y());
@@ -465,24 +481,24 @@ bool lydaq::TdcAnalyzer::noiseStudy(std::vector<lydaq::TdcChannel>& vChannel,std
 	  if (x.size()>16) continue;
 	  if (x.size()==maxs)
 	    {
-	    hposcma->Fill(x.X(),x.Y());
-	    float L=160.;
-	    float v=160./8.7;
-	    float xl=(L-x.Y()*v)/2.-L/2.;
-	    hposx->Fill(x.X(),xl);
+	      hposcma->Fill(x.X(),x.Y());
+	      float L=160.;
+	      float v=160./8.7;
+	      float xl=(L-x.Y()*v)/2.-L/2.;
+	      hposx->Fill(x.X(),xl);
 
-	    for (int i=0;i<x.size();i++)
-	      {
-	      hposs->Fill(x.strip(i).xpos(),x.strip(i).ypos());
-	      std::stringstream srcs;
-	      srcs<<src.str()<<"align/strip"<<int(x.strip(i).xpos());
-	      //std:cout<<srcs.str()<<std::endl;
-	      TH1* hdts=_rh->GetTH1(srcs.str());
-	      if (hdts==NULL)
-		hdts=_rh->BookTH1(srcs.str(),100,-20,20.);
-	      hdts->Fill(x.strip(i).ypos());
-	      }
-	    break;
+	      for (int i=0;i<x.size();i++)
+		{
+		  hposs->Fill(x.strip(i).xpos(),x.strip(i).ypos());
+		  std::stringstream srcs;
+		  srcs<<src.str()<<"align/strip"<<int(x.strip(i).xpos());
+		  //std:cout<<srcs.str()<<std::endl;
+		  TH1* hdts=_rh->GetTH1(srcs.str());
+		  if (hdts==NULL)
+		    hdts=_rh->BookTH1(srcs.str(),100,-20,20.);
+		  hdts->Fill(x.strip(i).ypos());
+		}
+	      break;
 	    }
 	}
       int ncp=0;
@@ -533,7 +549,7 @@ void lydaq::TdcAnalyzer::multiChambers(std::vector<lydaq::TdcChannel>& vChannel)
   // if (btrg.count()==ndifread) _ntrigger++;
   // if (ntrg!=ndifread) return;
   if (!_triggerFound)
-     {            return;}
+    {            return;}
   if (atbcid<2) return;
 
   for (uint32_t chamber=1;chamber<=2;chamber++)
@@ -689,8 +705,8 @@ void lydaq::TdcAnalyzer::multiChambers(std::vector<lydaq::TdcChannel>& vChannel)
 		}
 	      else
 		{
-		hdtrt0->Fill(x.tdcTime()-tbcid,x.detectorStrip(_geo->feb(idif)));
-		hbp2d0->Fill(x.detectorStrip(_geo->feb(idif)));
+		  hdtrt0->Fill(x.tdcTime()-tbcid,x.detectorStrip(_geo->feb(idif)));
+		  hbp2d0->Fill(x.detectorStrip(_geo->feb(idif)));
 		}
 	    }
   
