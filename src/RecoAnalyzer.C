@@ -13,7 +13,7 @@ static TCanvas* TCHits=NULL;
 
 using namespace lydaq;
 using namespace lmana;
-void lmana::TdcAnalyzer::drawHits(int ch)
+void lmana::RecoAnalyzer::drawHits(int ch)
 {
   
  
@@ -51,6 +51,7 @@ void lmana::TdcAnalyzer::drawHits(int ch)
   TCHits->cd(3-ch);
   for (auto x:_strips)
     {
+      if (x.chamber()!=ch) continue;
       if (ch==1)
 	hpx->Fill(x.xpos()-70,x.ypos());
       else
@@ -82,19 +83,57 @@ void lmana::TdcAnalyzer::drawHits(int ch)
  *
  */
 using namespace std;
-lmana::TdcAnalyzer::TdcAnalyzer(DCHistogramHandler*r ) : Analyzer(r),_pedestalProcessed(false),_nevt(0),_ntrigger(0),_nfound(0),_nbside(0),_triggerFound(false),_display(false),_noise(false)
+lmana::RecoAnalyzer::RecoAnalyzer(DCHistogramHandler*r ) : Analyzer(r)
 {
-}
-void lmana::TdcAnalyzer::clear()
-{_strips.clear();}
-void lmana::TdcAnalyzer::processFEB(uint32_t feb,std::vector<lydaq::TdcChannel>& vChannel)
-{
-  //std::cout<<feb<<std::endl;
-  if (jEvent()["runtype"].asUInt()==1) pedestalAnalysis(feb,vChannel);
-  if (jEvent()["runtype"].asUInt()==2) scurveAnalysis(feb,vChannel);
+
+
+  memset(ch2_dt,0,128*sizeof(float));
+  memset(ch1_dt,0,128*sizeof(float));
+
+#define RUN743134
+#ifdef RUN743065
+  float alg1[45]={0.000, 0.000, 0.000, 0.000, 0.000, 0.000, 0.000, 0.000, 0.000, 0.000, 0.000, 0.000, 0.000, -5.951, -5.836, -5.586, 0.000, -5.932, -5.518, -5.538, -5.583, 0.000, -6.518, -6.195, -5.831, -5.572, -6.000, -6.076, -5.975, -6.086, -5.966, -5.547, -7.015, 0.000, 0.000, 0.000, 0.000, 0.000, 0.000, 0.000, 0.000, 0.000, 0.000, 0.000, 0.000};
+
+  for (int i=0;i<45;i++) {
+    ch1_dt[72+i]=alg1[i];}
+  float alg2[49]={0.000, 0.000, 0.000, 0.000, 0.000, 0.000, 0.000, 0.000, 0.000, 0.000, 0.000, 0.000, 0.000, 0.000, 0.970, 1.697, 0.485, 0.729, -0.419, -1.690, -2.601, -1.783, -1.922, -2.199, -2.046, -2.089, -2.064, -2.621, -4.695, -4.766, -1.886, -2.313, -2.396, -1.830, -2.271, 0.000, 0.000, 0.000, 0.000, 0.000, 0.000, 0.000, 0.000, 0.000, 0.000, 0.000, 0.000, 0.000, 0.000};
+  for (int i=0;i<49;i++) {
+    ch2_dt[72+i]=alg2[i];}
+#endif
+#ifdef RUN743079
+  float alg1[45]={0.000, 0.000, -6.572, -5.284, -4.974, -5.085, 0.000, -4.329, -4.858, -5.385, -4.898, -6.042, -6.749, -6.021, -6.035, -5.759, 0.000, -5.863, -5.516, -5.449, -5.467, 0.000, -6.745, -6.107, -5.797, -5.555, -5.856, -5.925, -5.829, -6.056, -5.897, -5.669, -7.332, -4.162, -3.824, -4.705, -4.881, 0.000, -5.893, 0.000, 0.000, 0.000, 0.000, 0.000, 0.000};
+  float alg2[49]={0.000, 0.000, 0.000, 0.000, 0.000, 0.000, 0.000, 0.000, 0.000, 0.000, 0.000, 0.000, 7.167, 1.371, 1.293, 1.741, 0.559, 0.756, -0.408, -1.673, -2.624, -1.695, -1.853, -2.149, -1.987, -1.961, -1.817, -2.609, -4.628, -5.021, -2.207, -2.201, -2.281, -1.775, -2.401, -2.072, 0.000, -4.127, -4.165, -3.657, -4.816, -4.676, -5.599, -6.948, -7.514, -7.008, -6.912, -6.900, 0.000};
+  for (int i=0;i<45;i++) {   ch1_dt[72+i]=alg1[i];}
+  for (int i=0;i<49;i++) {   ch2_dt[72+i]=alg2[i];}
+#endif
+#ifdef RUN743134
+  float alg1[45]={0.000, 0.000, -6.161, -5.713, -5.275, -4.911, 0.000, -4.309, -4.803, -5.357, -4.827, -5.955, -6.649, -5.904, -5.986, -5.782, 0.000, -5.835, -5.494, -5.430, -5.425, -4.701, -6.648, -6.014, -5.770, -5.537, -5.851, -5.887, -5.830, -6.019, -5.924, -5.680, -7.326, -3.991, -3.796, -4.641, -4.825, 0.000, -5.961, -5.593, -6.831, -6.694, -5.650, 0.000, 0.000};
+
+  float alg2[49]={0.000, 0.000, 0.000, 0.000, 0.000, 0.000, 0.000, 0.000, 0.000, 0.000, 0.000, 0.000, 7.251, 1.260, 1.334, 1.705, 0.474, 0.727, -0.513, -1.777, -2.623, -1.778, -1.943, -2.188, -2.119, -1.867, -2.075, -2.640, -4.647, -5.065, -2.271, -2.221, -2.303, -1.887, -2.338, -2.136, -29.730, -4.138, -4.045, -3.788, -4.752, -4.816, -5.459, -6.912, -7.614, -7.012, -7.248, -7.764, 0.000};
+  for (int i=0;i<45;i++) {   ch1_dt[72+i]=alg1[i];}
+  for (int i=0;i<49;i++) {   ch2_dt[72+i]=alg2[i];}
+#endif
 
 }
-void lmana::TdcAnalyzer::processChannels(std::vector<lydaq::TdcChannel>& vChannel)
+void lmana::RecoAnalyzer::end()
+{
+
+   // std::stringstream sr;
+  // sr<<"/tmp/toto"<<_run<<".root";
+  
+  // rh()->writeHistograms(sr.str());
+
+
+}
+
+void lmana::RecoAnalyzer::processFEB(uint32_t feb,std::vector<lydaq::TdcChannel>& vChannel)
+{
+  //std::cout<<feb<<std::endl;
+  //if (jEvent()["runtype"].asUInt()==1) pedestalAnalysis(feb,vChannel);
+  //if (jEvent()["runtype"].asUInt()==2) scurveAnalysis(feb,vChannel);
+
+}
+void lmana::RecoAnalyzer::processChannels(std::vector<lydaq::TdcChannel>& vChannel)
 {
   for (int i=0;i<255;i++)
     {
@@ -103,24 +142,22 @@ void lmana::TdcAnalyzer::processChannels(std::vector<lydaq::TdcChannel>& vChanne
       processFEB(i,vChannel);
     }
   if (jEvent()["runtype"].asUInt()==0)
-    this->multiChambers(vChannel);
+    {
+      _strips.clear();
+      _clusters.clear();
+      this->buildStrips(vChannel);
+      this->buildClusters();
+      this->drawHits(1);
+      this->drawHits(2);
+      getchar();
+    }
 }
-void lmana::TdcAnalyzer::setInfo(uint32_t dif,uint32_t run,uint32_t ev,uint32_t gt,uint64_t ab,uint16_t trgchan,uint32_t vth,uint32_t dac)
-{_dif=dif;
-  _run=run;
-  _event=ev;
-  _gtc=gt;
-  _abcid=ab;
-  _triggerChannel=trgchan;
-  _vthSet=vth;
-  _dacSet=dac;
-  if (_abcid0==0 || _abcid<_abcid0) _abcid0=_abcid;
-  _display=geo()->general()["display"].asUInt()==1;
-  _noise=geo()->general()["noise"].asUInt()==1;
-  _jEvent["run"]=_run;
-  _jEvent["event"]=_event;
-  _jEvent["gtc"]=_gtc;
-  _jEvent["abcid"]=Json::Value((Json::Value::UInt64)_abcid);
+void lmana::RecoAnalyzer::setInfo(uint32_t dif,uint32_t run,uint32_t ev,uint32_t gt,uint64_t ab,uint16_t trgchan,uint32_t vth,uint32_t dac)
+{ _jEvent["dif"]=dif;
+  _jEvent["run"]=run;
+  _jEvent["event"]=ev;
+  _jEvent["gtc"]=gt;
+  _jEvent["abcid"]=Json::Value((Json::Value::UInt64) ab);
   _jEvent["triggerChannel"]=trgchan;
   _jEvent["vthset"]=vth;
   _jEvent["dacset"]=dac;
@@ -128,7 +165,203 @@ void lmana::TdcAnalyzer::setInfo(uint32_t dif,uint32_t run,uint32_t ev,uint32_t 
   //std::cout<<_jEvent<<std::endl;
   //getchar();
 }
-bool lmana::TdcAnalyzer::noiseStudy(std::vector<lydaq::TdcChannel>& vChannel,std::string subdir)
+bool lmana::RecoAnalyzer::buildStrips(std::vector<lydaq::TdcChannel>& vChannel,bool offtime)
+{
+
+  uint32_t triggerChannel=jEvent()["triggerChannel"].asUInt();
+  float dtmin=-615,dtmax=-585;
+  bool noisy=false;
+  //dtmin+=100;dtmax+=100;
+  _strips.clear();
+  //fprintf(stderr,"Channels %d \n",vChannel.size());
+  for (uint32_t chamber=1;chamber<=2;chamber++)
+    {
+
+      std::vector<TdcChannel*> c_strip[128];
+      for (int i=0;i<128;i++) c_strip[i].clear();
+      float maxtime=0,mttime=0;uint32_t nch=0,ntrg=0;
+      float ttime[24];
+      memset(ttime,0,24*sizeof(float));
+      for (auto x=vChannel.begin();x!=vChannel.end();x++)
+	{
+	  if (geo()->feb(x->feb()).chamber!=chamber) continue;
+	  if (x->channel()!=triggerChannel) continue;
+	  ttime[x->feb()]=x->tdcTime();
+	  mttime+=x->tdcTime();
+	  ntrg++;
+	}
+      // Reject event with trigger too near the start of window
+      mttime=mttime/ntrg;
+      if (mttime<abs(dtmin)+50) return false;
+
+      //fprintf(stderr,"mtime %f ntrg %d \n",mttime,ntrg);
+
+      
+      for (auto x=vChannel.begin();x!=vChannel.end();x++)
+	{
+	  if (geo()->feb(x->feb()).chamber!=chamber) continue;
+	  if (x->channel()==triggerChannel) continue;
+	  dtmin=geo()->feb(x->feb()).dt[x->side(geo()->feb(x->feb()))]-10.;
+	  dtmax=geo()->feb(x->feb()).dt[x->side(geo()->feb(x->feb()))]+10.;
+
+	  if (offtime)
+	    {
+	      dtmin-=200;
+	      dtmax-=200;
+	    }
+
+	  if (x->tdcTime()>maxtime) maxtime=x->tdcTime();
+	  if (x->tdcTime()-ttime[x->feb()]<dtmin) continue;
+	  if (x->tdcTime()-ttime[x->feb()]>dtmax) continue;
+	  //dtm[x->feb()][ 
+	  c_strip[x->detectorStrip(geo()->feb(x->feb()))].push_back(&(*x));
+
+
+	  
+	  nch++;
+	}
+
+      maxtime=maxtime*1E-9;
+
+      fprintf(stderr," Maxtime %d %f %d %f \n",chamber,maxtime,nch,nch/maxtime/6500);
+      //getchar();
+      bool dostop=false;int nstrip=0;
+      uint16_t febc[24];
+      memset(febc,0,48);
+      std::bitset<49> stb(0);
+      // Loop on the strips
+      for (int i=0;i<128;i++)
+	{
+	  if (c_strip[i].size()>0)
+	    {
+	      //fprintf(stderr,"Chamber %d Strip %d # %d \n",chamber,i,c_strip[i].size());
+	      nstrip++;
+
+	      stb.set(i-70,1);
+	    }
+	  // reject events with ambiguities
+	  if (c_strip[i].size()>2) dostop=true;
+
+	  if (c_strip[i].size()==2)
+	    {
+	      double t0=-1,t1=-1;
+	      for (auto x:c_strip[i])
+		{
+
+		  //fprintf(stderr,"\t %d %d %f %f \n",x->channel(), x->side(geo()->feb(x->feb())),x->tdcTime(),x->tdcTime()-ttime[x->feb()]);
+		  double dt=geo()->feb(x->feb()).dtc[x->channel()];
+		  if (t0<0 &&  x->side(geo()->feb(x->feb()))==0)
+		    {
+		      t0=x->tdcTime()-dt;
+
+		      //fprintf(stderr,"T0 %d %d %d %d %f %f dt=%f \n",x->feb(),x->channel(),x->coarse(),x->fine(),x->tdcTime(),t0,dt);
+		    }
+		  if (t1<0 &&  x->side(geo()->feb(x->feb()))==1)
+		    {
+		      t1=x->tdcTime()-dt;
+		      //fprintf(stderr,"T1 %d %d %d %d %f %f \n",x->feb(),x->channel(),x->coarse(),x->fine(),x->tdcTime(),t1);
+		    }
+		  if(t0>0 && t1>0 )
+		    {
+		      febc[x->feb()]++;
+		      //std::cout<<x->feb()<<" FEBC "<< febc[x->feb()]<<std::endl;
+		      if (geo()->feb(x->feb()).polarity==-1)
+			{
+			  double tt=t1;
+			  t1=t0;
+			  t0=tt;
+			}
+		    
+		      //lmana::TdcStrip ts(geo()->feb(x->feb()).chamber,x->feb(),x->detectorStrip(geo()->feb(x->feb())),t0,t1,geo()->feb(x->feb()).timePedestal[x->detectorStrip( geo()->feb(x->feb()))-70]);
+		      if (chamber==1)
+			{
+			  lmana::TdcStrip ts(geo()->feb(x->feb()).chamber,x->feb(),x->detectorStrip(geo()->feb(x->feb())),t0,t1,ch1_dt[x->detectorStrip( geo()->feb(x->feb()))+1]);
+			  _strips.push_back(ts);
+			}
+		      else
+			{
+			  lmana::TdcStrip ts(geo()->feb(x->feb()).chamber,x->feb(),x->detectorStrip(geo()->feb(x->feb())),t0,t1,ch2_dt[x->detectorStrip( geo()->feb(x->feb()))+1]);
+			  _strips.push_back(ts);
+			}
+
+		    }
+		}
+
+
+
+	    
+	    }
+	}
+      if (dostop) return true;
+      if (stb.count()>24) return true;
+    }
+  fprintf(stderr,"Number of strips %d \n",_strips.size());
+  //getchar();
+}
+      //for (int i=0;i<24;i++)
+      // if (febc[i]>=10) return true;
+      //std::cout<<stb<<std::endl;
+
+
+void lmana::RecoAnalyzer::buildClusters()
+{
+      float step=4.;
+      //if (chamber==1) step=4.;
+      for (auto it=_strips.begin();it!=_strips.end();it++)
+	{
+	  //fprintf(stderr,"%d %d %f %f %f %f \n",it->chamber(),it->strip(),it->xpos(),it->ypos(),it->t0(),it->t1());
+
+	  //	      if (it->ypos()<-10 || it->ypos()>-0.2) continue;
+	  bool found=false;
+	  for (auto ic=_clusters.begin();ic!=_clusters.end();ic++)
+	    {
+	      if (ic->isAdjacent((*it),step))
+		{
+		  ic->addStrip((*it));
+		  found=true;
+		  break;
+		}
+	    }
+	  if(!found)
+	    {
+	      lmana::TdcCluster c;
+	      c.addStrip((*it));
+	      _clusters.push_back(c);
+	    }
+	}
+
+      // Merge adjacent cluster
+      bool merged=false;
+      //printf("_clusters size %d \n",_clusters.size());
+      for (auto it=_clusters.begin();it!=_clusters.end();it++)
+	{
+	  for (auto jt=it+1;jt!=_clusters.end();)
+	    {
+	      bool adj=false;
+	      for (int i=0;i<jt->size();i++)
+		{
+		  if (it->isAdjacent(jt->strip(i),step))
+		    {adj=true;break;}
+		}
+	      if (adj)
+		{
+		  merged=true;
+		  printf("Merigng cluster \n");
+		  for (int i=0;i<jt->size();i++)
+		    {
+		      it->addStrip(jt->strip(i));
+		    }
+		  _clusters.erase(jt);
+		}
+	      else
+		++jt;
+	    }
+	}
+      printf("_clusters size after %d \n",_clusters.size());
+
+}
+#ifdef SCRATCH
+bool lmana::RecoAnalyzer::noiseStudy(std::vector<lydaq::TdcChannel>& vChannel,std::string subdir)
 {
   float ch1_dt[128];
   float ch2_dt[128];
@@ -552,7 +785,7 @@ bool lmana::TdcAnalyzer::noiseStudy(std::vector<lydaq::TdcChannel>& vChannel,std
   return false;
 }
 
-void lmana::TdcAnalyzer::multiChambers(std::vector<lydaq::TdcChannel>& vChannel)
+void lmana::RecoAnalyzer::multiChambers(std::vector<lydaq::TdcChannel>& vChannel)
 {
   _noise=true;
   this->noiseStudy(vChannel,"OffTime");
@@ -1039,7 +1272,7 @@ void lmana::TdcAnalyzer::multiChambers(std::vector<lydaq::TdcChannel>& vChannel)
 #endif
 }
 
-void lmana::TdcAnalyzer::fullAnalysis(std::vector<lydaq::TdcChannel>& vChannel)
+void lmana::RecoAnalyzer::fullAnalysis(std::vector<lydaq::TdcChannel>& vChannel)
 {
 
   double fe1_2tr[128];
@@ -1535,7 +1768,7 @@ void lmana::TdcAnalyzer::fullAnalysis(std::vector<lydaq::TdcChannel>& vChannel)
 	 
 
 }
-void lmana::TdcAnalyzer::pedestalAnalysis(uint32_t mezId,std::vector<lydaq::TdcChannel>& vChannel)
+void lmana::RecoAnalyzer::pedestalAnalysis(uint32_t mezId,std::vector<lydaq::TdcChannel>& vChannel)
 {
   _pedestalProcessed=true;
 
@@ -1572,7 +1805,7 @@ void lmana::TdcAnalyzer::pedestalAnalysis(uint32_t mezId,std::vector<lydaq::TdcC
     }
 
 }
-void lmana::TdcAnalyzer::scurveAnalysis(uint32_t mezId,std::vector<lydaq::TdcChannel>& vChannel)
+void lmana::RecoAnalyzer::scurveAnalysis(uint32_t mezId,std::vector<lydaq::TdcChannel>& vChannel)
 {
 
   //if (gtc[mezId-1]
@@ -1650,12 +1883,12 @@ void lmana::TdcAnalyzer::scurveAnalysis(uint32_t mezId,std::vector<lydaq::TdcCha
   //  if (maxt>0)
   //  getchar();
 }
-void lmana::TdcAnalyzer::normalAnalysis(uint32_t mezId,std::vector<lydaq::TdcChannel>& vChannel)
+void lmana::RecoAnalyzer::normalAnalysis(uint32_t mezId,std::vector<lydaq::TdcChannel>& vChannel)
 {
   this->LmAnalysis(mezId,vChannel);
 }
 
-void lmana::TdcAnalyzer::end()
+void lmana::RecoAnalyzer::end()
 {
 
   if (_pedestalProcessed)
@@ -1712,7 +1945,7 @@ void lmana::TdcAnalyzer::end()
 
 }
 
-void lmana::TdcAnalyzer::LmAnalysis(uint32_t mezId,std::vector<lydaq::TdcChannel>& vChannel)
+void lmana::RecoAnalyzer::LmAnalysis(uint32_t mezId,std::vector<lydaq::TdcChannel>& vChannel)
 {
   //if (vChannel.size()==254) return;
   //printf("%d %d %d \n",_event,mezId,vChannel.size());
@@ -2278,3 +2511,4 @@ void lmana::TdcAnalyzer::LmAnalysis(uint32_t mezId,std::vector<lydaq::TdcChannel
   DEBUG_PRINTF("%d-%d %d  #evt %d #dif %d #trig %d #found %d  #time %d \n",_run,_event,_gtc,_nevt,mezId,_ntrigger,_nfound,_nbside); 
 }
 
+#endif

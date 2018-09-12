@@ -29,7 +29,7 @@ using namespace lmana;
 tdcrb::tdcrb(std::string dire) : _directory(dire),_run(0),_started(false),_fdIn(-1),_totalSize(0),_event(0),_geo(NULL),_t0(2E50),_t(0),_tspill(0)
 			       ,_readoutTotalTime(0),_numberOfMuon(0),_numberOfShower(0),_runType(0),_dacSet(0),_fdOut(-1),_bxId0(0)
 {_rh=DCHistogramHandler::instance();
-_analyzer= new lmana::TdcAnalyzer(_rh);
+_analyzer= new lmana::RecoAnalyzer(_rh);
  _mezMap.clear();
  for (uint32_t i=1;i<255;i++)
     { 
@@ -402,6 +402,7 @@ if (ier<0 || ((last==_event)&_nread>200))
 		    _vthSet=buf[1];
 		  printf("\n Run type %d DAC set %d VTH set %d \n",_runType,_dacSet,_vthSet);
 		  // getchar();
+		  _analyzer->jEvent()["runtype"]=_runType;
 
 		}
 	      if (_detId==130)
@@ -454,8 +455,8 @@ if (ier<0 || ((last==_event)&_nread>200))
 		      // if (nch>0)
 		      // getchar();
 		      //if (!tfound && _runType==0 && _event%10000!=0 ) continue;
-		      if (_runType==1) _analyzer->pedestalAnalysis(_difId,vch);
-		      if (_runType==2) _analyzer->scurveAnalysis(_difId,vch);
+		      //if (_runType==1) _analyzer->pedestalAnalysis(_difId,vch);
+		      //if (_runType==2) _analyzer->scurveAnalysis(_difId,vch);
 		      //if (_runType==0) _analyzer->normalAnalysis(_difId,vch);
 		    }
 		  difFound[ _difId]+=vch.size();
@@ -472,9 +473,16 @@ if (ier<0 || ((last==_event)&_nread>200))
      
 	    }
 	  //_analyzer->fullAnalysis(_vAll);
-	  if (_runType==0) _analyzer->multiChambers(_vAll);
-	  if (_analyzer->trigger())
-	    INFO_PRINTF("EVENT SUMMARY \t \t ========>Oops %d total %d, %d, triggers %d %f \n",_event,_eventChannels,_vAll.size(),_analyzer->triggers(),_analyzer->acquisitionTime());
+	  //if (_runType==0) _analyzer->multiChambers(_vAll);
+	  _analyzer->processChannels(_vAll);
+	  //if (_analyzer->trigger())
+	  //INFO_PRINTF("EVENT SUMMARY \t \t ========>Oops %d total %d, %d, triggers %d %f \n",_event,_eventChannels,_vAll.size(),_analyzer->triggers(),_analyzer->acquisitionTime());
+	  INFO_PRINTF("EVENT SUMMARY \t \t ========>Oops %d total %d, %d, triggers \n",_event,_eventChannels,_vAll.size());
+	   
+
+
+
+
 	}
 
     }

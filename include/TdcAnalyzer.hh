@@ -47,6 +47,7 @@ namespace lmana
       for (auto x:_strips)
 	{
 	//if (abs(x.xpos()-s.xpos())<step && abs(x.ypos()-s.ypos())<2)
+	  if (x.chamber()!=s.chamber()) continue;
 	float dta=2.5;
 	if (x.dif()!=s.dif()) dta=3*2.5;
 	if (abs(x.xpos()-s.xpos())<step && abs((x.t0()+x.t1())/2-(s.t0()+s.t1())/2)<dta && abs(x.ypos()-s.ypos())<1.5)
@@ -89,9 +90,56 @@ namespace lmana
     std::vector<lmana::TdcStrip> _strips;
 
   };
-  class TdcAnalyzer {
+  class Analyzer {
+  public:
+    Analyzer(DCHistogramHandler* r){_rh=r;_jEvent=Json::Value::null;}
+    virtual ~Analyzer(){;}
+    virtual void end()=0;
+    virtual void clear()=0;
+    virtual void setInfo(uint32_t dif,uint32_t run,uint32_t ev,uint32_t gt,uint64_t ab,uint16_t trgchan,uint32_t vth,uint32_t dac)=0;
+    virtual void processFEB(uint32_t feb,std::vector<lydaq::TdcChannel>& vChannel)=0;
+    
+    virtual void processChannels(std::vector<lydaq::TdcChannel>& vChannel)=0;
+    jsonGeo* geometry(){return _geo;}
+    void setGeometry(jsonGeo* g){_geo=g;}
+    inline DCHistogramHandler* rh(){return _rh;}
+    inline jsonGeo* geo(){return _geo;}
+    inline Json::Value& jEvent(){ return _jEvent;}
+  protected:
+    jsonGeo* _geo;
+    DCHistogramHandler* _rh;
+    Json::Value _jEvent;
+  };
+
+  class RecoAnalyzer : public lmana::Analyzer {
+  public:
+    RecoAnalyzer(DCHistogramHandler* r);
+    virtual ~RecoAnalyzer(){;}
+    virtual void end();
+    virtual void clear(){;}
+    virtual void processFEB(uint32_t feb,std::vector<lydaq::TdcChannel>& vChannel);
+    virtual void processChannels(std::vector<lydaq::TdcChannel>& vChannel);
+    bool buildStrips(std::vector<lydaq::TdcChannel>& vChannel,bool offtime=false);
+    void buildClusters();
+    virtual void setInfo(uint32_t dif,uint32_t run,uint32_t ev,uint32_t gt,uint64_t ab,uint16_t trgchan,uint32_t vth,uint32_t dac);
+    void drawHits(int nch);
+  private:
+    std::vector<lmana::TdcStrip> _strips;
+    std::vector<lmana::TdcCluster> _clusters;
+    float ch1_dt[128];
+    float ch2_dt[128];
+
+  };
+
+
+  
+  class TdcAnalyzer : public lmana::Analyzer {
   public:
     TdcAnalyzer(DCHistogramHandler* r);
+    virtual ~TdcAnalyzer(){;}
+    virtual void processFEB(uint32_t feb,std::vector<lydaq::TdcChannel>& vChannel);
+    virtual void processChannels(std::vector<lydaq::TdcChannel>& vChannel);
+
     void pedestalAnalysis(uint32_t mezId,std::vector<lydaq::TdcChannel>& vChannel);
     void scurveAnalysis(uint32_t mezId,std::vector<lydaq::TdcChannel>& vChannel);
     void normalAnalysis(uint32_t mezId,std::vector<lydaq::TdcChannel>& vChannel);
@@ -100,26 +148,24 @@ namespace lmana
     void multiChambers(std::vector<lydaq::TdcChannel>& vChannel);
     bool noiseStudy(std::vector<lydaq::TdcChannel>& vChannel,std::string stubdir="InTime");
     void drawHits(int nch);
-    void end();
-    void setInfo(uint32_t dif,uint32_t run,uint32_t ev,uint32_t gt,uint64_t ab,uint16_t trgchan,uint32_t vth,uint32_t dac);
+    virtual void end();
+    virtual void setInfo(uint32_t dif,uint32_t run,uint32_t ev,uint32_t gt,uint64_t ab,uint16_t trgchan,uint32_t vth,uint32_t dac);
     double acquisitionTime(){ return (_abcid-_abcid0)*2E-7;}
-    void clear(){_strips.clear();}
+    virtual void clear();
     std::vector<lmana::TdcStrip>& strips(){return _strips;}
     uint32_t triggers(){return _ntrigger;}
     bool trigger(){return _triggerFound;}
     uint32_t gtc(){return _gtc;}
     uint64_t abcid(){return _abcid;}
-    jsonGeo* geometry(){return _geo;}
-    void setGeometry(jsonGeo* g){_geo=g;}
   private:
-    DCHistogramHandler* _rh;
+    //DCHistogramHandler* _rh;
     std::vector<lydaq::TdcChannel>::iterator _trigger;
     std::vector<lmana::TdcStrip> _strips;
     uint32_t _dif,_run,_event,_gtc,_vthSet,_dacSet,_nevt,_ntrigger,_nfound,_nbside;
     uint64_t _abcid,_abcid0;
     uint16_t _triggerChannel;
     bool _pedestalProcessed,_triggerFound,_display,_noise;
-    jsonGeo* _geo;
+    //jsonGeo* _geo;
   };
 };
 #endif

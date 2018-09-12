@@ -61,7 +61,7 @@ env = Environment(CPPPATH=INCLUDES,CPPFLAGS=CPPFLAGS,LINKFLAGS=LDFLAGS, LIBS=LIB
 
 
 #Shared library
-lmrb=env.SharedLibrary("#lib/lmrb",source=['src/jsonGeo.C','src/DCHistogramHandler.C','src/TdcAnalyzer.C','src/tdcrb.cxx'])
+lmrb=env.SharedLibrary("#lib/lmrb",source=['src/jsonGeo.C','src/DCHistogramHandler.C','src/TdcAnalyzer.C','src/tdcrb.cxx','src/RecoAnalyzer.C'])
 LIBRARIESPLUG=["lmrb","boost_system"]+LIBRARIES
 LIBRARY_PATHS.append(".")
 

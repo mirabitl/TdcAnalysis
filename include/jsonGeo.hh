@@ -30,6 +30,7 @@ std::string itoa(int k);
 class jsonFebInfo
 {
 public:
+  jsonFebInfo(){id=0;}
   uint32_t id;
   uint32_t chamber;
   uint32_t tdc2strip[25];
@@ -39,6 +40,7 @@ public:
   float triggerMin,triggerMax,triggerMean,dt[2];
   float timePedestal[12];
   float dtc[25];
+  bool isEmpty(){return (id==0);}
   void dump()
   {
     printf("id %d Chamber %d Shift %d \n",id,chamber,stripShift);
