@@ -24,10 +24,12 @@
 
 
 using namespace zdaq;
+using namespace lydaq;
+using namespace lmana;
 tdcrb::tdcrb(std::string dire) : _directory(dire),_run(0),_started(false),_fdIn(-1),_totalSize(0),_event(0),_geo(NULL),_t0(2E50),_t(0),_tspill(0)
 			       ,_readoutTotalTime(0),_numberOfMuon(0),_numberOfShower(0),_runType(0),_dacSet(0),_fdOut(-1),_bxId0(0)
 {_rh=DCHistogramHandler::instance();
-_analyzer= new lydaq::TdcAnalyzer(_rh);
+_analyzer= new lmana::TdcAnalyzer(_rh);
  _mezMap.clear();
  for (uint32_t i=1;i<255;i++)
     { 

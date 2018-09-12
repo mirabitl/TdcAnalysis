@@ -10,7 +10,10 @@
 #include <bitset>
 #include <TCanvas.h>
 static TCanvas* TCHits=NULL;
-void lydaq::TdcAnalyzer::drawHits(int ch)
+
+using namespace lydaq;
+using namespace lmana;
+void lmana::TdcAnalyzer::drawHits(int ch)
 {
   
  
@@ -79,10 +82,10 @@ void lydaq::TdcAnalyzer::drawHits(int ch)
  *
  */
 using namespace std;
-lydaq::TdcAnalyzer::TdcAnalyzer(DCHistogramHandler*r ) : _rh(r),_pedestalProcessed(false),_nevt(0),_ntrigger(0),_nfound(0),_nbside(0),_triggerFound(false),_geo(NULL),_display(false),_noise(false)
+lmana::TdcAnalyzer::TdcAnalyzer(DCHistogramHandler*r ) : _rh(r),_pedestalProcessed(false),_nevt(0),_ntrigger(0),_nfound(0),_nbside(0),_triggerFound(false),_geo(NULL),_display(false),_noise(false)
 {
 }
-void lydaq::TdcAnalyzer::setInfo(uint32_t dif,uint32_t run,uint32_t ev,uint32_t gt,uint64_t ab,uint16_t trgchan,uint32_t vth,uint32_t dac)
+void lmana::TdcAnalyzer::setInfo(uint32_t dif,uint32_t run,uint32_t ev,uint32_t gt,uint64_t ab,uint16_t trgchan,uint32_t vth,uint32_t dac)
 {_dif=dif;
   _run=run;
   _event=ev;
@@ -96,7 +99,7 @@ void lydaq::TdcAnalyzer::setInfo(uint32_t dif,uint32_t run,uint32_t ev,uint32_t 
   _noise=_geo->general()["noise"].asUInt()==1;
   
 }
-bool lydaq::TdcAnalyzer::noiseStudy(std::vector<lydaq::TdcChannel>& vChannel,std::string subdir)
+bool lmana::TdcAnalyzer::noiseStudy(std::vector<lydaq::TdcChannel>& vChannel,std::string subdir)
 {
   float ch1_dt[128];
   float ch2_dt[128];
@@ -316,15 +319,15 @@ bool lydaq::TdcAnalyzer::noiseStudy(std::vector<lydaq::TdcChannel>& vChannel,std
 			  t0=tt;
 			}
 		    
-		      //lydaq::TdcStrip ts(_geo->feb(x->feb()).chamber,x->feb(),x->detectorStrip(_geo->feb(x->feb())),t0,t1,_geo->feb(x->feb()).timePedestal[x->detectorStrip( _geo->feb(x->feb()))-70]);
+		      //lmana::TdcStrip ts(_geo->feb(x->feb()).chamber,x->feb(),x->detectorStrip(_geo->feb(x->feb())),t0,t1,_geo->feb(x->feb()).timePedestal[x->detectorStrip( _geo->feb(x->feb()))-70]);
 		      if (chamber==1)
 			{
-			  lydaq::TdcStrip ts(_geo->feb(x->feb()).chamber,x->feb(),x->detectorStrip(_geo->feb(x->feb())),t0,t1,ch1_dt[x->detectorStrip( _geo->feb(x->feb()))+1]);
+			  lmana::TdcStrip ts(_geo->feb(x->feb()).chamber,x->feb(),x->detectorStrip(_geo->feb(x->feb())),t0,t1,ch1_dt[x->detectorStrip( _geo->feb(x->feb()))+1]);
 			  _strips.push_back(ts);
 			}
 		      else
 			{
-			  lydaq::TdcStrip ts(_geo->feb(x->feb()).chamber,x->feb(),x->detectorStrip(_geo->feb(x->feb())),t0,t1,ch2_dt[x->detectorStrip( _geo->feb(x->feb()))+1]);
+			  lmana::TdcStrip ts(_geo->feb(x->feb()).chamber,x->feb(),x->detectorStrip(_geo->feb(x->feb())),t0,t1,ch2_dt[x->detectorStrip( _geo->feb(x->feb()))+1]);
 			  _strips.push_back(ts);
 			}
 
@@ -345,7 +348,7 @@ bool lydaq::TdcAnalyzer::noiseStudy(std::vector<lydaq::TdcChannel>& vChannel,std
       //for (int i=0;i<24;i++)
       // if (febc[i]>=10) return true;
       //std::cout<<stb<<std::endl;
-      std::vector<lydaq::TdcCluster> vclus;
+      std::vector<lmana::TdcCluster> vclus;
       vclus.clear();
       float step=2.;
       if (chamber==1) step=4.;
@@ -366,7 +369,7 @@ bool lydaq::TdcAnalyzer::noiseStudy(std::vector<lydaq::TdcChannel>& vChannel,std
 	    }
 	  if(!found)
 	    {
-	      lydaq::TdcCluster c;
+	      lmana::TdcCluster c;
 	      c.addStrip((*it));
 	      vclus.push_back(c);
 	    }
@@ -520,7 +523,7 @@ bool lydaq::TdcAnalyzer::noiseStudy(std::vector<lydaq::TdcChannel>& vChannel,std
   return false;
 }
 
-void lydaq::TdcAnalyzer::multiChambers(std::vector<lydaq::TdcChannel>& vChannel)
+void lmana::TdcAnalyzer::multiChambers(std::vector<lydaq::TdcChannel>& vChannel)
 {
   _noise=true;
   this->noiseStudy(vChannel,"OffTime");
@@ -782,7 +785,7 @@ void lydaq::TdcAnalyzer::multiChambers(std::vector<lydaq::TdcChannel>& vChannel)
 			t0=tt;
 		      }
 		    
-		    lydaq::TdcStrip ts(_geo->feb(x.feb()).chamber,x.feb(),x.detectorStrip(_geo->feb(x.feb())),t0,t1,_geo->feb(x.feb()).timePedestal[x.detectorStrip( _geo->feb(x.feb()))-70]);
+		    lmana::TdcStrip ts(_geo->feb(x.feb()).chamber,x.feb(),x.detectorStrip(_geo->feb(x.feb())),t0,t1,_geo->feb(x.feb()).timePedestal[x.detectorStrip( _geo->feb(x.feb()))-70]);
 
 		    //if (chamber==2)
 		    // {
@@ -840,7 +843,7 @@ void lydaq::TdcAnalyzer::multiChambers(std::vector<lydaq::TdcChannel>& vChannel)
 	  DEBUG_PRINTF("================> Event %d Number of DIF found %d \n",_event,theNumberOfDIF);
 	  DEBUG_PRINTF(" ======================================> Strips \n");
 
-	  std::vector<lydaq::TdcCluster> vclus;
+	  std::vector<lmana::TdcCluster> vclus;
 	  vclus.clear();
 	  float step=2.;
 	  if (chamber==1) step=3.;
@@ -860,7 +863,7 @@ void lydaq::TdcAnalyzer::multiChambers(std::vector<lydaq::TdcChannel>& vChannel)
 		}
 	      if(!found)
 		{
-		  lydaq::TdcCluster c;
+		  lmana::TdcCluster c;
 		  c.addStrip((*it));
 		  vclus.push_back(c);
 		}
@@ -913,7 +916,7 @@ void lydaq::TdcAnalyzer::multiChambers(std::vector<lydaq::TdcChannel>& vChannel)
 	    
 	  for (auto it=_strips.begin();it!=_strips.end();it++)
 	    {
-	      lydaq::TdcStrip& x=(*it);
+	      lmana::TdcStrip& x=(*it);
 	      if (chamber==2)
 		DEBUG_PRINTF("\t STRIP %d %d %f %f pos %f %f \n",x.dif(),x.strip(),x.t0(),x.t1(),x.xpos(),x.ypos());
 	      nst[x.dif()/2]++;
@@ -974,7 +977,7 @@ void lydaq::TdcAnalyzer::multiChambers(std::vector<lydaq::TdcChannel>& vChannel)
 	      float ti=-2000.,tj=-2000.;
 	      for (auto it=_strips.begin();it!=_strips.end();it++)
 		{
-		  lydaq::TdcStrip& x=(*it);
+		  lmana::TdcStrip& x=(*it);
 		  //if (x.dif()!=8) continue;
 		  if (x.strip()==i) {ti=x.ypos();}
 		  if (x.strip()==i+1) {tj=x.ypos();}
@@ -1007,7 +1010,7 @@ void lydaq::TdcAnalyzer::multiChambers(std::vector<lydaq::TdcChannel>& vChannel)
 #endif
 }
 
-void lydaq::TdcAnalyzer::fullAnalysis(std::vector<lydaq::TdcChannel>& vChannel)
+void lmana::TdcAnalyzer::fullAnalysis(std::vector<lydaq::TdcChannel>& vChannel)
 {
 
   double fe1_2tr[128];
@@ -1356,7 +1359,7 @@ void lydaq::TdcAnalyzer::fullAnalysis(std::vector<lydaq::TdcChannel>& vChannel)
 		  }
 		hdts1->Fill(t1-tbcid-dtmean);
 
-		lydaq::TdcStrip ts(x.feb(),x.detectorStrip(x.feb()),t0,t1,fe1_2tr[x.detectorStrip(x.feb())]);
+		lmana::TdcStrip ts(x.feb(),x.detectorStrip(x.feb()),t0,t1,fe1_2tr[x.detectorStrip(x.feb())]);
 		_strips.push_back(ts);
 
 		if (nstrip==1)
@@ -1414,7 +1417,7 @@ void lydaq::TdcAnalyzer::fullAnalysis(std::vector<lydaq::TdcChannel>& vChannel)
       
       for (auto it=_strips.begin();it!=_strips.end();it++)
 	{
-	  lydaq::TdcStrip& x=(*it);
+	  lmana::TdcStrip& x=(*it);
 	  DEBUG_PRINTF("\t STRIP %d %d %f %f pos %f %f \n",x.dif(),x.strip(),x.t0(),x.t1(),x.xpos(),x.ypos());
 	  nst[x.dif()/2]++;
 	  std::stringstream sr;
@@ -1473,7 +1476,7 @@ void lydaq::TdcAnalyzer::fullAnalysis(std::vector<lydaq::TdcChannel>& vChannel)
 	  float ti=-2000.,tj=-2000.;
 	  for (auto it=_strips.begin();it!=_strips.end();it++)
 	    {
-	      lydaq::TdcStrip& x=(*it);
+	      lmana::TdcStrip& x=(*it);
 	      //if (x.dif()!=8) continue;
 	      if (x.strip()==i) {ti=x.ypos();}
 	      if (x.strip()==i+1) {tj=x.ypos();}
@@ -1503,7 +1506,7 @@ void lydaq::TdcAnalyzer::fullAnalysis(std::vector<lydaq::TdcChannel>& vChannel)
 	 
 
 }
-void lydaq::TdcAnalyzer::pedestalAnalysis(uint32_t mezId,std::vector<lydaq::TdcChannel>& vChannel)
+void lmana::TdcAnalyzer::pedestalAnalysis(uint32_t mezId,std::vector<lydaq::TdcChannel>& vChannel)
 {
   _pedestalProcessed=true;
 
@@ -1540,7 +1543,7 @@ void lydaq::TdcAnalyzer::pedestalAnalysis(uint32_t mezId,std::vector<lydaq::TdcC
     }
 
 }
-void lydaq::TdcAnalyzer::scurveAnalysis(uint32_t mezId,std::vector<lydaq::TdcChannel>& vChannel)
+void lmana::TdcAnalyzer::scurveAnalysis(uint32_t mezId,std::vector<lydaq::TdcChannel>& vChannel)
 {
 
   //if (gtc[mezId-1]
@@ -1618,12 +1621,12 @@ void lydaq::TdcAnalyzer::scurveAnalysis(uint32_t mezId,std::vector<lydaq::TdcCha
   //  if (maxt>0)
   //  getchar();
 }
-void lydaq::TdcAnalyzer::normalAnalysis(uint32_t mezId,std::vector<lydaq::TdcChannel>& vChannel)
+void lmana::TdcAnalyzer::normalAnalysis(uint32_t mezId,std::vector<lydaq::TdcChannel>& vChannel)
 {
   this->LmAnalysis(mezId,vChannel);
 }
 
-void lydaq::TdcAnalyzer::end()
+void lmana::TdcAnalyzer::end()
 {
 
   if (_pedestalProcessed)
@@ -1680,7 +1683,7 @@ void lydaq::TdcAnalyzer::end()
 
 }
 
-void lydaq::TdcAnalyzer::LmAnalysis(uint32_t mezId,std::vector<lydaq::TdcChannel>& vChannel)
+void lmana::TdcAnalyzer::LmAnalysis(uint32_t mezId,std::vector<lydaq::TdcChannel>& vChannel)
 {
   //if (vChannel.size()==254) return;
   //printf("%d %d %d \n",_event,mezId,vChannel.size());
@@ -2111,7 +2114,7 @@ void lydaq::TdcAnalyzer::LmAnalysis(uint32_t mezId,std::vector<lydaq::TdcChannel
 	      }
 	    if (t0>0 && t1>0)
 	      {
-		lydaq::TdcStrip ts(_dif,str+FEB2STRIP[_dif],t0,t1,fe1_shift[str]);
+		lmana::TdcStrip ts(_dif,str+FEB2STRIP[_dif],t0,t1,fe1_shift[str]);
 		_strips.push_back(ts);
 		std::cout<<"Adding strip "<<str+FEB2STRIP[_dif]<<std::endl;
 		spat2.set(i,1);

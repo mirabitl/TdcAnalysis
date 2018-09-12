@@ -5,7 +5,7 @@
 #include "TdcMapping.hh"
 #include "jsonGeo.hh"
 
-namespace lydaq
+namespace lmana
 {
   class TdcStrip
   {
@@ -81,10 +81,12 @@ namespace lydaq
     double X(){return _x;}
     double Y(){return _y;}
     uint32_t size(){return _strips.size();}
-    lydaq::TdcStrip& strip(int n) {return _strips[n];}
+    lmana::TdcStrip& strip(int n) {return _strips[n];}
+    inline uint16_t chamber() const {return (_strips.size()>0)?_strips[0].chamber():0;}
+    inline uint16_t dif() const {return (_strips.size()>0)?_strips[0].dif():0;}
   private:
     double _x,_y;
-    std::vector<lydaq::TdcStrip> _strips;
+    std::vector<lmana::TdcStrip> _strips;
 
   };
   class TdcAnalyzer {
@@ -102,7 +104,7 @@ namespace lydaq
     void setInfo(uint32_t dif,uint32_t run,uint32_t ev,uint32_t gt,uint64_t ab,uint16_t trgchan,uint32_t vth,uint32_t dac);
     double acquisitionTime(){ return (_abcid-_abcid0)*2E-7;}
     void clear(){_strips.clear();}
-    std::vector<lydaq::TdcStrip>& strips(){return _strips;}
+    std::vector<lmana::TdcStrip>& strips(){return _strips;}
     uint32_t triggers(){return _ntrigger;}
     bool trigger(){return _triggerFound;}
     uint32_t gtc(){return _gtc;}
@@ -112,7 +114,7 @@ namespace lydaq
   private:
     DCHistogramHandler* _rh;
     std::vector<lydaq::TdcChannel>::iterator _trigger;
-    std::vector<lydaq::TdcStrip> _strips;
+    std::vector<lmana::TdcStrip> _strips;
     uint32_t _dif,_run,_event,_gtc,_vthSet,_dacSet,_nevt,_ntrigger,_nfound,_nbside;
     uint64_t _abcid,_abcid0;
     uint16_t _triggerChannel;

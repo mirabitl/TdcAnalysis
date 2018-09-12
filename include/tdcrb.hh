@@ -52,7 +52,7 @@ private:
   uint32_t _idx;
   jsonGeo* _geo;
   std::map<uint32_t,std::bitset<64> > _tcount;
-  lydaq::TdcAnalyzer* _analyzer;
+  lmana::TdcAnalyzer* _analyzer;
   double _readoutTime,_readoutTotalTime;
   uint32_t _numberOfShower,_numberOfMuon;
   DCHistogramHandler* _rh;
