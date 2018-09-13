@@ -17,8 +17,10 @@ void lmana::RecoAnalyzer::drawHits(int ch)
 {
   
  
-  TH2* hpx = rh()->GetTH2("realx");
-  TH2* hpy = rh()->GetTH2("realy");
+  TH2* hpx = rh()->GetTH2("Return");
+  TH2* hpy = rh()->GetTH2("Coaxial");
+  TH2* hpcx = rh()->GetTH2("CReturn");
+  TH2* hpcy = rh()->GetTH2("CCoaxial");
  
   
   if (hpx==NULL)
@@ -30,14 +32,20 @@ void lmana::RecoAnalyzer::drawHits(int ch)
       hpx->SetMarkerColor(kRed);
       hpy->SetMarkerStyle(25);
       hpy->SetMarkerColor(kBlue);
+      hpcx =rh()->BookTH2("CReturn",96,0.1,48.1,256,-15.,15.);
+      hpcy =rh()->BookTH2("CCoaxial",96,0.1,48.1,256,-15.,15.);
+      hpcx->SetMarkerStyle(21);
+      hpcx->SetMarkerColor(kGreen);
+      hpcy->SetMarkerStyle(21);
+      hpcy->SetMarkerColor(kBlack);
 
     }
   else
     {
       if (ch==1)
-	hpx->Reset();
+	{hpx->Reset();hpcx->Reset();}
       else
-	hpy->Reset();
+	{hpy->Reset();hpcy->Reset();}
 
     }
 
@@ -61,11 +69,25 @@ void lmana::RecoAnalyzer::drawHits(int ch)
 	  hpy->Fill(dx,x.ypos());
 	}
     }
+  for (auto x:_clusters)
+    {
+      if (x.chamber()!=ch) continue;
+      if (ch==1)
+	hpcx->Fill(x.X()-70,x.Y());
+      else
+	{
+	  float dx=48-(x.X()-70);
+	  std::cout<<dx<<std::endl;
+	  hpcy->Fill(dx,x.Y());
+	}
+    }
+  
   if (ch==1)
-    hpx->Draw("P");
+    {hpx->Draw("P");hpcx->Draw("PSAME");}
   else
     {
       hpy->Draw("P");
+      hpcy->Draw("PSAME");
       TCHits->Modified();
       TCHits->Draw();
       TCHits->Update();
@@ -147,9 +169,48 @@ void lmana::RecoAnalyzer::processChannels(std::vector<lydaq::TdcChannel>& vChann
       _clusters.clear();
       this->buildStrips(vChannel);
       this->buildClusters();
-      this->drawHits(1);
-      this->drawHits(2);
-      getchar();
+      //this->drawHits(1);
+      //this->drawHits(2);
+      //getchar();
+      if (_clusters.size()>3) return;
+      float t0[2],t1[2],tm[2];
+      t0[0]=0;t0[1]=0;
+      auto hch1=rh()->AccessTH2("/ch1/CLUPOS",48,70.,118.,200,-7.,7.);
+      auto hch2=rh()->AccessTH2("/ch2/CLUPOS",48,70.,118.,200,-7.,7.);
+
+      for (auto x:_clusters)
+	{
+
+	  t0[x.chamber()-1]=(x.T0())-ttime[x.dif()];
+	  t1[x.chamber()-1]=(x.T1())-ttime[x.dif()];
+	  tm[x.chamber()-1]=x.TM()-ttime[x.dif()];
+	  //printf("%d %f %f  %f\n",x.chamber(),x.X(),x.Y(),tm[x.chamber()-1]);
+	}
+      if (t0[0]==0 || t0[1]==0) return;
+      for (auto x:_clusters)
+	{
+
+	  if (x.chamber()==1)
+	    {
+	      //printf("%d %f %f  %x\n",x.chamber(),x.X(),x.Y(),hch1);
+	    hch1->Fill(x.X(),x.Y());
+	    }
+	  else
+	    {
+	      //printf("%d %f %f  %x\n",x.chamber(),x.X(),x.Y(),hch2);
+	    hch2->Fill(x.X(),x.Y());
+	    }
+	}
+
+      auto hdt0=rh()->AccessTH1("ADT0",200,-20.,20.);
+      auto hdt1=rh()->AccessTH1("ADT1",200,-20.,20.);
+      auto hdtm=rh()->AccessTH1("ADTM",200,-20.,20.);
+	   
+      hdt0->Fill(t0[0]-t0[1]);
+      hdt1->Fill(t1[0]-t1[1]);
+      if (jEvent()["event"].asUInt()<5000)
+	hdtm->Fill(tm[0]-tm[1]);
+      
     }
 }
 void lmana::RecoAnalyzer::setInfo(uint32_t dif,uint32_t run,uint32_t ev,uint32_t gt,uint64_t ab,uint16_t trgchan,uint32_t vth,uint32_t dac)
@@ -174,14 +235,15 @@ bool lmana::RecoAnalyzer::buildStrips(std::vector<lydaq::TdcChannel>& vChannel,b
   //dtmin+=100;dtmax+=100;
   _strips.clear();
   //fprintf(stderr,"Channels %d \n",vChannel.size());
+  memset(ttime,0,24*sizeof(float));
   for (uint32_t chamber=1;chamber<=2;chamber++)
     {
 
       std::vector<TdcChannel*> c_strip[128];
       for (int i=0;i<128;i++) c_strip[i].clear();
       float maxtime=0,mttime=0;uint32_t nch=0,ntrg=0;
-      float ttime[24];
-      memset(ttime,0,24*sizeof(float));
+
+
       for (auto x=vChannel.begin();x!=vChannel.end();x++)
 	{
 	  if (geo()->feb(x->feb()).chamber!=chamber) continue;

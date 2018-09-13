@@ -40,7 +40,7 @@ namespace lmana
   class TdcCluster
   {
   public:
-    TdcCluster(): _x(0),_y(0) { _strips.clear();}
+    TdcCluster(): _x(0),_y(0),_t0(0),_t1(0) { _strips.clear();}
     bool isAdjacent(TdcStrip& s,float step=2)
     {
 
@@ -62,31 +62,60 @@ namespace lmana
 	this->calcpos();}
     void calcpos()
     {
-      if (_strips.size()==1)	{_x=_strips[0].xpos(); _y=_strips[0].ypos();}
-      if (_strips.size()==2){_x=(_strips[0].xpos()+_strips[1].xpos())/2.;_y=(_strips[0].ypos()+_strips[1].ypos())/2.;}
-      if (_strips.size()==3)       if (_strips.size()==1)	{_x=_strips[1].xpos(); _y=_strips[1].ypos();}
-      if (_strips.size()==4){_x=(_strips[2].xpos()+_strips[1].xpos())/2.;_y=(_strips[2].ypos()+_strips[1].ypos())/2.;}
+      if (_strips.size()==1) {
+	_x=_strips[0].xpos(); _y=_strips[0].ypos();
+	_t0=_strips[0].t0();
+	_t1=_strips[0].t1();
+
+      }
+      if (_strips.size()==2)
+	{
+	  _x=(_strips[0].xpos()+_strips[1].xpos())/2.;
+	  _y=(_strips[0].ypos()+_strips[1].ypos())/2.;
+	  _t0=(_strips[0].t0()+_strips[1].t0())/2.;
+	  _t1=(_strips[0].t1()+_strips[1].t1())/2.;
+
+	}
+      if (_strips.size()==3) {
+	_x=_strips[1].xpos();
+	_y=_strips[1].ypos();
+	_t0=_strips[1].t0();
+	_t1=_strips[1].t1();
+      }
+      if (_strips.size()==4){
+	_x=(_strips[2].xpos()+_strips[1].xpos())/2.;
+	_y=(_strips[2].ypos()+_strips[1].ypos())/2.;
+	_t0=(_strips[2].t0()+_strips[1].t0())/2.;
+	_t1=(_strips[2].t1()+_strips[1].t1())/2.;
+      }
       if (_strips.size()>=5 && _strips.size()<=12)
 	{
-	  _x=0;_y=0;
+	  _x=0;_y=0,_t0=0,_t1=0;
 	  for (int i=2;i<_strips.size()-2;i++)
 	    {
 	      _x+=_strips[i].xpos();
 	      _y+=_strips[i].ypos();
+	      _t0+=_strips[i].t0();
+	      _t1+=_strips[i].t1();
 	    }
 	  _x/=(_strips.size()-4);
 	  _y/=(_strips.size()-4);
+	  _t0/=(_strips.size()-4);
+	  _t1/=(_strips.size()-4);
 
 	}
     }
-    double X(){return _x;}
-    double Y(){return _y;}
+    inline double X(){return _x;}
+    inline double Y(){return _y;}
+    inline double T0(){return _t0;}
+    inline double T1(){return _t1;}
+    inline double TM(){return (_t0+_t1)/2.;}
     uint32_t size(){return _strips.size();}
     lmana::TdcStrip& strip(int n) {return _strips[n];}
     inline uint16_t chamber() const {return (_strips.size()>0)?_strips[0].chamber():0;}
     inline uint16_t dif() const {return (_strips.size()>0)?_strips[0].dif():0;}
   private:
-    double _x,_y;
+    double _x,_y,_t0,_t1;
     std::vector<lmana::TdcStrip> _strips;
 
   };
@@ -128,7 +157,7 @@ namespace lmana
     std::vector<lmana::TdcCluster> _clusters;
     float ch1_dt[128];
     float ch2_dt[128];
-
+    float ttime[24];
   };
 
 
@@ -165,6 +194,7 @@ namespace lmana
     uint64_t _abcid,_abcid0;
     uint16_t _triggerChannel;
     bool _pedestalProcessed,_triggerFound,_display,_noise;
+    
     //jsonGeo* _geo;
   };
 };

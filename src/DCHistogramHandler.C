@@ -71,7 +71,14 @@ if (ih!=mapH2.end())
   }
   else 
     return NULL;
-}  
+}
+TH1* DCHistogramHandler::AccessTH1(std::string name,int nbinx,double xmin,double xmax,std::string sub)
+{
+  TH1* p=GetTH1(name);
+  if (p==NULL)
+    p=BookTH1(sub+name,nbinx,xmin,xmax);
+  return p;
+}
 TH1* DCHistogramHandler::BookTH1(std::string name,int nbinx,double xmin,double xmax)
 {
   //@ Test top->addFullName(name);
@@ -93,6 +100,13 @@ TH1* DCHistogramHandler::BookTH1(std::string name,int nbinx,double xmin,double x
   return h;
 }
 
+TH2* DCHistogramHandler::AccessTH2(std::string name,int nbinx,double xmin,double xmax,int nbiny,double ymin,double ymax,std::string sub)
+{
+  TH2* p=GetTH2(name);
+  if (p==NULL)
+    p=BookTH2(sub+name,nbinx,xmin,xmax,nbiny,ymin,ymax);
+  return p;
+}
 TH2* DCHistogramHandler::BookTH2(std::string name,int nbinx,double xmin,double xmax,int nbiny,double ymin,double ymax)
 {
   //@ Test top->addFullName(name);
@@ -131,6 +145,13 @@ TH3* DCHistogramHandler::BookTH3(std::string name,int nbinx,double xmin,double x
   mapH3.insert(pr);
   //std::cout<<name<<" Booked"<<std::endl;
   return h;
+}
+TProfile* DCHistogramHandler::AccessProfile(std::string name,int nbinx,double xmin,double xmax,double ymin,double ymax,std::string sub)
+{
+  TProfile* p=(TProfile*) GetTH1(name);
+  if (p==NULL)
+    p=BookProfile(sub+name,nbinx,xmin,xmax,ymin,ymax);
+  return p;
 }
 
 TProfile* DCHistogramHandler::BookProfile(std::string name,int nbinx,double xmin,double xmax,double ymin,double ymax)

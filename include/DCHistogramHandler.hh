@@ -42,6 +42,7 @@ class DCHistogramHandler
      @return a TH1* ptr
      
    */
+  TH1* AccessTH1(std::string name,int nbinx,double xmin,double xmax,std::string sub="");
   TH1* BookTH1(std::string name,int nbinx,double xmin,double xmax); 
   //! Book a TH2D histogram and register it in the map
  /**
@@ -56,6 +57,7 @@ class DCHistogramHandler
      @return a TH2* ptr
      
    */
+  TH2* AccessTH2(std::string name,int nbinx,double xmin,double xmax,int nbiny,double ymin,double ymax,std::string sub="");
   TH2* BookTH2(std::string name,int nbinx,double xmin,double xmax,int nbiny,double ymin,double ymax); 
 
   //!     Book a TProfile histogram and register it in the map (TH1 map)
@@ -70,6 +72,7 @@ class DCHistogramHandler
      @return a TProfile* ptr
      
    */
+  TProfile* AccessProfile(std::string name,int nbinx,double xmin,double xmax,double ymin=1,double ymax=-1,std::string sub="");
   TProfile* BookProfile(std::string name,int nbinx,double xmin,double xmax,double ymin=1,double ymax=-1); 
 
   //!     Book a TProfile2D histogram and register it in the map (TH2 map)
