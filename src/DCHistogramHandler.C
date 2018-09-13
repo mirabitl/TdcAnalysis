@@ -74,7 +74,7 @@ if (ih!=mapH2.end())
 }
 TH1* DCHistogramHandler::AccessTH1(std::string name,int nbinx,double xmin,double xmax,std::string sub)
 {
-  TH1* p=GetTH1(name);
+  TH1* p=GetTH1(sub+name);
   if (p==NULL)
     p=BookTH1(sub+name,nbinx,xmin,xmax);
   return p;
@@ -102,7 +102,7 @@ TH1* DCHistogramHandler::BookTH1(std::string name,int nbinx,double xmin,double x
 
 TH2* DCHistogramHandler::AccessTH2(std::string name,int nbinx,double xmin,double xmax,int nbiny,double ymin,double ymax,std::string sub)
 {
-  TH2* p=GetTH2(name);
+  TH2* p=GetTH2(sub+name);
   if (p==NULL)
     p=BookTH2(sub+name,nbinx,xmin,xmax,nbiny,ymin,ymax);
   return p;
@@ -148,7 +148,7 @@ TH3* DCHistogramHandler::BookTH3(std::string name,int nbinx,double xmin,double x
 }
 TProfile* DCHistogramHandler::AccessProfile(std::string name,int nbinx,double xmin,double xmax,double ymin,double ymax,std::string sub)
 {
-  TProfile* p=(TProfile*) GetTH1(name);
+  TProfile* p=(TProfile*) GetTH1(sub+name);
   if (p==NULL)
     p=BookProfile(sub+name,nbinx,xmin,xmax,ymin,ymax);
   return p;

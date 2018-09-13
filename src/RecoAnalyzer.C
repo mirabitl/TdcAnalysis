@@ -155,6 +155,65 @@ void lmana::RecoAnalyzer::processFEB(uint32_t feb,std::vector<lydaq::TdcChannel>
   //if (jEvent()["runtype"].asUInt()==2) scurveAnalysis(feb,vChannel);
 
 }
+void lmana::RecoAnalyzer::clusterAnalysis()
+{
+  if (_clusters.size()!=2) return;
+  double t0[2],t1[2],tm[2];
+  t0[0]=0;t0[1]=0;
+  auto hch1=rh()->AccessTH2("/ch1/CLUPOS",48,70.,118.,200,-7.,7.,"/Clusters");
+  auto hch2=rh()->AccessTH2("/ch2/CLUPOS",48,70.,118.,200,-7.,7.,"/Clusters");
+  auto h1t0=rh()->AccessTH2("/ch1/T0",48,70.,118.,200,-650.,-550.,"/Clusters");
+  auto h2t0=rh()->AccessTH2("/ch2/T0",48,70.,118.,200,-650.,-550.,"/Clusters");
+  auto h1t1=rh()->AccessTH2("/ch1/T1",48,70.,118.,200,-650.,-550.,"/Clusters");
+  auto h2t1=rh()->AccessTH2("/ch2/T1",48,70.,118.,200,-650.,-550.,"/Clusters");
+
+  double XM=0;
+  for (auto x:_clusters)
+    {
+      if (x.chamber()==2) XM=x.X();
+      t0[x.chamber()-1]=(x.T0())-ttime[x.dif()];
+      t1[x.chamber()-1]=(x.T1())-ttime[x.dif()];
+      tm[x.chamber()-1]=x.TM()-ttime[x.dif()];
+      //printf("%d %f %f  %f\n",x.chamber(),x.X(),x.Y(),tm[x.chamber()-1]);
+    }
+  if (t0[0]==0 || t0[1]==0) return;
+  for (auto x:_clusters)
+    {
+
+      if (x.chamber()==1)
+	{
+	  //printf("%d %f %f  %x\n",x.chamber(),x.X(),x.Y(),hch1);
+	  hch1->Fill(x.X(),x.Y());
+	  h1t0->Fill(x.X(),t0[0]);
+	  h1t1->Fill(x.X(),t1[0]);
+	}
+      else
+	{
+	  //printf("%d %f %f  %x\n",x.chamber(),x.X(),x.Y(),hch2);
+	  hch2->Fill(x.X(),x.Y());
+	  h2t0->Fill(x.X(),t0[1]);
+	  h2t1->Fill(x.X(),t1[1]);
+	}
+    }
+
+  auto hdt0=rh()->AccessTH1("ADT0",200,-20.,20.,"/Clusters/");
+  auto hdt02=rh()->AccessTH2("ADT02",20000,0.,20000,200,-20.,20.,"/Clusters/");
+  auto hdtx2=rh()->AccessTH2("ADTX2",48,70.,118.,200,-20.,20.,"/Clusters/");
+  auto hdty2=rh()->AccessTH2("ADTY2",48,70.,118.,200,-20.,20.,"/Clusters/");
+  auto hdtz2=rh()->AccessTH2("ADTZ2",48,70.,118.,200,-20.,20.,"/Clusters/");
+  auto hdt1=rh()->AccessTH1("ADT1",200,-20.,20.,"/Clusters/");
+  auto hdtm=rh()->AccessTH1("ADTM",200,-20.,20.,"/Clusters/");
+	   
+  hdt0->Fill(t0[0]-t0[1]);
+  hdt02->Fill(jEvent()["event"].asUInt()*1.,t0[0]-t0[1]);
+  hdtx2->Fill(XM,t0[0]-t0[1]);
+  hdty2->Fill(XM,t1[0]-t1[1]);
+  hdtz2->Fill(XM,tm[0]-tm[1]);
+  hdt1->Fill(t1[0]-t1[1]);
+  hdtm->Fill(tm[0]-tm[1]);
+      
+
+}
 void lmana::RecoAnalyzer::processChannels(std::vector<lydaq::TdcChannel>& vChannel)
 {
   for (int i=0;i<255;i++)
@@ -169,48 +228,10 @@ void lmana::RecoAnalyzer::processChannels(std::vector<lydaq::TdcChannel>& vChann
       _clusters.clear();
       this->buildStrips(vChannel);
       this->buildClusters();
+      this->clusterAnalysis();
       //this->drawHits(1);
       //this->drawHits(2);
       //getchar();
-      if (_clusters.size()>3) return;
-      float t0[2],t1[2],tm[2];
-      t0[0]=0;t0[1]=0;
-      auto hch1=rh()->AccessTH2("/ch1/CLUPOS",48,70.,118.,200,-7.,7.);
-      auto hch2=rh()->AccessTH2("/ch2/CLUPOS",48,70.,118.,200,-7.,7.);
-
-      for (auto x:_clusters)
-	{
-
-	  t0[x.chamber()-1]=(x.T0())-ttime[x.dif()];
-	  t1[x.chamber()-1]=(x.T1())-ttime[x.dif()];
-	  tm[x.chamber()-1]=x.TM()-ttime[x.dif()];
-	  //printf("%d %f %f  %f\n",x.chamber(),x.X(),x.Y(),tm[x.chamber()-1]);
-	}
-      if (t0[0]==0 || t0[1]==0) return;
-      for (auto x:_clusters)
-	{
-
-	  if (x.chamber()==1)
-	    {
-	      //printf("%d %f %f  %x\n",x.chamber(),x.X(),x.Y(),hch1);
-	    hch1->Fill(x.X(),x.Y());
-	    }
-	  else
-	    {
-	      //printf("%d %f %f  %x\n",x.chamber(),x.X(),x.Y(),hch2);
-	    hch2->Fill(x.X(),x.Y());
-	    }
-	}
-
-      auto hdt0=rh()->AccessTH1("ADT0",200,-20.,20.);
-      auto hdt1=rh()->AccessTH1("ADT1",200,-20.,20.);
-      auto hdtm=rh()->AccessTH1("ADTM",200,-20.,20.);
-	   
-      hdt0->Fill(t0[0]-t0[1]);
-      hdt1->Fill(t1[0]-t1[1]);
-      if (jEvent()["event"].asUInt()<5000)
-	hdtm->Fill(tm[0]-tm[1]);
-      
     }
 }
 void lmana::RecoAnalyzer::setInfo(uint32_t dif,uint32_t run,uint32_t ev,uint32_t gt,uint64_t ab,uint16_t trgchan,uint32_t vth,uint32_t dac)

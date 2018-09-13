@@ -32,6 +32,8 @@ namespace lmana
     }
 
     #endif
+
+    
   private:
     uint16_t _dif,_str,_ch;
     double _t0,_t1,_shift;
@@ -62,6 +64,13 @@ namespace lmana
 	this->calcpos();}
     void calcpos()
     {
+
+      std::sort( _strips.begin( ), _strips.end( ), [ ]( const TdcStrip& lhs, const TdcStrip& rhs )
+		 {
+		   return lhs.strip() < rhs.strip();
+		 }
+		 );
+      
       if (_strips.size()==1) {
 	_x=_strips[0].xpos(); _y=_strips[0].ypos();
 	_t0=_strips[0].t0();
@@ -150,14 +159,15 @@ namespace lmana
     virtual void processChannels(std::vector<lydaq::TdcChannel>& vChannel);
     bool buildStrips(std::vector<lydaq::TdcChannel>& vChannel,bool offtime=false);
     void buildClusters();
+    void clusterAnalysis();
     virtual void setInfo(uint32_t dif,uint32_t run,uint32_t ev,uint32_t gt,uint64_t ab,uint16_t trgchan,uint32_t vth,uint32_t dac);
     void drawHits(int nch);
   private:
     std::vector<lmana::TdcStrip> _strips;
     std::vector<lmana::TdcCluster> _clusters;
-    float ch1_dt[128];
-    float ch2_dt[128];
-    float ttime[24];
+    double ch1_dt[128];
+    double ch2_dt[128];
+    double ttime[24];
   };
 
 
