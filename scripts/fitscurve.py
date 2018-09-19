@@ -30,31 +30,78 @@ def calApp(V,P,T):
   print 1-(0.2+0.8*P/990.*293./T)
   return  V*(0.2+0.8*P/990.*293./T)
 
-def getdt(run,chamber,feb):
-  f82=TFile("./histo%d_0.root" % run);
+def getdt(run,chamber,feb,sub=""):
+  c=TCanvas()
+  f82=TFile(sub+"histo%d_0.root" % run);
   r=[]
   for i in range(0,25):
     r.append(0)
   for i in range(1,25):
     #print "/run%d/Chamber%d/FEB/%d/Side0/channel%d" % (run,chamber,feb,i)
-    f82.cd("/run%d/Chamber%d/FEB/%d/Side0/" % (run,chamber,feb))
-    hch=f82.Get("/run%d/Chamber%d/FEB/%d/Side0/channel%d" % (run,chamber,feb,i))
+    f82.cd("/run%d/InTime/Chamber%d/FEB/%d/Side0/" % (run,chamber,feb))
+    hch=f82.Get("/run%d/InTime/Chamber%d/FEB/%d/Side0/channel%d" % (run,chamber,feb,i))
     #print hch
     if (hch!=None):
       #print i,hch.GetEntries(),hch.GetMean();
-      if (hch.GetEntries()>5):
-        r[i]=hch.GetMean()
+      if (hch.GetEntries()>25):
+          scfit=TF1("scfit","gaus",-10.,10.)
+          hch.Fit("scfit","Q","",-10.,5);
+          dtmean=scfit.GetParameter(1)
+          dtres=scfit.GetParameter(2)
+          print i,hch.GetEntries(),hch.GetMean(),dtmean,dtres
+          c.cd()
+          hch.Draw()
+          c.Modified()
+          c.Update()
+          val=raw_input()
+          r[i]=dtmean
+          if (abs(dtmean-hch.GetMean())>hch.GetRMS()):
+              r[i]=hch.GetMean()
       continue
-    f82.cd("/run%d/Chamber%d/FEB/%d/Side1/" % (run,chamber,feb))
-    hch1=f82.Get("/run%d/Chamber%d/FEB/%d/Side1/channel%d" % (run,chamber,feb,i))
+    
+    f82.cd("/run%d/InTime/Chamber%d/FEB/%d/Side1/" % (run,chamber,feb))
+    hch1=f82.Get("/run%d/InTime/Chamber%d/FEB/%d/Side1/channel%d" % (run,chamber,feb,i))
     #print hch1
     if (hch1!=None):
       #print i,hch1.GetEntries(),hch1.GetMean();
-      if (hch1.GetEntries()>5):
-        r[i]=hch1.GetMean()
+      if (hch1.GetEntries()>25):
+          scfit=TF1("scfit","gaus",-10.,10.)
+          hch1.Fit("scfit","Q","",-10,5);
+          dtmean=scfit.GetParameter(1)
+          dtres=scfit.GetParameter(2)
+          print i,hch1.GetEntries(),hch1.GetMean(),dtmean,dtres
+          c.cd()
+          hch1.Draw()
+          c.Modified()
+          c.Update()
+          val=raw_input()
+
+          r[i]=dtmean
+          #hch1.GetMean()
+          if (abs(dtmean-hch1.GetMean())>hch1.GetRMS()):
+              r[i]=hch1.GetMean()
+
       continue
 
   #print r
+  hfeb0=f82.Get("/run%d/InTime/Chamber%d/FEB/%d/Side0/DTall" % (run,chamber,feb))
+  hfeb1=f82.Get("/run%d/InTime/Chamber%d/FEB/%d/Side1/DTall" % (run,chamber,feb))
+  sfit=TF1("sfit","gaus",-615.,-570.)
+  hfeb0.Fit("sfit","Q","",-615.,-570.);
+  c.cd()
+  hfeb0.Draw()
+  c.Modified()
+  c.Update()
+  #val=raw_input()
+  print "dt0: %5.1f" % (sfit.GetParameter(1))
+  hfeb1.Fit("sfit","Q","",-615.,-570.);
+  c.cd()
+  hfeb1.Draw()
+  c.Modified()
+  c.Update()
+  #val=raw_input()
+  print "dt1: %5.1f"  % sfit.GetParameter(1)
+  
   r = map(prettyfloat, r)
   print '"dtc":',r
 def fitProfile(run,sel=92):
