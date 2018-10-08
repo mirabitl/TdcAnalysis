@@ -39,6 +39,9 @@ namespace lmana
     double _t0,_t1,_shift;
 
   };
+  // DTA 2.5 DTY 1.5  
+#define DTA 5.
+#define DTY 5.
   class TdcCluster
   {
   public:
@@ -50,9 +53,9 @@ namespace lmana
 	{
 	//if (abs(x.xpos()-s.xpos())<step && abs(x.ypos()-s.ypos())<2)
 	  if (x.chamber()!=s.chamber()) continue;
-	float dta=2.5;
-	if (x.dif()!=s.dif()) dta=3*2.5;
-	if (abs(x.xpos()-s.xpos())<step && abs((x.t0()+x.t1())/2-(s.t0()+s.t1())/2)<dta && abs(x.ypos()-s.ypos())<1.5)
+	float dta=DTA;
+	if (x.dif()!=s.dif()) dta=3*DTA;
+	if (abs(x.xpos()-s.xpos())<step && abs((x.t0()+x.t1())/2-(s.t0()+s.t1())/2)<dta && abs(x.ypos()-s.ypos())<DTY)
 	  {
 	    return true;
 	  }

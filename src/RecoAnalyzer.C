@@ -162,10 +162,10 @@ void lmana::RecoAnalyzer::clusterAnalysis()
   t0[0]=0;t0[1]=0;
   auto hch1=rh()->AccessTH2("/ch1/CLUPOS",48,70.,118.,200,-7.,7.,"/Clusters");
   auto hch2=rh()->AccessTH2("/ch2/CLUPOS",48,70.,118.,200,-7.,7.,"/Clusters");
-  auto h1t0=rh()->AccessTH2("/ch1/T0",48,70.,118.,200,-650.,-550.,"/Clusters");
-  auto h2t0=rh()->AccessTH2("/ch2/T0",48,70.,118.,200,-650.,-550.,"/Clusters");
-  auto h1t1=rh()->AccessTH2("/ch1/T1",48,70.,118.,200,-650.,-550.,"/Clusters");
-  auto h2t1=rh()->AccessTH2("/ch2/T1",48,70.,118.,200,-650.,-550.,"/Clusters");
+  auto h1t0=rh()->AccessTH2("/ch1/T0",48,70.,118.,200,-50.,50.,"/Clusters");
+  auto h2t0=rh()->AccessTH2("/ch2/T0",48,70.,118.,200,-50.,50.,"/Clusters");
+  auto h1t1=rh()->AccessTH2("/ch1/T1",48,70.,118.,200,-50.,50.,"/Clusters");
+  auto h2t1=rh()->AccessTH2("/ch2/T1",48,70.,118.,200,-50.,50.,"/Clusters");
 
   double XM=0;
   for (auto x:_clusters)
@@ -179,20 +179,22 @@ void lmana::RecoAnalyzer::clusterAnalysis()
   if (t0[0]==0 || t0[1]==0) return;
   for (auto x:_clusters)
     {
+      double dfeb0=geo()->feb(x.dif()).dt[0];
+      double dfeb1=geo()->feb(x.dif()).dt[1];
 
       if (x.chamber()==1)
 	{
 	  //printf("%d %f %f  %x\n",x.chamber(),x.X(),x.Y(),hch1);
 	  hch1->Fill(x.X(),x.Y());
-	  h1t0->Fill(x.X(),t0[0]);
-	  h1t1->Fill(x.X(),t1[0]);
+	  h1t0->Fill(x.X(),t0[0]-dfeb0);
+	  h1t1->Fill(x.X(),t1[0]-dfeb1);
 	}
       else
 	{
 	  //printf("%d %f %f  %x\n",x.chamber(),x.X(),x.Y(),hch2);
 	  hch2->Fill(x.X(),x.Y());
-	  h2t0->Fill(x.X(),t0[1]);
-	  h2t1->Fill(x.X(),t1[1]);
+	  h2t0->Fill(x.X(),t0[1]-dfeb0);
+	  h2t1->Fill(x.X(),t1[1]-dfeb1);
 	}
     }
 
@@ -333,6 +335,18 @@ bool lmana::RecoAnalyzer::buildStrips(std::vector<lydaq::TdcChannel>& vChannel,b
 
 		  //fprintf(stderr,"\t %d %d %f %f \n",x->channel(), x->side(geo()->feb(x->feb())),x->tdcTime(),x->tdcTime()-ttime[x->feb()]);
 		  double dt=geo()->feb(x->feb()).dtc[x->channel()];
+		  dt=0;
+		  // Un essai
+		  double dt0[48]={0.00, 0.00, 0.00, -2.17, -1.52, -1.62, -1.86, -2.76, -3.16, -3.66, -4.63, -4.79, -4.24, -1.34, -1.04, -1.13, -1.44, -1.38, -0.85, -1.17, -1.90, -2.25, -2.13, -1.70, -0.41, -1.25, -1.58, -1.67, -2.00, -2.19, -1.84, -1.90, -2.55, -3.14, -5.18, -6.47, -5.12, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00};
+		  double dt1[48]={0.00, 0.00, 0.00, -0.33, 0.47, 0.73, 0.54, -0.52, -1.03, -1.39, -2.19, -2.37, -1.72, 1.26, 1.32, 1.19, 1.04, 1.20, 1.19, 0.92, 0.50, 0.48, 0.76, 1.01, 0.69, -0.05, -0.20, 0.08, -0.10, -0.46, -0.32, -0.04, -0.51, -1.32, -2.69, -2.63, -0.79, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00};
+		  if (chamber==1)
+		    {
+		      if (x->side(geo()->feb(x->feb()))==0)
+			dt=dt0[x->detectorStrip( geo()->feb(x->feb()))-72];
+		      else
+			dt=dt1[x->detectorStrip( geo()->feb(x->feb()))-72];
+		    }
+		  //
 		  if (t0<0 &&  x->side(geo()->feb(x->feb()))==0)
 		    {
 		      t0=x->tdcTime()-dt;
