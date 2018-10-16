@@ -89,7 +89,7 @@ void lmana::TdcAnalyzer::clear()
 {_strips.clear();}
 void lmana::TdcAnalyzer::processFEB(uint32_t feb,std::vector<lydaq::TdcChannel>& vChannel)
 {
-  //std::cout<<feb<<std::endl;
+  std::cout<<"Process FEB "<<feb<<" "<<jEvent()["runtype"].asUInt()<<std::endl;
   if (jEvent()["runtype"].asUInt()==1) pedestalAnalysis(feb,vChannel);
   if (jEvent()["runtype"].asUInt()==2) scurveAnalysis(feb,vChannel);
 
@@ -1600,7 +1600,7 @@ void lmana::TdcAnalyzer::scurveAnalysis(uint32_t mezId,std::vector<lydaq::TdcCha
       for (std::vector<lydaq::TdcChannel>::iterator x=vChannel.begin();x!=vChannel.end();x++)
 	{
 	  if (x->channel()==ich) {
-	    printf("%d \n",x->channel());
+	    printf("Found %d  %d \n",x->channel(),vth);
 	    double dt=x->tdcTime()-lastf;
 	    lastf=x->tdcTime();
 	    hvth->Fill(vth*1.);
@@ -1623,11 +1623,16 @@ void lmana::TdcAnalyzer::scurveAnalysis(uint32_t mezId,std::vector<lydaq::TdcCha
  
       std::stringstream src;
       src<<sr.str()<<"vthc"<<ich;
-      TH1* hvth=rh()->GetTH1(src.str());
-      if (hvth==NULL)
+      TH1* hvthc=rh()->GetTH1(src.str());
+      std::stringstream srd;
+      srd<<sr.str()<<"vthd"<<ich;
+      TH1* hvthd=rh()->GetTH1(srd.str());
+
+      if (hvthc==NULL)
 	{
 	 
-	  hvth=rh()->BookTH1(src.str(),900,0.,900.);
+	  hvthc=rh()->BookTH1(src.str(),900,0.,900.);
+	  hvthd=rh()->BookTH1(srd.str(),900,0.,900.);
 	  printf("Booking %s \n",src.str().c_str());
 	}
       bool found=false;
@@ -1637,10 +1642,14 @@ void lmana::TdcAnalyzer::scurveAnalysis(uint32_t mezId,std::vector<lydaq::TdcCha
 	  // x->dump();
 	  if (x->tdcTime()>maxt) maxt=x->tdcTime();
 	  if (x->channel()==ich) {
+
 	    //printf("%d \n",x->channel());
 	    double dt=x->tdcTime()-lastf;
 	    lastf=x->tdcTime();
-	    hvth->Fill(vth*1.);
+	    if (x->falling()) 
+	      hvthd->Fill(vth*1.);
+	    else
+	      hvthc->Fill(vth*1.);
 
 	  }
 	}

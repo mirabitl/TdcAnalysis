@@ -29,7 +29,7 @@ using namespace lmana;
 tdcrb::tdcrb(std::string dire) : _directory(dire),_run(0),_started(false),_fdIn(-1),_totalSize(0),_event(0),_geo(NULL),_t0(2E50),_t(0),_tspill(0)
 			       ,_readoutTotalTime(0),_numberOfMuon(0),_numberOfShower(0),_runType(0),_dacSet(0),_fdOut(-1),_bxId0(0)
 {_rh=DCHistogramHandler::instance();
-_analyzer= new lmana::RecoAnalyzer(_rh);
+_analyzer= new lmana::TdcAnalyzer(_rh);
  _mezMap.clear();
  for (uint32_t i=1;i<255;i++)
     { 
@@ -367,22 +367,22 @@ if (ier<0 || ((last==_event)&_nread>200))
 	      b.uncompress();
 	      memcpy(&_buf[_idx], b.payload(),b.payloadSize());
 	      b.setDetectorId(b.detectorId()&0xFF);
-	      DEBUG_PRINTF("\t \t det %d source %d event %d bx %x payload %d size  %d %d\n",b.detectorId()&0XFF,b.dataSourceId(),b.eventId(),b.bxId(),b.payloadSize(),bsize,_idx);
+	      INFO_PRINTF("\t \t det %d source %d event %d bx %x payload %d size  %d %d\n",b.detectorId()&0XFF,b.dataSourceId(),b.eventId(),b.bxId(),b.payloadSize(),bsize,_idx);
 	      _bxId=b.bxId();
 	      if (_bxId0==0) _bxId0=_bxId;
 	      uint32_t _detId=b.detectorId()&0xFF;
-	      DEBUG_PRINTF("DUMP DETID %d \n",_detId);
+	      INFO_PRINTF("DUMP DETID %d \n",_detId);
 	      uint8_t* cc=(uint8_t*) b.payload();
 	      
 	      // for (int ib=0;ib<b.payloadSize();ib++)
-	      // 	{
-	      // 	  printf(" %.2x ",cc[ib]);
+	      //  	{
+	      //  	  printf(" %.2x ",cc[ib]);
 	      // 	  if (ib%16==15 &&ib>0) printf("\n");
 	      // 	}
 
 
 	      
-	      // getchar();
+	      //getchar();
 	      if (_detId==255)
 		{
 		  uint32_t* buf=(uint32_t*) b.payload();
@@ -401,7 +401,7 @@ if (ier<0 || ((last==_event)&_nread>200))
 		  if (_runType==2)
 		    _vthSet=buf[1];
 		  printf("\n Run type %d DAC set %d VTH set %d \n",_runType,_dacSet,_vthSet);
-		  // getchar();
+		  //getchar();
 		  _analyzer->jEvent()["runtype"]=_runType;
 
 		}
@@ -409,17 +409,18 @@ if (ier<0 || ((last==_event)&_nread>200))
 		{
 		  uint32_t* ibuf=(uint32_t*) b.payload();
 	       
-		   // for (int i=0;i<7;i++)
-		   //   {
-		   //     printf("%d ",ibuf[i]);
-		   //  }
+		  for (int i=0;i<7;i++)
+		    {
+		      printf("%d ",ibuf[i]);
+		    }
 		  uint32_t nch=ibuf[6];
-		  //printf("\n channels -> %d \n",nch);
+		  printf("\n channels -> %d \n",nch);
 		  _mezzanine=ibuf[4];
 		  _difId=(ibuf[5]>>24)&0xFF;
 		  _gtc=ibuf[1];
 
-		  DEBUG_PRINTF("\t \t \t %d %d GTC %d NCH %d \n",_mezzanine,_difId,_gtc,nch);
+		  INFO_PRINTF("\t \t \t %d %d GTC %d NCH %d \n",_mezzanine,_difId,_gtc,nch);
+
 		  std::vector<lydaq::TdcChannel> vch;
 		  vch.clear();
 		  _analyzer->setInfo(_difId,_run,_event,_gtc,_bxId,TDC_TRIGGER_CHANNEL,_vthSet,_dacSet);
@@ -431,10 +432,12 @@ if (ier<0 || ((last==_event)&_nread>200))
 		      bool tfound=false;
 		      for (int i=0;i<nch;i++)
 			{
-			  
-			  // for (int j=0;j<6;j++)
-			  //    INFO_PRINTF("\t %.2x ",cbuf[i*6+j]);
-			  // INFO_PRINTF("\n");
+#define DUMPCHANSN			
+#ifdef DUMPCHANS			  
+			  for (int j=0;j<6;j++)
+			     INFO_PRINTF("\t %.2x ",cbuf[i*6+j]);
+			   INFO_PRINTF("\n");
+#endif
 			  memcpy(&_eventChannel[_eventChannels],&cbuf[6*i],6*sizeof(uint8_t));
 			  lydaq::TdcChannel c(&cbuf[6*i],_difId&0xFF);
 			  lydaq::TdcChannel ca((uint8_t*) &_eventChannel[_eventChannels],_difId&0xFF);
@@ -452,6 +455,9 @@ if (ier<0 || ((last==_event)&_nread>200))
 			  _vAll.push_back(ca);
 			  
 			}
+#ifdef DUMPCHANS
+		      if (nch>0) getchar();
+#endif
 		      // if (nch>0)
 		      // getchar();
 		      //if (!tfound && _runType==0 && _event%10000!=0 ) continue;

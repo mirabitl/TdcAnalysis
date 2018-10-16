@@ -30,6 +30,66 @@ def calApp(V,P,T):
   print 1-(0.2+0.8*P/990.*293./T)
   return  V*(0.2+0.8*P/990.*293./T)
 
+def getdtc(run,chamber,sub=""):
+  c=TCanvas()
+  f82=TFile(sub+"histo%d_0.root" % run);
+  r0=[]
+  r1=[]
+  for i in range(0,48):
+    r0.append(0)
+    r1.append(0)
+  ht0=None
+  ht1=None
+  if (chamber==1):
+      f82.cd("/Clusters/ch1")
+      ht0=f82.Get("/Clusters/ch1/T0")
+      ht1=f82.Get("/Clusters/ch1/T1")
+      ht0.Draw()
+      c.Modified()
+      c.Update()
+      val=raw_input()
+  if (chamber==2):
+      f82.cd("/Clusters/ch2")
+      ht0=f82.Get("/Clusters/ch2/T0")
+      ht1=f82.Get("/Clusters/ch2/T1")
+
+  scfit=TF1("scfit","gaus",-10.,10.)
+
+  for i in range(0,48):
+    #print "/run%d/Chamber%d/FEB/%d/Side0/channel%d" % (run,chamber,feb,i)
+    hch=ht0.ProjectionY("ch",i,i+1)
+    if (hch.GetEntries()>20):
+        hch.Fit("scfit","Q","");
+        c.cd()
+        hch.Draw()
+        c.Modified()
+        c.Update()
+        val=raw_input()
+        dtmean=scfit.GetParameter(1)
+        dtres=scfit.GetParameter(2)
+        r0[i]=dtmean
+    else:
+        r0[i]=0;
+    hch1=ht1.ProjectionY("ch1",i,i+1)
+    if (hch.GetEntries()>20):
+        hch1.Fit("scfit","Q","");
+        #c.cd()
+        #hch.Draw()
+        #c.Modified()
+        #c.Update()
+        #val=raw_input()
+        dtmean=scfit.GetParameter(1)
+        dtres=scfit.GetParameter(2)
+        r1[i]=dtmean
+    else:
+        r1[i]=0;
+
+  r0 = map(prettyfloat, r0)
+  print '"dt0":',r0
+  r1 = map(prettyfloat, r1)
+  print '"dt1":',r1
+
+
 def getdt(run,chamber,feb,sub=""):
   c=TCanvas()
   f82=TFile(sub+"histo%d_0.root" % run);
