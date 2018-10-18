@@ -171,10 +171,11 @@ class DCHistogramHandler
   void Lock();
   void UnLock();
 	//! Dump to XML
-	void writeXML(std::string  path);
-	void writeSQL(std::string name="/dev/shm/LMonitoring.root");
-	//! referennce to the instance
+  void writeXML(std::string  path);
+  void writeSQL(std::string name="/dev/shm/LMonitoring.root");
+  //! referennce to the instance
   static DCHistogramHandler* instance() ;
+  static DCHistogramHandler* instance1() {return DCHistogramHandler::instance();}
  private:
   std::map<std::string,TH2*> mapH2;  /// Map of name , pointer to histogram TH1*
   std::map<std::string,TH1*> mapH1;  /// Map of name, pointer to histogram TH2*

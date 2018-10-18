@@ -38,6 +38,10 @@ public:
   void addRun(uint32_t r,std::string name) { _files.push_back(std::pair<uint32_t,std::string>(r,name));}
   void setRun(int r){_run=r;}
   void setOutFileId(int32_t fid){_fdOut=fid;}
+  void setAnalyzer(lmana::Analyzer* a){_analyzer=a;}
+  void clearDataSet(){_files.clear();}
+  void findDataSet(std::string dir,uint32_t run);
+  void stop(){_started=false;}
 private:
   std::vector<std::pair<uint32_t,std::string> > _files;
   uint64_t _bxId,_bxId0;

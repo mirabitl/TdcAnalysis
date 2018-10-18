@@ -559,7 +559,7 @@ def fitped(run,tdc,vthmin,vthmax,old=defped):
   ped=[]
   for i in range(32):
     ped.append(0)
-  f82=TFile("./histo%d_0.root" % run);
+  f82=TFile("Histos/InTime/histo%d_0.root" % run);
   f82.cd("/run%d/TDC%d" % (run,tdc));
   c1=TCanvas();
   #c2=TCanvas("c2","Test",1400,900);
@@ -580,7 +580,7 @@ def fitped(run,tdc,vthmin,vthmax,old=defped):
   
   for ip in range(1,25):
       #c2.cd()
-      hs=f82.Get("/run%d/TDC%d/vth%d" % (run,tdc,ip));
+      hs=f82.Get("/run%d/TDC%d/vthd%d" % (run,tdc,ip));
       if (hs.GetEntries()==0):
         continue
       nmax=0
@@ -616,7 +616,7 @@ def fitped(run,tdc,vthmin,vthmax,old=defped):
       
   for ip in range(0,25):
       #c2.cd()
-      hs=f82.Get("/run%d/TDC%d/vthc%d" % (run,tdc,ip));
+      hs=f82.Get("/run%d/TDC%d/vthd%d" % (run,tdc,ip));
       if (hs.GetEntries()==0):
         continue
       hder=TH1F("hder%d" % ip,"derivative",900,0.,900.)	

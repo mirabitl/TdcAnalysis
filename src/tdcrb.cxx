@@ -21,21 +21,59 @@
 #include "TCanvas.h"
 #include "TdcMapping.hh"
 #include <fstream>
+#include <dirent.h>
+#include <fnmatch.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <getopt.h>
+
 
 
 using namespace zdaq;
 using namespace lydaq;
 using namespace lmana;
 tdcrb::tdcrb(std::string dire) : _directory(dire),_run(0),_started(false),_fdIn(-1),_totalSize(0),_event(0),_geo(NULL),_t0(2E50),_t(0),_tspill(0)
-			       ,_readoutTotalTime(0),_numberOfMuon(0),_numberOfShower(0),_runType(0),_dacSet(0),_fdOut(-1),_bxId0(0)
+			       ,_readoutTotalTime(0),_numberOfMuon(0),_numberOfShower(0),_runType(0),_dacSet(0),_fdOut(-1),_bxId0(0),_analyzer(NULL)
 {_rh=DCHistogramHandler::instance();
-_analyzer= new lmana::TdcAnalyzer(_rh);
+
  _mezMap.clear();
  for (uint32_t i=1;i<255;i++)
     { 
       _mezMap.insert(std::pair<uint32_t,std::vector<lydaq::TdcChannel> >(i,std::vector<lydaq::TdcChannel>()));}
 }
 
+void tdcrb::findDataSet(std::string dirp,uint32_t runask)
+{
+    std::stringstream spat;
+  //int runask=atol(argv[1]);
+  spat<<"SMM*"<<runask<<"*.dat";
+  //spat<<"SMM*"<<argv[1]<<"*.dat";
+  struct dirent **namelist;
+  int n;
+  std::cout<<"Pattern "<<spat.str()<<std::endl;
+  //std::string dirp="/data/srv02/RAID6/Dome0718";
+
+  //dirp=".";
+  n = scandir(dirp.c_str(), &namelist, NULL, alphasort);
+  if (n < 0)
+    perror("scandir");
+  else {
+    while (n--) {
+
+      if (fnmatch(spat.str().c_str(), namelist[n]->d_name, 0)==0)
+	{
+	  printf("%s %d \n", namelist[n]->d_name,fnmatch(spat.str().c_str(), namelist[n]->d_name, 0));
+	  printf("found\n");
+	  std::stringstream sf;
+	  sf<<dirp<<"/"<< namelist[n]->d_name;
+	  this->addRun(runask,sf.str());
+	}
+      free(namelist[n]);
+    }
+    free(namelist);
+  }
+
+}
 void tdcrb::geometry(std::string name)
 {
   _geo=new jsonGeo(name);
@@ -75,6 +113,7 @@ uint32_t tdcrb::eventNumber(){return _event;}
 uint32_t tdcrb::runNumber(){return _run;}
 void tdcrb::Read()
 {
+  if (_analyzer == NULL) _analyzer= new lmana::TdcAnalyzer(_rh);
   int nfile=0;
   _nread=0;
   for (std::vector<std::pair<uint32_t,std::string> >::iterator it=_files.begin();it!=_files.end();it++)
@@ -304,6 +343,7 @@ void tdcrb::read()
   uint32_t _eventChannels;
   _geo->fillFebs(_run);
   _geo->fillAlign(_run);
+  _started=true;
   while (_started)
     {
       if (!_started) return;

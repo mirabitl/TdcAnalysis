@@ -18,6 +18,7 @@ INCLUDES=['.','./include',"/usr/include","/usr/local/include","/usr/X11R6/includ
 
 #MYSQL and sqlite
 INCLUDES.append("/opt/zdaq/include")
+INCLUDES.append("/opt/lydaq/drivers/common/include")
 INCLUDES.append("/usr/include/libxml2")
 #python
 INCLUDES.append(commands.getoutput("python -c 'import distutils.sysconfig as conf; print conf.get_python_inc()'"))
@@ -39,7 +40,7 @@ ROOT_LIBS.append('XMLIO')
 ROOT_LIBPATH=[lib[2:] for lib in filter(lambda x: (x[:2]=="-L"), commands.getoutput("$ROOTSYS/bin/root-config --libs ").split(" "))]
 # Summary
 
-LIBRARIES=ROOT_LIBS+['pthread','jsoncpp']
+LIBRARIES=ROOT_LIBS+['pthread','jsoncpp','zdaq','log4cxx']
 
 
 
@@ -61,7 +62,7 @@ env = Environment(CPPPATH=INCLUDES,CPPFLAGS=CPPFLAGS,LINKFLAGS=LDFLAGS, LIBS=LIB
 
 
 #Shared library
-lmrb=env.SharedLibrary("#lib/lmrb",source=['src/jsonGeo.C','src/DCHistogramHandler.C','src/TdcAnalyzer.C','src/tdcrb.cxx','src/RecoAnalyzer.C'])
+lmrb=env.SharedLibrary("#lib/lmrb",source=['src/jsonGeo.C','src/DCHistogramHandler.C','src/TdcAnalyzer.C','src/tdcrb.cxx','src/RecoAnalyzer.C','src/RbServer.cxx'])
 LIBRARIESPLUG=["lmrb","boost_system"]+LIBRARIES
 LIBRARY_PATHS.append(".")
 
@@ -79,11 +80,13 @@ EXE_LIBS=LIBRARIESPLUG
 
 tdcr=env1.Program("bin/tdcr",source="src/tdcr.cc",LIBPATH=EXE_LIBPATH,LIBS=EXE_LIBS)
 
+rbd=env1.Program("bin/rb_daemon",source="src/RbDaemon.cc",LIBPATH=EXE_LIBPATH,LIBS=EXE_LIBS)
 
 
 
 
-Default([lmrb,tdcr])
+
+Default([lmrb,tdcr,rbd])
 
 
 
