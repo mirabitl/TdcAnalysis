@@ -149,7 +149,7 @@ void RbServer::c_histo(Mongoose::Request &request, Mongoose::JsonResponse &respo
   LOG4CXX_INFO(_logMDCC,__PRETTY_FUNCTION__<<" Histo called for "<<sh);
   response["STATUS"]="DONE";
   if (sh.compare("none")!=0)
-    response["histo"]=_rh->getXMLHisto(sh);
+    response["histo"]=_rh->getJSONHisto(sh);
   else
     response["STATUS"]="MISSED";
   

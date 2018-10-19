@@ -472,7 +472,7 @@ if (ier<0 || ((last==_event)&_nread>200))
 		      bool tfound=false;
 		      for (int i=0;i<nch;i++)
 			{
-#define DUMPCHANSN			
+#define DUMPCHANS			
 #ifdef DUMPCHANS			  
 			  for (int j=0;j<6;j++)
 			     INFO_PRINTF("\t %.2x ",cbuf[i*6+j]);

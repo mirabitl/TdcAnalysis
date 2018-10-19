@@ -29,6 +29,9 @@
 int main(int argc, char **argv )
 {
   static tdcrb bs("/tmp");
+  DCHistogramHandler* rh=DCHistogramHandler::instance();
+  lmana::Analyzer* a= new lmana::TdcAnalyzer(rh);
+  bs.setAnalyzer(a);
   TApplication theApp("tapp", &argc, argv);
   std::string geom_file;
   std::string dirp="/home/acqilc/backup_aug2018";
@@ -135,7 +138,7 @@ int main(int argc, char **argv )
   }
 #endif
   
-  DCHistogramHandler rootHandler;
+
   //DHCalEventReader  dher;
 
 

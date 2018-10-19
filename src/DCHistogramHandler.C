@@ -621,101 +621,6 @@ void DCHistogramHandler::ListHisto(std::string reg,int type,std::vector<std::str
   //std::cout<<"On sort de ListHisto"<<std::endl;
 }
 
-TCanvas* DCHistogramHandler::DrawRegexp(std::string reg,bool same)
-{
-
-  std::vector<std::string> found;
-  std::vector<TH1*> vh1;
-  std::vector<TH2*> vh2;
-  std::vector<TH3*> vh3;
-  ListHisto(reg,1,found);
-  for (unsigned int i=0;i<found.size();i++)
-    vh1.push_back(GetTH1(found[i]));
-  ListHisto(reg,2,found);
-  for (unsigned int i=0;i<found.size();i++)
-    vh2.push_back(GetTH2(found[i]));
-
-  ListHisto(reg,3,found);
-  for (unsigned int i=0;i<found.size();i++)
-    vh3.push_back(GetTH3(found[i]));
-
-  if ((vh1.size()+vh2.size()+vh3.size())==0) 
-    {
-      std::string serr=" No histogram found for "+reg;
-      std::cout<<serr<<std::endl;
-      return NULL;
-
-    }
-  //std::cout<<vh1.size()<<" TH1 Found and "<<vh2.size()<<" Th2"<<std::endl;
-  std::stringstream name("Canvas");
-  name<<reg;
-  int ncol=TMath::Nint(TMath::Sqrt(vh1.size()+vh2.size()+1));int nrow=(vh1.size()+vh2.size())/ncol+1;
-  int nhist=vh1.size()+vh2.size()+vh3.size();
-  if (nhist==1)
-    {
-      ncol=1;
-      nrow=1;
-    }
-  //std::cout<<"DrawRegexp :: "<<vh1.size()+vh2.size()<< " "<<ncol<<" "<<nrow<<std::endl;
-  TCanvas* c1 = new TCanvas(name.str().c_str(),reg.c_str(),700,700);
-  //std::cout<<"Createion du canvas faite "<<std::endl;
-  if (!same)
-    {
-      c1->Divide(ncol,nrow);
-      int ipad =1;
-      gROOT->GetStyle("Default")->SetOptStat(1111);
-      for (unsigned int i=0;i<vh1.size();i++)
-	{
-	  c1->cd(ipad);
-	  if (vh1[i]== NULL) continue;
-	  vh1[i]->Draw();
-	  //std::cout<<"Histo plot"<<i<<std::endl;
-	  ipad++;
-	}
-      if (vh2.size()>0)
-	{
-	  gROOT->GetStyle("Default")->SetOptStat(0);
-	  gROOT->GetStyle("Default")->SetPalette(1,0);
-	}
-      for (unsigned int i=0;i<vh2.size();i++)
-	{
-	  c1->cd(ipad);
-	  if (vh2[i]== NULL) continue;
-	  vh2[i]->Draw("colz");
-	  ipad++;
-	}
-      for (unsigned int i=0;i<vh3.size();i++)
-	{
-	  c1->cd(ipad);
-	  if (vh3[i]== NULL) continue;
-	  vh3[i]->Draw("box");
-	  ipad++;
-	}
-    }
-  else
-    {
-      // work only for One D histo
-      bool first = true;
-      gROOT->GetStyle("Default")->SetOptStat(1111);
-      for (unsigned int i=0;i<vh1.size();i++)
-	{
-	  
-	  if (vh1[i]== NULL) continue;
-	  if (first)
-	    {
-	      vh1[i]->Draw();
-	      first=false;
-	    }
-	  else
-	    vh1[i]->Draw("SAME");
-	  //std::cout<<"Histo plot"<<i<<std::endl;
-	}
-
-    }
-  //std::cout<<"End of DrawRegexp"<<std::endl;
-  return c1;
-
-}
 std::string DCHistogramHandler::getXMLHistoList()
 {
   std::ostringstream xmlstr;
@@ -757,6 +662,28 @@ std::string DCHistogramHandler::getXMLHisto(std::string hname)
 	  TH3* h3= this->GetTH3(hname);
 	  if (h3!=0)
 	    xmlstr<<TBufferXML::ConvertToXML(h3);
+	}
+    }
+ return xmlstr.str();
+}
+
+std::string DCHistogramHandler::getJSONHisto(std::string hname)
+{
+  std::ostringstream xmlstr;
+  //  xmlstr << "<?xml version=\"1.0\" encoding=\"UTF-8\"?>" << std::endl;
+  TH1* h1= this->GetTH1(hname);
+  if (h1!=0)
+    xmlstr<<TBufferJSON::ConvertToJSON(h1);
+  else
+    {
+      TH2* h2= this->GetTH2(hname);
+      if (h2!=0)
+	xmlstr<<TBufferJSON::ConvertToJSON(h2);
+      else
+	{
+	  TH3* h3= this->GetTH3(hname);
+	  if (h3!=0)
+	    xmlstr<<TBufferJSON::ConvertToJSON(h3);
 	}
     }
  return xmlstr.str();

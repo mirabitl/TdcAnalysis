@@ -34,10 +34,10 @@ if (USE_CIMG):
 if (USE_CULA):
 	CPPFLAGS.append("-DUSE_CULA")
 #Library ROOT + some of XDAQ + DB 
-ROOT_LIBS=[lib[2:] for lib in filter(lambda x: (x[:2]=="-l"), commands.getoutput("$ROOTSYS/bin/root-config --libs --ldflags --glibs").split(" "))
+ROOT_LIBS=[lib[2:] for lib in filter(lambda x: (x[:2]=="-l"), commands.getoutput("$ROOTSYS/bin/root-config --libs --ldflags ").split(" "))
 ]
 ROOT_LIBS.append('XMLIO')
-ROOT_LIBPATH=[lib[2:] for lib in filter(lambda x: (x[:2]=="-L"), commands.getoutput("$ROOTSYS/bin/root-config --libs ").split(" "))]
+ROOT_LIBPATH=[lib[2:] for lib in filter(lambda x: (x[:2]=="-L"), commands.getoutput("$ROOTSYS/bin/root-config --libs  ").split(" "))]
 # Summary
 
 LIBRARIES=ROOT_LIBS+['pthread','jsoncpp','zdaq','log4cxx']

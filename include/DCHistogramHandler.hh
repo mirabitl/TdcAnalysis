@@ -13,6 +13,7 @@
 #include <TMath.h>
 #include "AbsTree.hh"
 #include <semaphore.h>
+#include <TBufferJSON.h>
 /** 
 \class DCHistogramHandler
   \author  L.Mirabito 
@@ -151,7 +152,7 @@ class DCHistogramHandler
       @param reg Linux regular expression
       @return a TCanvas* ptr
   */
-  TCanvas* DrawRegexp(std::string reg,bool same=false); 
+  //TCanvas* DrawRegexp(std::string reg,bool same=false); 
 
   //!Write histograms to a file
   /** 
@@ -166,6 +167,8 @@ class DCHistogramHandler
 
   //!Return XML Buffer of a an Histo
   std::string getXMLHisto(std::string name);
+  //!Return JSON Buffer of a an Histo
+  std::string getJSONHisto(std::string name);
 
   //!Lock and UnLock for multi threaded
   void Lock();
