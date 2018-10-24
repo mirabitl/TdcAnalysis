@@ -1576,14 +1576,15 @@ void lmana::TdcAnalyzer::scurveAnalysis(uint32_t mezId,std::vector<lydaq::TdcCha
 {
 
   //if (gtc[mezId-1]
-  std::cout<<"Mezzanine "<<mezId<<"Event "<<_event<<" GTC"<<_gtc<<" hits"<<vChannel.size()<<" Vth set "<<_vthSet<<" Trigger channel "<<_triggerChannel<<std::endl;
-  _triggerChannel=24;
+  uint32_t maxChannels=64;
+  std::cout<<"Mezzanine "<<mezId<<"Event "<<_event<<" GTC"<<_gtc<<" hits"<<vChannel.size()<<" Vth set "<<_vthSet<<" Trigger channel "<<maxChannels<<std::endl;
+
   // Analyze
   std::stringstream sr;
   sr<<"/run"<<_run<<"/TDC"<<mezId<<"/";
   
   uint32_t vth =_vthSet;
-  for (int ich=0;ich<_triggerChannel+1;ich++)
+  for (int ich=0;ich<maxChannels+1;ich++)
     {
  
       std::stringstream src;
@@ -1599,6 +1600,7 @@ void lmana::TdcAnalyzer::scurveAnalysis(uint32_t mezId,std::vector<lydaq::TdcCha
       double lastf=0;
       for (std::vector<lydaq::TdcChannel>::iterator x=vChannel.begin();x!=vChannel.end();x++)
 	{
+	  if (x->feb()!=mezId) continue;
 	  if (x->channel()==ich) {
 	    printf("Found %d  %d \n",x->channel(),vth);
 	    double dt=x->tdcTime()-lastf;
@@ -1618,7 +1620,7 @@ void lmana::TdcAnalyzer::scurveAnalysis(uint32_t mezId,std::vector<lydaq::TdcCha
       printf("Booking %s \n",srt.str().c_str());
     }
   double maxt=0;
-  for (int ich=0;ich<_triggerChannel+1;ich++)
+  for (int ich=0;ich<maxChannels+1;ich++)
     {
  
       std::stringstream src;
@@ -1640,6 +1642,7 @@ void lmana::TdcAnalyzer::scurveAnalysis(uint32_t mezId,std::vector<lydaq::TdcCha
       for (std::vector<lydaq::TdcChannel>::iterator x=vChannel.begin();x!=vChannel.end();x++)
 	{
 	  // x->dump();
+	  if (x->feb()!=mezId) continue;
 	  if (x->tdcTime()>maxt) maxt=x->tdcTime();
 	  if (x->channel()==ich) {
 
