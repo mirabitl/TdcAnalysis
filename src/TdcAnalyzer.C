@@ -1587,21 +1587,24 @@ void lmana::TdcAnalyzer::scurveAnalysis(uint32_t mezId,std::vector<lydaq::TdcCha
   for (int ich=0;ich<maxChannels+1;ich++)
     {
  
-      std::stringstream src;
-      src<<sr.str()<<"vth"<<ich;
-      TH1* hvth=rh()->GetTH1(src.str());
-      if (hvth==NULL)
-	{
-	 
-	  hvth=rh()->BookTH1(src.str(),900,0.,900.);
-	  printf("Booking %s \n",src.str().c_str());
-	}
       bool found=false;
       double lastf=0;
+      std::stringstream src;
+      src<<sr.str()<<"vth"<<ich;
+
       for (std::vector<lydaq::TdcChannel>::iterator x=vChannel.begin();x!=vChannel.end();x++)
 	{
 	  if (x->feb()!=mezId) continue;
 	  if (x->channel()==ich) {
+
+	    TH1* hvth=rh()->GetTH1(src.str());
+	    if (hvth==NULL)
+	      {
+		
+		hvth=rh()->BookTH1(src.str(),900,0.,900.);
+		printf("Booking %s \n",src.str().c_str());
+	      }
+
 	    printf("Found %d  %d \n",x->channel(),vth);
 	    double dt=x->tdcTime()-lastf;
 	    lastf=x->tdcTime();
@@ -1630,13 +1633,6 @@ void lmana::TdcAnalyzer::scurveAnalysis(uint32_t mezId,std::vector<lydaq::TdcCha
       srd<<sr.str()<<"vthd"<<ich;
       TH1* hvthd=rh()->GetTH1(srd.str());
 
-      if (hvthc==NULL)
-	{
-	 
-	  hvthc=rh()->BookTH1(src.str(),900,0.,900.);
-	  hvthd=rh()->BookTH1(srd.str(),900,0.,900.);
-	  printf("Booking %s \n",src.str().c_str());
-	}
       bool found=false;
       double lastf=0;
       for (std::vector<lydaq::TdcChannel>::iterator x=vChannel.begin();x!=vChannel.end();x++)
@@ -1646,14 +1642,34 @@ void lmana::TdcAnalyzer::scurveAnalysis(uint32_t mezId,std::vector<lydaq::TdcCha
 	  if (x->tdcTime()>maxt) maxt=x->tdcTime();
 	  if (x->channel()==ich) {
 
+
+
 	    //printf("%d \n",x->channel());
 	    double dt=x->tdcTime()-lastf;
 	    lastf=x->tdcTime();
-	    if (x->falling()) 
-	      hvthd->Fill(vth*1.);
-	    else
-	      hvthc->Fill(vth*1.);
+	    if (x->falling())
+	      {
+		if (hvthd==NULL)
+		  {
+		    
+		    hvthd=rh()->BookTH1(srd.str(),900,0.,900.);
 
+		  }
+
+	      hvthd->Fill(vth*1.);
+	      }
+	    else
+	      {
+		if (hvthc==NULL)
+		  {
+		
+		    hvthc=rh()->BookTH1(src.str(),900,0.,900.);
+		
+		    printf("Booking %s \n",src.str().c_str());
+		  }
+
+	      hvthc->Fill(vth*1.);
+	      }
 	  }
 	}
     }

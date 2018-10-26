@@ -18,6 +18,7 @@ INCLUDES=['.','./include',"/usr/include","/usr/local/include","/usr/X11R6/includ
 
 #MYSQL and sqlite
 INCLUDES.append("/opt/zdaq/include")
+INCLUDES.append("/opt/lydaq/analysis/shmwriter/include")
 INCLUDES.append("/opt/lydaq/drivers/common/include")
 INCLUDES.append("/usr/include/libxml2")
 #python
@@ -40,7 +41,7 @@ ROOT_LIBS.append('XMLIO')
 ROOT_LIBPATH=[lib[2:] for lib in filter(lambda x: (x[:2]=="-L"), commands.getoutput("$ROOTSYS/bin/root-config --libs  ").split(" "))]
 # Summary
 
-LIBRARIES=ROOT_LIBS+['pthread','jsoncpp','zdaq','log4cxx']
+LIBRARIES=ROOT_LIBS+['pthread','jsoncpp','zdaq','log4cxx','lydaq_pluggins_shmwriter','lydaq_analysis_sdhcal','Gui']
 
 
 

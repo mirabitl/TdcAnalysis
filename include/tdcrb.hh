@@ -42,6 +42,11 @@ public:
   void clearDataSet(){_files.clear();}
   void findDataSet(std::string dir,uint32_t run);
   void stop(){_started=false;}
+  void processRawEvent(uint64_t idx);
+  void monitor();
+  void pull(std::string name,zdaq::buffer* buf,std::string sourcedir);
+  uint32_t numberOfDataSource();
+
 private:
   std::vector<std::pair<uint32_t,std::string> > _files;
   uint64_t _bxId,_bxId0;
@@ -63,6 +68,7 @@ private:
   uint32_t _runType,_dacSet,_vthSet,_mezzanine,_difId;
   
   std::map<uint32_t,std::vector<lydaq::TdcChannel> > _mezMap;
+  std::map<uint64_t,std::vector<zdaq::buffer*> > _eventMap;
 
 };
 #endif

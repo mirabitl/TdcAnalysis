@@ -65,6 +65,11 @@ void RbServer::processRun()
   LOG4CXX_INFO(_logMDCC,__PRETTY_FUNCTION__<<" Calling read "<<_run);
   _bs->Read();
 }
+void RbServer::monitorRun()
+{
+  LOG4CXX_INFO(_logMDCC,__PRETTY_FUNCTION__<<" Calling read "<<_run);
+  _bs->monitor();
+}
 
 void RbServer::stop(zdaq::fsmmessage* m)
 {
@@ -102,6 +107,40 @@ void RbServer::process(zdaq::fsmmessage* m)
   return;
 
 }
+
+void RbServer::startMonitor(zdaq::fsmmessage* m)
+{
+  LOG4CXX_INFO(_logMDCC,__PRETTY_FUNCTION__<<" CMD: "<<m->command());
+  if (_bs==NULL)
+    {
+       LOG4CXX_ERROR(_logMDCC,__PRETTY_FUNCTION__<<"Please open Configure first");
+       return;
+    }
+  if (m->content().isMember("run"))
+    { 
+      _run=m->content()["run"].asUInt();
+
+    }
+  else
+    {
+    LOG4CXX_ERROR(_logMDCC,__PRETTY_FUNCTION__<<"Please provide a run number");
+    return;
+    }
+  LOG4CXX_ERROR(_logMDCC,__PRETTY_FUNCTION__<<"RUn"<<_run);
+  //  _bs->clearDataSet();
+  //_bs->findDataSet(_directory,_run);
+  _bs->setRun(_run);
+  LOG4CXX_ERROR(_logMDCC,__PRETTY_FUNCTION__<<" launching thread"<<_run);
+  // No launch the process
+  _g_group.create_thread(boost::bind(&RbServer::monitorRun, this));
+  //_g_group.join_all();
+  return;
+
+}
+
+
+
+
 void RbServer::c_status(Mongoose::Request &request, Mongoose::JsonResponse &response)
 {
 
@@ -172,6 +211,7 @@ RbServer::RbServer(std::string name) : zdaq::baseApplication(name),_bs(NULL),_rh
 
   _fsm->addTransition("CONFIGURE","CREATED","CONFIGURED",boost::bind(&RbServer::configure, this,_1));
   _fsm->addTransition("PROCESS","CONFIGURED","RUNNING",boost::bind(&RbServer::process, this,_1));
+  _fsm->addTransition("MONITOR","CONFIGURED","RUNNING",boost::bind(&RbServer::startMonitor, this,_1));
   _fsm->addTransition("STOP","RUNNING","CONFIGURED",boost::bind(&RbServer::stop, this,_1));
   _fsm->addTransition("DESTROY","CONFIGURED","CREATED",boost::bind(&RbServer::destroy, this,_1));
   

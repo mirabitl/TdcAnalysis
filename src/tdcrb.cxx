@@ -26,7 +26,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <getopt.h>
-
+#include "shmwriterProcessor.hh"
 
 
 using namespace zdaq;
@@ -79,6 +79,213 @@ void tdcrb::geometry(std::string name)
   _geo=new jsonGeo(name);
   _analyzer->setGeometry(_geo);
 }
+
+void tdcrb::pull(std::string name,zdaq::buffer* buf,std::string sourcedir)
+{
+  std::stringstream sc,sd;
+  sc.str(std::string());
+  sd.str(std::string());
+  sc<<sourcedir<<"/closed/"<<name;
+  sd<<sourcedir<<"/"<<name;
+  int fd=::open(sd.str().c_str(),O_RDONLY);
+  if (fd<0) 
+    {
+      printf("%s  Cannot open file %s : return code %d \n",__PRETTY_FUNCTION__,sd.str().c_str(),fd);
+      //LOG4CXX_FATAL(_logShm," Cannot open shm file "<<fname);
+      return ;
+    }
+  int size_buf=::read(fd,buf->ptr(),0x20000);
+  buf->setPayloadSize(size_buf-(3*sizeof(uint32_t)+sizeof(uint64_t)));
+  //printf("%d bytes read %x %d \n",size_buf,cbuf[0],cbuf[1]);
+  ::close(fd);
+  ::unlink(sc.str().c_str());
+  ::unlink(sd.str().c_str());
+}
+
+uint32_t tdcrb::numberOfDataSource() {return 1;}
+
+
+
+void tdcrb::processRawEvent(uint64_t idx)
+{
+   std::map<uint64_t,std::vector<zdaq::buffer*> >::iterator it=_eventMap.find(idx);
+  if (it->second.size()!=numberOfDataSource()) return;
+  if (it->first==0) return; // do not process event 0
+  uint64_t _eventChannel[4096*8];
+  std::vector<lydaq::TdcChannel> _vAll;
+  _vAll.clear();
+  uint32_t _eventChannels=0;
+  _idx=0;
+  //std::cout<<"full  event find " <<it->first<<std::endl;
+  for (auto ib=it->second.begin();ib!=it->second.end();ib++)
+    {
+      zdaq::buffer* b=(*ib);
+      //b->setPayloadSize(bsize-(3*sizeof(uint32_t)+sizeof(uint64_t)));
+      b->uncompress();
+      memcpy(&_buf[_idx], b->payload(),b->payloadSize());
+      _idx+=b->payloadSize();
+      b->setDetectorId(b->detectorId()&0xFF);
+      _event=b->eventId();
+      INFO_PRINTF("\t \t det %d source %d event %d bx %x payload %d size %d\n",b->detectorId()&0XFF,b->dataSourceId(),b->eventId(),b->bxId(),b->payloadSize(),_idx);
+      _bxId=b->bxId();
+      if (_bxId0==0) _bxId0=_bxId;
+      uint32_t _detId=b->detectorId()&0xFF;
+      INFO_PRINTF("DUMP DETID %d \n",_detId);
+      uint8_t* cc=(uint8_t*) b->payload();
+	      
+      // for (int ib=0;ib<b->payloadSize();ib++)
+      //  	{
+      //  	  printf(" %.2x ",cc[ib]);
+      // 	  if (ib%16==15 &&ib>0) printf("\n");
+      // 	}
+      
+
+	      
+      //getchar();
+      if (_detId==255)
+	{
+	  uint32_t* buf=(uint32_t*) b->payload();
+	  printf("NEW RUN %d \n",_event);
+	  //_run=_event;
+
+
+	  for (int i=0;i<b->payloadSize()/4;i++)
+	    {
+	      printf("%d ",buf[i]);
+	    }
+	  _difId=b->dataSourceId();
+	  _runType=buf[0];
+	  if (_runType==1)
+	    _dacSet=buf[1];
+	  if (_runType==2)
+	    _vthSet=buf[1];
+	  printf("\n Run type %d DAC set %d VTH set %d \n",_runType,_dacSet,_vthSet);
+	  //getchar();
+	  _analyzer->jEvent()["runtype"]=_runType;
+
+	}
+      if (_detId==130)
+	{
+	  uint32_t* ibuf=(uint32_t*) b->payload();
+	  
+	  for (int i=0;i<7;i++)
+	    {
+	      printf("%d ",ibuf[i]);
+	    }
+	  uint32_t nch=ibuf[6];
+	  printf("\n channels -> %d \n",nch);
+	  _mezzanine=ibuf[4];
+	  _difId=(ibuf[5]>>24)&0xFF;
+	  _gtc=ibuf[1];
+	  
+	  INFO_PRINTF("\t \t \t %d %d GTC %d NCH %d \n",_mezzanine,_difId,_gtc,nch);
+
+	  std::vector<lydaq::TdcChannel> vch;
+	  vch.clear();
+	  _analyzer->setInfo(_difId,_run,_event,_gtc,_bxId,TDC_TRIGGER_CHANNEL,_vthSet,_dacSet);
+	  if (ibuf[6]>=0)
+	    {
+	      for (uint32_t i=1;i<255;i++)
+		if (_mezMap[i].size()>0) _mezMap[i].clear();
+	      uint8_t* cbuf=( uint8_t*)&ibuf[7];
+	      bool tfound=false;
+	      for (int i=0;i<nch;i++)
+		{
+#undef DUMPCHANS
+#ifdef DUMPCHANS			  
+		  for (int j=0;j<6;j++)
+		    INFO_PRINTF("\t %.2x ",cbuf[i*6+j]);
+		  INFO_PRINTF("\n");
+#endif
+		  memcpy(&_eventChannel[_eventChannels],&cbuf[6*i],6*sizeof(uint8_t));
+		  lydaq::TdcChannel c(&cbuf[6*i],_difId&0xFF);
+		  lydaq::TdcChannel ca((uint8_t*) &_eventChannel[_eventChannels],_difId&0xFF);
+			  //c.dump();
+			 
+		  _eventChannels++;
+		  //_mezMap[_difId].push_back(c);
+		  vch.push_back(c);
+		  _vAll.push_back(ca);
+		  
+		}
+#ifdef DUMPCHANS
+	      if (nch>0) getchar();
+#endif
+	      // if (nch>0)
+	      // getchar();
+	      //if (!tfound && _runType==0 && _event%10000!=0 ) continue;
+	      //if (_runType==1) _analyzer->pedestalAnalysis(_difId,vch);
+	      //if (_runType==2) _analyzer->scurveAnalysis(_difId,vch);
+	      //if (_runType==0) _analyzer->normalAnalysis(_difId,vch);
+	    }
+
+	  if (_event%100==0)
+	    DEBUG_PRINTF("Time Acquisition => \t %lu %lu %10.3f \n",_bxId0,_bxId,(_bxId-_bxId0)*2E-7);
+		  
+		
+	  if (_gtc%100==0)
+	    DEBUG_PRINTF("\t \t \t ========>Oops Type %d Mez %d DIF %d %x  channels %d Event %d %d\n",_runType,_mezzanine,_difId,ibuf[5],difFound[_difId],_gtc,tbcid);
+
+		
+	}
+
+     
+    }
+  //_analyzer->fullAnalysis(_vAll);
+  //if (_runType==0) _analyzer->multiChambers(_vAll);
+  _analyzer->processChannels(_vAll);
+  //if (_analyzer->trigger())
+  //INFO_PRINTF("EVENT SUMMARY \t \t ========>Oops %d total %d, %d, triggers %d %f \n",_event,_eventChannels,_vAll.size(),_analyzer->triggers(),_analyzer->acquisitionTime());
+  INFO_PRINTF("EVENT SUMMARY \t \t ========>Oops %d total %d, %d, triggers \n",_event,_eventChannels,_vAll.size());
+	   
+  // remove completed events
+  for (std::vector<zdaq::buffer*>::iterator iv=it->second.begin();iv!=it->second.end();iv++) delete (*iv);
+  it->second.clear();
+  _eventMap.erase(it);
+}
+void tdcrb::monitor()
+{
+  _started=true;
+  _geo->fillFebs(_run);
+  _geo->fillAlign(_run);
+
+  while (_started)
+    {
+      std::vector<std::string> vnames;
+      shmwriterProcessor::ls("/dev/shm/monitor",vnames);
+      for (auto x:vnames)
+	{std::cout<<x<<std::endl;
+	  //EUDAQ_WARN("Find file "+x);
+ //continue;
+	  zdaq::buffer* b=new zdaq::buffer(0x80000);
+	  this->pull(x,b,"/dev/shm/monitor");
+	  uint64_t idx_storage=b->eventId(); // usually abcid
+	  std::map<uint64_t,std::vector<zdaq::buffer*> >::iterator it_gtc=_eventMap.find(idx_storage);
+	  if (it_gtc!=_eventMap.end())
+	    it_gtc->second.push_back(b);
+	  else
+	    {
+	      std::vector<zdaq::buffer*> v;
+	      v.clear();
+	      v.push_back(b);
+          
+	      std::pair<uint64_t,std::vector<zdaq::buffer*> > p(idx_storage,v);
+	      _eventMap.insert(p);
+	      it_gtc=_eventMap.find(idx_storage);
+	    }
+	  if (it_gtc->second.size()==this->numberOfDataSource())
+	    {
+	      if (it_gtc->first%100==0)
+		printf("GTC %lu %lu  %d\n",it_gtc->first,it_gtc->second.size(),this->numberOfDataSource());
+	      this->processRawEvent(idx_storage);
+	    }
+	}
+      usleep(50000);	
+  
+    }
+  
+}
+
 void tdcrb::open(std::string filename)
 {
   if (_geo==NULL)
