@@ -259,6 +259,28 @@ void tdcrb::monitor()
  //continue;
 	  zdaq::buffer* b=new zdaq::buffer(0x80000);
 	  this->pull(x,b,"/dev/shm/monitor");
+	  if (b->detectorId()==255)
+	    {
+	      uint32_t* buf=(uint32_t*) b->payload();
+	      printf("NEW RUN %d \n",b->dataSourceId());
+	      _run=b->dataSourceId();
+
+
+	      for (int i=0;i<b->payloadSize()/4;i++)
+		{
+		  printf("%d ",buf[i]);
+		}
+
+	      _runType=buf[0];
+	      if (_runType==1)
+		_dacSet=buf[1];
+	      if (_runType==2)
+		_vthSet=buf[1];
+	      printf("\n Run type %d DAC set %d VTH set %d \n",_runType,_dacSet,_vthSet);
+	  //getchar();
+	      _analyzer->jEvent()["runtype"]=_runType;
+	      continue;
+	    }
 	  uint64_t idx_storage=b->eventId(); // usually abcid
 	  std::map<uint64_t,std::vector<zdaq::buffer*> >::iterator it_gtc=_eventMap.find(idx_storage);
 	  if (it_gtc!=_eventMap.end())
