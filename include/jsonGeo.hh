@@ -34,7 +34,7 @@ public:
   uint32_t id;
   uint32_t chamber;
   uint32_t tdc2strip[25];
-  uint32_t  tdc2side[25];
+  uint32_t  tdc2side[49];
   uint32_t stripShift;
   float polarity;
   float triggerMin,triggerMax,triggerMean,dt[2];

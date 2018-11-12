@@ -189,6 +189,7 @@ namespace lmana
     void fullAnalysis(std::vector<lydaq::TdcChannel>& vChannel);
     void multiChambers(std::vector<lydaq::TdcChannel>& vChannel);
     bool noiseStudy(std::vector<lydaq::TdcChannel>& vChannel,std::string stubdir="InTime");
+    void rawAnalysis(std::vector<lydaq::TdcChannel>& vChannel,std::string stubdir="Raw");
     void drawHits(int nch);
     virtual void end();
     virtual void setInfo(uint32_t dif,uint32_t run,uint32_t ev,uint32_t gt,uint64_t ab,uint16_t trgchan,uint32_t vth,uint32_t dac);

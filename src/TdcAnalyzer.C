@@ -236,7 +236,7 @@ bool lmana::TdcAnalyzer::noiseStudy(std::vector<lydaq::TdcChannel>& vChannel,std
 	      
 	      hdt=rh()->BookTH1(src.str(),50,-25,25);
 	      hdtr=rh()->BookTH2(srcp.str()+"DeltaTrigger",4000,-2000.,1500.,32,0.,32.);
-	      hdtrp=rh()->BookTH1(srcp.str()+"DTall",2000,-1000.,0.);
+	      hdtrp=rh()->BookTH1(srcp.str()+"DTall",20000,-1000.,0.);
 	      //hfi=rh()->BookTH1(srcp.str()+"Fine",100,-2.5,2.5);
 
 	    }
@@ -551,9 +551,45 @@ bool lmana::TdcAnalyzer::noiseStudy(std::vector<lydaq::TdcChannel>& vChannel,std
     }
   return false;
 }
+void lmana::TdcAnalyzer::rawAnalysis(std::vector<lydaq::TdcChannel>& vChannel,std::string subdir)
+{
 
+  for (auto x=vChannel.begin();x!=vChannel.end();x++)
+	{
+	  //std::cout<<"================================> bit set \n";
+	  std::stringstream sraw;
+	  sraw<<"/run"<<_run<<"/"<<subdir<<"/Feb"<<x->feb()<<"/";
+	  TH1* hchan=rh()->GetTH1(sraw.str()+"Channels");
+	  if (hchan==NULL)
+	    {
+	      hchan=rh()->BookTH1(sraw.str()+"Channels",96,0.,96.);
+	    }
+	  hchan->Fill(x->channel());
+	  
+	  // printf("%f %f \n",dtmin,dtmax);
+	  // getchar();
+	  // Book and fill time to trigger
+	  std::stringstream src;
+	  int side=0;
+	  if (x->falling()) side=1;
+	  src<<"/run"<<_run<<"/"<<subdir<<"/FEB/"<<x->feb()<<"/Fall"<<side<<"/channel"<<(int) x->channel();
+		  
+	  TH1* hdt=rh()->GetTH1(src.str());
+	  if (hdt==NULL)
+	    {
+	      
+	      hdt=rh()->BookTH1(src.str(),5000,0.,5000.);
+
+	    }
+	  hdt->Fill(x->tdcTime());
+	}
+
+  
+}
 void lmana::TdcAnalyzer::multiChambers(std::vector<lydaq::TdcChannel>& vChannel)
 {
+  this->rawAnalysis(vChannel,"Raw");
+  return;
   _noise=true;
   this->noiseStudy(vChannel,"OffTime");
   _noise=false;
@@ -1576,7 +1612,7 @@ void lmana::TdcAnalyzer::scurveAnalysis(uint32_t mezId,std::vector<lydaq::TdcCha
 {
 
   //if (gtc[mezId-1]
-  uint32_t maxChannels=64;
+  uint32_t maxChannels=96;
   std::cout<<"Mezzanine "<<mezId<<"Event "<<_event<<" GTC"<<_gtc<<" hits"<<vChannel.size()<<" Vth set "<<_vthSet<<" Trigger channel "<<maxChannels<<std::endl;
 
   // Analyze

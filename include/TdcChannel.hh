@@ -77,7 +77,11 @@ private:
 public:
   TdcChannel() :_fr(NULL),_used(false) {;}
   TdcChannel(uint8_t*  b,uint8_t feb=0) :_fr(b),_used(false),_feb(feb) {;}
-  inline uint8_t channel() {return  (_fr[0]&0X3F);}
+  inline uint8_t channel() {
+    if (falling())
+      return (_fr[0]-0x80)-48;
+    else
+      return _fr[0];}
   inline bool falling() {return  ((_fr[0]&0X80)>>7)==1;}
   inline uint16_t pr() {return  TDC2PR[channel()];}
   inline uint16_t lemo() {return  strip()+12*side();}

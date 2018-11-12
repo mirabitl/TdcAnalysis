@@ -555,7 +555,13 @@ def calceff(run,tdc,strip=71):
 
   val = raw_input()
 
-def fitped(run,tdc,vthmin,vthmax,old=defped):
+def fitped(run,tdc,vthmin,vthmax,asic=1,old=defped):
+  fi=0
+  la=24
+  if (asic==2):
+      fi=24
+      la=48
+
   ped=[]
   for i in range(32):
     ped.append(0)
@@ -578,9 +584,11 @@ def fitped(run,tdc,vthmin,vthmax,old=defped):
   hpnoise=TH1F("hpnoise","Summary noise %d %d " %(run,tdc),32,0.,32.);
   scfit=TF1("scfit","[0]*TMath::Erfc((x-[1])/[2])",vthmin+1,vthmax);
   
-  for ip in range(1,25):
+  for ip in range(fi,la):
       #c2.cd()
-      hs=f82.Get("/run%d/TDC%d/vthd%d" % (run,tdc,ip));
+      hs=f82.Get("/run%d/TDC%d/vth%d" % (run,tdc,ip));
+      if (hs==None):
+          continue;
       if (hs.GetEntries()==0):
         continue
       nmax=0
@@ -609,14 +617,16 @@ def fitped(run,tdc,vthmin,vthmax,old=defped):
       else:
         hs.Draw("SAME")
   c1.Update()
-  c1.SaveAs("Run%d_AllStrip%d.root" % (run,tdc));
-  c1.SaveAs("Run%d_AllStrip%d.png" % (run,tdc));
+  c1.SaveAs("Run%d_AllStrip%d_%d.root" % (run,tdc,asic));
+  c1.SaveAs("Run%d_AllStrip%d_%d.png" % (run,tdc,asic));
 
   val = raw_input()
       
-  for ip in range(0,25):
+  for ip in range(fi,la):
       #c2.cd()
-      hs=f82.Get("/run%d/TDC%d/vthd%d" % (run,tdc,ip));
+      hs=f82.Get("/run%d/TDC%d/vthc%d" % (run,tdc,ip));
+      if (hs==None):
+          continue;
       if (hs.GetEntries()==0):
         continue
       hder=TH1F("hder%d" % ip,"derivative",900,0.,900.)	
@@ -651,7 +661,7 @@ def fitped(run,tdc,vthmin,vthmax,old=defped):
 
       hder.Draw()
       c1.Update()
-      #val = raw_input()
+      val = raw_input()
 
       print "heho ",rped,hder.GetMean()
       rped=hder.GetMean()
@@ -671,11 +681,19 @@ def fitped(run,tdc,vthmin,vthmax,old=defped):
       firmwaret=[31,29,27,25,23,22,21,20,19,18,17,16,15,14,13,12,11,10,9,8,7,6]
       #firmwaco=[31,29,27,25,23,22,21,20,19,18,17,16,15,14,13,12,11,10,9,8,7,6,5,4]
       firmware2=[24,5,3,1,0,2,4,6,7,8,9,10,26,28,30,31,29,27,25,23,22,21,20,19]
-      firmware=firmware2
-      if (ip>0):
-        ipr=firmware[ip-1]
+      
+      firmwareta1=[21,20,23,22,25,24,27,26,29,28,31,30,1,0,3,2,5,4,7,6,10,8,15,12]
+      firmwareta2=[21,20,23,22,25,24,27,26,29,28,31,30,1,0,3,2,5,4,7,6,10,8,14,12]
+      if (asic==1):
+          firmware=firmwareta1
       else:
-        ipr=0
+          firmware=firmwareta2
+      #if (ip>0):
+      #  ipr=firmware[ip-fi-1]
+      #else:
+      #  ipr=0
+      print ip,fi,ip-fi
+      ipr=firmware[ip-fi]
       ped[ipr]=rped
       print ip,ipr,ped[ipr]
       hmean.Fill(rped)
@@ -722,7 +740,7 @@ def fitped(run,tdc,vthmin,vthmax,old=defped):
       continue;
     old[i]=0
     dac[i]=int(round(old[i]+(med-ped[i])*1./2.97))
-  print "cor%d=" % tdc,dac
+  print "cor%d_%d=" % (tdc,asic),dac
   return dac
 
 def calcped(oldpr,ped,median):
