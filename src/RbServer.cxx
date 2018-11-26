@@ -131,6 +131,8 @@ void RbServer::startMonitor(zdaq::fsmmessage* m)
   //_bs->findDataSet(_directory,_run);
   _bs->setRun(_run);
   LOG4CXX_ERROR(_logMDCC,__PRETTY_FUNCTION__<<" launching thread"<<_run);
+  // Clean directory
+    _bs->clearShm();
   // No launch the process
   _g_group.create_thread(boost::bind(&RbServer::monitorRun, this));
   //_g_group.join_all();

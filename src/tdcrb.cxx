@@ -243,6 +243,22 @@ void tdcrb::processRawEvent(uint64_t idx)
   it->second.clear();
   _eventMap.erase(it);
 }
+void tdcrb::clearShm()
+{
+  std::vector<std::string> vnames;
+  shmwriterProcessor::ls("/dev/shm/monitor",vnames);
+  std::stringstream sc,sd;
+  sc.str(std::string());
+  sd.str(std::string());
+  for (auto name:vnames)
+    {
+      sc<<"/dev/shm/monitor/closed/"<<name;
+      sd<<"/dev/shm/monitor/"<<name;
+      ::unlink(sc.str().c_str());
+      ::unlink(sd.str().c_str());
+
+    }
+}
 void tdcrb::monitor()
 {
   _started=true;

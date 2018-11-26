@@ -43,6 +43,7 @@ public:
   void findDataSet(std::string dir,uint32_t run);
   void stop(){_started=false;}
   void processRawEvent(uint64_t idx);
+  void clearShm();
   void monitor();
   void pull(std::string name,zdaq::buffer* buf,std::string sourcedir);
   uint32_t numberOfDataSource();
