@@ -555,12 +555,12 @@ def calceff(run,tdc,strip=71):
 
   val = raw_input()
 
-def fitped(run,tdc,vthmin,vthmax,asic=1,old=defped):
+def fitped(run,tdc,vthmin,vthmax,asic=1,ncha=24,rising=True,old=defped):
   fi=0
-  la=24
+  la=ncha
   if (asic==2):
-      fi=24
-      la=48
+      fi=ncha
+      la=2*ncha
 
   ped=[]
   for i in range(32):
@@ -586,7 +586,11 @@ def fitped(run,tdc,vthmin,vthmax,asic=1,old=defped):
   
   for ip in range(fi,la):
       #c2.cd()
-      hs=f82.Get("/run%d/TDC%d/vthc%d" % (run,tdc,ip));
+      hs=None
+      if (rising):
+          hs=f82.Get("/run%d/TDC%d/vthc%d" % (run,tdc,ip));
+      else:
+          hs=f82.Get("/run%d/TDC%d/vthd%d" % (run,tdc,ip+2*ncha));
       if (hs==None):
           continue;
       if (hs.GetEntries()==0):
@@ -624,7 +628,11 @@ def fitped(run,tdc,vthmin,vthmax,asic=1,old=defped):
       
   for ip in range(fi,la):
       #c2.cd()
-      hs=f82.Get("/run%d/TDC%d/vthc%d" % (run,tdc,ip));
+      hs=None
+      if (rising):
+          hs=f82.Get("/run%d/TDC%d/vthc%d" % (run,tdc,ip));
+      else:
+          hs=f82.Get("/run%d/TDC%d/vthd%d" % (run,tdc,ip+2*ncha));
       if (hs==None):
           continue;
       if (hs.GetEntries()==0):

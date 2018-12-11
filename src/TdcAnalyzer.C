@@ -554,15 +554,26 @@ bool lmana::TdcAnalyzer::noiseStudy(std::vector<lydaq::TdcChannel>& vChannel,std
 void lmana::TdcAnalyzer::rawAnalysis(std::vector<lydaq::TdcChannel>& vChannel,std::string subdir)
 {
 
+  float maxt=0.;
+  std::stringstream sraw0;
+  sraw0<<"/run"<<_run<<"/"<<subdir<<"/";
+  TH1* hmax=rh()->GetTH1(sraw0.str()+"MaxTime");
+  if (hmax==NULL)
+    {
+      hmax=rh()->BookTH1(sraw0.str()+"MaxTime",100000,0.,0.5);
+    }
+
   for (auto x=vChannel.begin();x!=vChannel.end();x++)
 	{
 	  //std::cout<<"================================> bit set \n";
 	  std::stringstream sraw;
 	  sraw<<"/run"<<_run<<"/"<<subdir<<"/Feb"<<x->feb()<<"/";
 	  TH1* hchan=rh()->GetTH1(sraw.str()+"Channels");
+
 	  if (hchan==NULL)
 	    {
 	      hchan=rh()->BookTH1(sraw.str()+"Channels",96,0.,96.);
+
 	    }
 	  hchan->Fill(x->channel());
 	  
@@ -578,12 +589,14 @@ void lmana::TdcAnalyzer::rawAnalysis(std::vector<lydaq::TdcChannel>& vChannel,st
 	  if (hdt==NULL)
 	    {
 	      
-	      hdt=rh()->BookTH1(src.str(),5000,0.,5000.);
+	      hdt=rh()->BookTH1(src.str(),200000,0.,200000.);
 
 	    }
+	  if (x->tdcTime()*1E-9>maxt)
+	    maxt=x->tdcTime()*1E-9;
 	  hdt->Fill(x->tdcTime());
 	}
-
+  hmax->Fill(maxt);
   
 }
 void lmana::TdcAnalyzer::multiChambers(std::vector<lydaq::TdcChannel>& vChannel)
@@ -1668,9 +1681,17 @@ void lmana::TdcAnalyzer::scurveAnalysis(uint32_t mezId,std::vector<lydaq::TdcCha
       std::stringstream srd;
       srd<<sr.str()<<"vthd"<<ich;
       TH1* hvthd=rh()->GetTH1(srd.str());
+      std::stringstream srn;
+      srn<<sr.str()<<"nc"<<ich;
+      TH1* hnc=rh()->GetTH1(srn.str());
+
+    
 
       bool found=false;
       double lastf=0;
+      std::vector<uint64_t> seen;
+      seen.clear();
+      uint32_t nc=0;
       for (std::vector<lydaq::TdcChannel>::iterator x=vChannel.begin();x!=vChannel.end();x++)
 	{
 	  // x->dump();
@@ -1679,6 +1700,17 @@ void lmana::TdcAnalyzer::scurveAnalysis(uint32_t mezId,std::vector<lydaq::TdcCha
 	  if (x->channel()==ich) {
 
 
+	    uint64_t ltt=(x->coarse()<<32)|(x->fine());
+	    nc++;
+	    if (std::find(seen.begin(), seen.end(), ltt) != seen.end())
+	      continue;
+	    seen.push_back(ltt);
+	    if (hnc==NULL)
+	      {
+		
+		hnc=rh()->BookTH1(srn.str(),32,-0.1,31.9);
+		
+	      }
 
 	    //printf("%d \n",x->channel());
 	    double dt=x->tdcTime()-lastf;
@@ -1708,6 +1740,8 @@ void lmana::TdcAnalyzer::scurveAnalysis(uint32_t mezId,std::vector<lydaq::TdcCha
 	      }
 	  }
 	}
+      if (hnc!=NULL)
+	hnc->Fill(nc-seen.size()*1.0);
     }
   hti->Fill(maxt);
   printf("MAXTIME %f %f \n",maxt,maxt*2.5E-9);

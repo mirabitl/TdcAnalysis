@@ -70,7 +70,7 @@ private:
 };
 
   #endif
-
+#define LASTCHAN 24
   #ifdef FEBCMS
   class TdcChannel
 {
@@ -79,7 +79,7 @@ public:
   TdcChannel(uint8_t*  b,uint8_t feb=0) :_fr(b),_used(false),_feb(feb) {;}
   inline uint8_t channel() {
     if (falling())
-      return (_fr[0]-0x80)-48;
+      return (_fr[0]-0x80)-LASTCHAN;
     else
       return _fr[0];}
   inline bool falling() {return  ((_fr[0]&0X80)>>7)==1;}
