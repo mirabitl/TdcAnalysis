@@ -70,7 +70,7 @@ private:
 };
 
   #endif
-#define LASTCHAN 24
+#define LASTCHAN 32
   #ifdef FEBCMS
   class TdcChannel
 {

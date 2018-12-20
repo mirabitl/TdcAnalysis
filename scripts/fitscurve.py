@@ -580,8 +580,8 @@ def fitped(run,tdc,vthmin,vthmax,asic=1,ncha=24,rising=True,old=defped):
   gStyle.SetOptFit();
   hmean=TH1F("hmean","Summary %d %d " %(run,tdc),vthmax-vthmin+1,vthmin,vthmax)
   hnoise=TH1F("hnoise","Summary noise %d %d " %(run,tdc),100,0.,30.)
-  hpmean=TH1F("hpmean","Summary %d %d " %(run,tdc),32,0.,32.);
-  hpnoise=TH1F("hpnoise","Summary noise %d %d " %(run,tdc),32,0.,32.);
+  hpmean=TH1F("hpmean","Summary %d %d " %(run,tdc),2*ncha,0.,2.*ncha);
+  hpnoise=TH1F("hpnoise","Summary noise %d %d " %(run,tdc),ncha,0.,2.*ncha);
   scfit=TF1("scfit","[0]*TMath::Erfc((x-[1])/[2])",vthmin+1,vthmax);
   
   for ip in range(fi,la):
@@ -595,6 +595,7 @@ def fitped(run,tdc,vthmin,vthmax,asic=1,ncha=24,rising=True,old=defped):
           continue;
       if (hs.GetEntries()==0):
         continue
+      hs.Scale(1./2700.);
       nmax=0
       for i in range(1,hs.GetNbinsX()):
         if (hs.GetBinContent(i)==0):
@@ -637,6 +638,7 @@ def fitped(run,tdc,vthmin,vthmax,asic=1,ncha=24,rising=True,old=defped):
           continue;
       if (hs.GetEntries()==0):
         continue
+      #hs.Scale(1./2700.);
       hder=TH1F("hder%d" % ip,"derivative",900,0.,900.)	
       #hs.Rebin(2)
       nmax=0

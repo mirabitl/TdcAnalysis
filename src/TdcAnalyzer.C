@@ -589,7 +589,7 @@ void lmana::TdcAnalyzer::rawAnalysis(std::vector<lydaq::TdcChannel>& vChannel,st
 	  if (hdt==NULL)
 	    {
 	      
-	      hdt=rh()->BookTH1(src.str(),200000,0.,200000.);
+	      hdt=rh()->BookTH1(src.str(),70000,0.,2000.);
 
 	    }
 	  if (x->tdcTime()*1E-9>maxt)

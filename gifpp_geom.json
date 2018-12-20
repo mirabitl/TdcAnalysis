@@ -1,7 +1,7 @@
 {
     "general":
     {
-	"directory":"/home/acqilc/TdcAnalysis/Histos/InTime",
+	"directory":"./Histos/InTime",
 	"noise":0,
 	"display":0
     },
