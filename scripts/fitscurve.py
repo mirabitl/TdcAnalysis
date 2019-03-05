@@ -581,7 +581,7 @@ def fitped(run,tdc,vthmin,vthmax,asic=1,ncha=24,rising=True,old=defped):
   hmean=TH1F("hmean","Summary %d %d " %(run,tdc),vthmax-vthmin+1,vthmin,vthmax)
   hnoise=TH1F("hnoise","Summary noise %d %d " %(run,tdc),100,0.,30.)
   hpmean=TH1F("hpmean","Summary %d %d " %(run,tdc),2*ncha,0.,2.*ncha);
-  hpnoise=TH1F("hpnoise","Summary noise %d %d " %(run,tdc),ncha,0.,2.*ncha);
+  hpnoise=TH1F("hpnoise","Summary noise %d %d " %(run,tdc),2*ncha,0.,2.*ncha);
   scfit=TF1("scfit","[0]*TMath::Erfc((x-[1])/[2])",vthmin+1,vthmax);
   
   for ip in range(fi,la):
@@ -590,11 +590,12 @@ def fitped(run,tdc,vthmin,vthmax,asic=1,ncha=24,rising=True,old=defped):
       if (rising):
           hs=f82.Get("/run%d/TDC%d/vthc%d" % (run,tdc,ip));
       else:
-          hs=f82.Get("/run%d/TDC%d/vthd%d" % (run,tdc,ip+2*ncha));
+          hs=f82.Get("/run%d/TDC%d/vthd%d" % (run,tdc,ip));
       if (hs==None):
           continue;
       if (hs.GetEntries()==0):
         continue
+      print ip,fi,la," found"
       hs.Scale(1./2700.);
       nmax=0
       for i in range(1,hs.GetNbinsX()):
@@ -633,7 +634,7 @@ def fitped(run,tdc,vthmin,vthmax,asic=1,ncha=24,rising=True,old=defped):
       if (rising):
           hs=f82.Get("/run%d/TDC%d/vthc%d" % (run,tdc,ip));
       else:
-          hs=f82.Get("/run%d/TDC%d/vthd%d" % (run,tdc,ip+2*ncha));
+          hs=f82.Get("/run%d/TDC%d/vthd%d" % (run,tdc,ip));
       if (hs==None):
           continue;
       if (hs.GetEntries()==0):
@@ -705,7 +706,7 @@ def fitped(run,tdc,vthmin,vthmax,asic=1,ncha=24,rising=True,old=defped):
       print ip,fi,ip-fi
       ipr=firmware[ip-fi]
       ped[ipr]=rped
-      print ip,ipr,ped[ipr]
+      print ip,ipr,rped,scfit.GetParameter(2)
       hmean.Fill(rped)
       hnoise.Fill(scfit.GetParameter(2))
       hpmean.SetBinContent(ip+1,rped);
@@ -725,7 +726,11 @@ def fitped(run,tdc,vthmin,vthmax,asic=1,ncha=24,rising=True,old=defped):
   c1.SaveAs("Summary_%d_TDC%d.png" % (run,tdc));
   val = raw_input()
   hnoise.Draw()
+  c1.Update()
+  val = raw_input()
   hpnoise.Draw()
+  c1.Update()
+  val = raw_input()
   c1.Update()
   c1.SaveAs("Summary_Noise_%d_TDC%d.png" % (run,tdc));
 
@@ -742,7 +747,7 @@ def fitped(run,tdc,vthmin,vthmax,asic=1,ncha=24,rising=True,old=defped):
       med=ped[i]
 
   med=med+5
-  med=480
+  med=460
   print "Alignment to :",med
   dac=ped
   for i in range(32):

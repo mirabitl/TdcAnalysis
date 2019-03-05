@@ -563,20 +563,27 @@ void lmana::TdcAnalyzer::rawAnalysis(std::vector<lydaq::TdcChannel>& vChannel,st
       hmax=rh()->BookTH1(sraw0.str()+"MaxTime",100000,0.,0.5);
     }
 
+  uint32_t mask=0;
+
   for (auto x=vChannel.begin();x!=vChannel.end();x++)
 	{
 	  //std::cout<<"================================> bit set \n";
 	  std::stringstream sraw;
 	  sraw<<"/run"<<_run<<"/"<<subdir<<"/Feb"<<x->feb()<<"/";
 	  TH1* hchan=rh()->GetTH1(sraw.str()+"Channels");
-
+	  TH1* heff=rh()->GetTH1(sraw.str()+"EffChannels");
 	  if (hchan==NULL)
 	    {
 	      hchan=rh()->BookTH1(sraw.str()+"Channels",96,0.,96.);
+	      heff=rh()->BookTH1(sraw.str()+"EffChannels",96,0.,96.);
 
 	    }
+	  if (mask==0)
+	    hchan->Fill(64.);
+
 	  hchan->Fill(x->channel());
-	  
+
+	  mask |=(1<<x->channel());
 	  // printf("%f %f \n",dtmin,dtmax);
 	  // getchar();
 	  // Book and fill time to trigger
@@ -589,13 +596,19 @@ void lmana::TdcAnalyzer::rawAnalysis(std::vector<lydaq::TdcChannel>& vChannel,st
 	  if (hdt==NULL)
 	    {
 	      
-	      hdt=rh()->BookTH1(src.str(),70000,0.,2000.);
+	      hdt=rh()->BookTH1(src.str(),350000,0.,10000.);
 
 	    }
 	  if (x->tdcTime()*1E-9>maxt)
 	    maxt=x->tdcTime()*1E-9;
 	  hdt->Fill(x->tdcTime());
+
+	  for (int i=1;i<heff->GetNbinsX();i++)
+	    heff->SetBinContent(i,hchan->GetBinContent(i)/hchan->GetBinContent(65)*100);
 	}
+  //printf(" Mask %x \n",mask);
+  //  if (mask!=0xFF)
+  //  printf(" Problem =================\n");
   hmax->Fill(maxt);
   
 }
