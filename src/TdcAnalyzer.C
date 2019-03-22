@@ -24,8 +24,8 @@ void lmana::TdcAnalyzer::drawHits(int ch)
   if (hpx==NULL)
     {
  
-      hpx =rh()->BookTH2("Return",96,0.1,48.1,256,-15.,15.);
-      hpy =rh()->BookTH2("Coaxial",96,0.1,48.1,256,-15.,15.);
+      hpx =rh()->BookTH2("Return",96,0.1,48.1,256,-35.,35.);
+      hpy =rh()->BookTH2("Coaxial",96,0.1,48.1,256,-35.,35.);
       hpx->SetMarkerStyle(25);
       hpx->SetMarkerColor(kRed);
       hpy->SetMarkerStyle(25);
@@ -52,10 +52,10 @@ void lmana::TdcAnalyzer::drawHits(int ch)
   for (auto x:_strips)
     {
       if (ch==1)
-	hpx->Fill(x.xpos()-70,x.ypos());
+	hpx->Fill(x.xpos(),x.ypos());
       else
 	{
-	  float dx=48-(x.xpos()-70);
+	  float dx=48-(x.xpos());
 	  std::cout<<dx<<std::endl;
 	  hpy->Fill(dx,x.ypos());
 	}
@@ -98,7 +98,7 @@ void lmana::TdcAnalyzer::processChannels(std::vector<lydaq::TdcChannel>& vChanne
 {
   for (int i=0;i<255;i++)
     {
-      //printf("FEB %d %d \n",i,geo()->feb(i).id);
+      // printf("FEB %d %d \n",i,geo()->feb(i).id);
       if (geo()->feb(i).isEmpty()) continue;
       processFEB(i,vChannel);
     }
@@ -136,7 +136,7 @@ bool lmana::TdcAnalyzer::noiseStudy(std::vector<lydaq::TdcChannel>& vChannel,std
   memset(ch2_dt,0,128*sizeof(float));
   memset(ch1_dt,0,128*sizeof(float));
 
-#define RUN743134
+#undef RUN743134
 #ifdef RUN743065
   float alg1[45]={0.000, 0.000, 0.000, 0.000, 0.000, 0.000, 0.000, 0.000, 0.000, 0.000, 0.000, 0.000, 0.000, -5.951, -5.836, -5.586, 0.000, -5.932, -5.518, -5.538, -5.583, 0.000, -6.518, -6.195, -5.831, -5.572, -6.000, -6.076, -5.975, -6.086, -5.966, -5.547, -7.015, 0.000, 0.000, 0.000, 0.000, 0.000, 0.000, 0.000, 0.000, 0.000, 0.000, 0.000, 0.000};
 
@@ -160,7 +160,7 @@ bool lmana::TdcAnalyzer::noiseStudy(std::vector<lydaq::TdcChannel>& vChannel,std
   for (int i=0;i<49;i++) {   ch2_dt[72+i]=alg2[i];}
 #endif
   uint32_t triggerChannel=0;
-  float dtmin=-615,dtmax=-585;
+  float dtmin=-140,dtmax=-585;
   bool noisy=false;
   //dtmin+=100;dtmax+=100;
   for (uint32_t chamber=1;chamber<=2;chamber++)
@@ -169,8 +169,8 @@ bool lmana::TdcAnalyzer::noiseStudy(std::vector<lydaq::TdcChannel>& vChannel,std
       std::vector<TdcChannel*> c_strip[128];
       for (int i=0;i<128;i++) c_strip[i].clear();
       float maxtime=0,mttime=0;uint32_t nch=0,ntrg=0;
-      float ttime[24];
-      memset(ttime,0,24*sizeof(float));
+      float ttime[48];
+      memset(ttime,0,48*sizeof(float));
       for (auto x=vChannel.begin();x!=vChannel.end();x++)
 	{
 	  if (geo()->feb(x->feb()).chamber!=chamber) continue;
@@ -179,12 +179,12 @@ bool lmana::TdcAnalyzer::noiseStudy(std::vector<lydaq::TdcChannel>& vChannel,std
 	  mttime+=x->tdcTime();
 	  ntrg++;
 	}
-      // for (int i=1;i<24;i++)
+      // for (int i=1;i<48;i++)
       // 	printf("%d -> %f \n",i,ttime[i]);
       //if (chamber==1 && ntrg!=4) return true;
       mttime=mttime/ntrg;
       if (mttime<abs(dtmin)+50) return true;
-      std::bitset<24> stfeb(0);
+      std::bitset<48> stfeb(0);
       for (auto x=vChannel.begin();x!=vChannel.end();x++)
 	{
 	  if (geo()->feb(x->feb()).chamber!=chamber) continue;
@@ -199,8 +199,8 @@ bool lmana::TdcAnalyzer::noiseStudy(std::vector<lydaq::TdcChannel>& vChannel,std
 	  //   }
 	  //dtmin=dtm[x->feb()][ x->side(geo()->feb(x->feb()))]-10.;
 	  //dtmax=dtm[x->feb()][ x->side(geo()->feb(x->feb()))]+10.;
-	  dtmin=geo()->feb(x->feb()).dt[x->side(geo()->feb(x->feb()))]-10.;
-	  dtmax=geo()->feb(x->feb()).dt[x->side(geo()->feb(x->feb()))]+10.;
+	  dtmin=geo()->feb(x->feb()).dt[x->side(geo()->feb(x->feb()))]-20.;
+	  dtmax=geo()->feb(x->feb()).dt[x->side(geo()->feb(x->feb()))]+20.;
 
 	  if (x->tdcTime()-ttime[x->feb()]>dtmin-200 && x->tdcTime()-ttime[x->feb()]<dtmax-200)
 	    {
@@ -212,11 +212,11 @@ bool lmana::TdcAnalyzer::noiseStudy(std::vector<lydaq::TdcChannel>& vChannel,std
 	      TH1* hstrips=rh()->GetTH1(sraw.str()+"Strips");
 	      if (hchan==NULL)
 		{
-		  hchan=rh()->BookTH1(sraw.str()+"Channels",24*16,0.,24.*16);
+		  hchan=rh()->BookTH1(sraw.str()+"Channels",48*16,0.,48.*16);
 		  hstrips=rh()->BookTH1(sraw.str()+"Strips",96,0,96);
 		}
-	      hchan->Fill(x->feb()*24+x->channel());
-	      hstrips->Fill( x->side(geo()->feb(x->feb()))*48+x->detectorStrip(geo()->feb(x->feb()))-72);
+	      hchan->Fill(x->feb()*48+x->channel());
+	      hstrips->Fill( x->side(geo()->feb(x->feb()))*48+x->detectorStrip(geo()->feb(x->feb())));
 	    }
 	  // printf("%f %f \n",dtmin,dtmax);
 	  // getchar();
@@ -235,7 +235,7 @@ bool lmana::TdcAnalyzer::noiseStudy(std::vector<lydaq::TdcChannel>& vChannel,std
 	    {
 	      
 	      hdt=rh()->BookTH1(src.str(),50,-25,25);
-	      hdtr=rh()->BookTH2(srcp.str()+"DeltaTrigger",4000,-2000.,1500.,32,0.,32.);
+	      hdtr=rh()->BookTH2(srcp.str()+"DeltaTrigger",4000,-2000.,1500.,48,0.,48.);
 	      hdtrp=rh()->BookTH1(srcp.str()+"DTall",20000,-1000.,0.);
 	      //hfi=rh()->BookTH1(srcp.str()+"Fine",100,-2.5,2.5);
 
@@ -267,18 +267,21 @@ bool lmana::TdcAnalyzer::noiseStudy(std::vector<lydaq::TdcChannel>& vChannel,std
 	      TH1* hstrips=rh()->GetTH1(sraw.str()+"SelStrips");
 	      if (hchan==NULL)
 		{
-		  hchan=rh()->BookTH1(sraw.str()+"SelChannels",24*16,0.,24.*16);
+		  hchan=rh()->BookTH1(sraw.str()+"SelChannels",48*16,0.,48.*16);
 		  hstrips=rh()->BookTH1(sraw.str()+"SelStrips",96,0,96);
 		}
-	      hchan->Fill(x->feb()*24+x->channel());
-	      hstrips->Fill( x->side(geo()->feb(x->feb()))*48+x->detectorStrip(geo()->feb(x->feb()))-72);
+	      hchan->Fill(x->feb()*48+x->channel());
+
+	      printf(" Channel %d Strip %d Shift %d Side %d %f\n",x->channel(),x->detectorStrip(geo()->feb(x->feb())),geo()->feb(x->feb()).stripShift,x->side(),x->tdcTime()-ttime[x->feb()]);
+	      hstrips->Fill( x->side(geo()->feb(x->feb()))*48+x->detectorStrip(geo()->feb(x->feb())));
 
 
 
 	  
 	  nch++;
 	}
-
+      // if (nch)
+      // 	getchar();
       std::stringstream srcc;
       srcc<<"/run"<<_run<<"/"<<subdir<<"/Chamber"<<chamber<<"/";
       
@@ -289,13 +292,13 @@ bool lmana::TdcAnalyzer::noiseStudy(std::vector<lydaq::TdcChannel>& vChannel,std
       if (hfr==NULL)
 	{
 	      
-	  hfr=rh()->BookTH1(srcc.str()+"FebCount",25,0.,25.);
-	  hfrs=rh()->BookTH1(srcc.str()+"FebCountSel",25,0.,25.);
+	  hfr=rh()->BookTH1(srcc.str()+"FebCount",49,0.,49.);
+	  hfrs=rh()->BookTH1(srcc.str()+"FebCountSel",49,0.,49.);
 
 	}
-      hfr->Fill(24.);
-      hfrs->Fill(24.);
-      for (int i=0;i<24;i++)
+      hfr->Fill(48.);
+      hfrs->Fill(48.);
+      for (int i=0;i<48;i++)
 	if (stfeb[i]>0) hfr->Fill(i*1.);
 
       
@@ -304,7 +307,7 @@ bool lmana::TdcAnalyzer::noiseStudy(std::vector<lydaq::TdcChannel>& vChannel,std
       fprintf(stderr," Maxtime %d %f %d %f \n",chamber,maxtime,nch,nch/maxtime/6500);
       //getchar();
       bool dostop=false;int nstrip=0;
-      uint16_t febc[24];
+      uint16_t febc[48];
       memset(febc,0,48);
       std::bitset<49> stb(0);
       for (int i=0;i<128;i++)
@@ -314,7 +317,7 @@ bool lmana::TdcAnalyzer::noiseStudy(std::vector<lydaq::TdcChannel>& vChannel,std
 	      //fprintf(stderr,"Chamber %d Strip %d # %d \n",chamber,i,c_strip[i].size());
 	      nstrip++;
 
-	      stb.set(i-70,1);
+	      stb.set(i,1);
 	    }
 	  if (c_strip[i].size()>2) dostop=true;
 
@@ -348,7 +351,7 @@ bool lmana::TdcAnalyzer::noiseStudy(std::vector<lydaq::TdcChannel>& vChannel,std
 			  t0=tt;
 			}
 		    
-		      //lmana::TdcStrip ts(geo()->feb(x->feb()).chamber,x->feb(),x->detectorStrip(geo()->feb(x->feb())),t0,t1,geo()->feb(x->feb()).timePedestal[x->detectorStrip( geo()->feb(x->feb()))-70]);
+		      //lmana::TdcStrip ts(geo()->feb(x->feb()).chamber,x->feb(),x->detectorStrip(geo()->feb(x->feb())),t0,t1,geo()->feb(x->feb()).timePedestal[x->detectorStrip( geo()->feb(x->feb()))]);
 		      if (chamber==1)
 			{
 			  lmana::TdcStrip ts(geo()->feb(x->feb()).chamber,x->feb(),x->detectorStrip(geo()->feb(x->feb())),t0,t1,ch1_dt[x->detectorStrip( geo()->feb(x->feb()))+1]);
@@ -368,19 +371,20 @@ bool lmana::TdcAnalyzer::noiseStudy(std::vector<lydaq::TdcChannel>& vChannel,std
 	    
 	    }
 	}
-      for (int i=0;i<24;i++)
+      // getchar();
+      for (int i=0;i<48;i++)
 	if (febc[i]>0) hfrs->Fill(i*1.);
 
       if (dostop) return true;
-      if (stb.count()>24) return true;
-      noisy=(stb.count()>24);
-      //for (int i=0;i<24;i++)
+      if (stb.count()>48) return true;
+      noisy=(stb.count()>48);
+      //for (int i=0;i<48;i++)
       // if (febc[i]>=10) return true;
       //std::cout<<stb<<std::endl;
       std::vector<lmana::TdcCluster> vclus;
       vclus.clear();
       float step=2.;
-      if (chamber==1) step=4.;
+      //if (chamber==1) step=4.;
       for (auto it=_strips.begin();it!=_strips.end();it++)
 	{
 	  //fprintf(stderr,"%d %d %f %f %f %f \n",it->chamber(),it->strip(),it->xpos(),it->ypos(),it->t0(),it->t1());
@@ -449,15 +453,17 @@ bool lmana::TdcAnalyzer::noiseStudy(std::vector<lydaq::TdcChannel>& vChannel,std
       TH1* hns=rh()->GetTH1(src.str()+"nstrip");
       TH1* hns2=rh()->GetTH1(src.str()+"nstrip2");
       TH1* htoa=rh()->GetTH1(src.str()+"TOA");
+      TH1* hdtr0=rh()->GetTH1(src.str()+"DT0");
+      TH1* hdtr1=rh()->GetTH1(src.str()+"DT1");
 
       if (hposc==NULL)
 	{
 	      
-	  hposc=rh()->BookTH2(src.str()+"XY",128,0.,128.,256,-15.,15.);
-	  hposs=rh()->BookTH2(src.str()+"XYStrip",128,0.,128.,256,-15.,15.);
-	  hposc1=rh()->BookTH2(src.str()+"XY1",128,0.,128.,256,-15.,15.);
-	  hposcm=rh()->BookTH2(src.str()+"XYMore",128,0.,128.,256,-15.,15.);
-	  hposcma=rh()->BookTH2(src.str()+"XYMax",128,0.,128.,3000,-15.,15.);
+	  hposc=rh()->BookTH2(src.str()+"XY",128,0.,128.,256,-25.,25.);
+	  hposs=rh()->BookTH2(src.str()+"XYStrip",128,0.,128.,256,-25.,25.);
+	  hposc1=rh()->BookTH2(src.str()+"XY1",128,0.,128.,256,-25.,25.);
+	  hposcm=rh()->BookTH2(src.str()+"XYMore",128,0.,128.,256,-25.,25.);
+	  hposcma=rh()->BookTH2(src.str()+"XYMax",128,0.,128.,3000,-25.,25.);
 	  hposx=rh()->BookTH2(src.str()+"XYX",128,0.,128.,600,-160.,160.);
 	  hncl=rh()->BookTH1(src.str()+"Clusters",32,0.,32.);
 	  hmulc=rh()->BookTH1(src.str()+"ClusterSize",32,0.,32.);
@@ -465,7 +471,8 @@ bool lmana::TdcAnalyzer::noiseStudy(std::vector<lydaq::TdcChannel>& vChannel,std
 	  hns=rh()->BookTH1(src.str()+"nstrip",48,0.,48.);
 	  hns2=rh()->BookTH1(src.str()+"nstrip2",48,0.,48.);
 	  htoa=rh()->BookTH1(src.str()+"TOA",100,-570.,-600.);
-
+	  hdtr0=rh()->BookTH1(src.str()+"DT0",20000,-1000.,0.);
+	  hdtr1=rh()->BookTH1(src.str()+"DT1",20000,-1000.,0.);
 	}
       hns->Fill(nstrip);
       hns2->Fill(_strips.size());
@@ -491,6 +498,8 @@ bool lmana::TdcAnalyzer::noiseStudy(std::vector<lydaq::TdcChannel>& vChannel,std
 	      {
 		htoa->Fill(
 			   (x.strip(i).t0()+x.strip(i).t1())/2.-ttime[x.strip(i).dif()]);
+		hdtr0->Fill(x.strip(i).t0()-ttime[x.strip(i).dif()]);
+		hdtr1->Fill(x.strip(i).t1()-ttime[x.strip(i).dif()]);
 	      }
 
 	  if (x.size()>30) continue;
@@ -527,7 +536,7 @@ bool lmana::TdcAnalyzer::noiseStudy(std::vector<lydaq::TdcChannel>& vChannel,std
 		  //std:cout<<srcs.str()<<std::endl;
 		  TH1* hdts=rh()->GetTH1(srcs.str());
 		  if (hdts==NULL)
-		    hdts=rh()->BookTH1(srcs.str(),100,-20,20.);
+		    hdts=rh()->BookTH1(srcs.str(),600,-30,30.);
 		  hdts->Fill(x.strip(i).ypos());
 		}
 	      break;
@@ -601,8 +610,11 @@ void lmana::TdcAnalyzer::rawAnalysis(std::vector<lydaq::TdcChannel>& vChannel,st
 	    }
 	  if (x->tdcTime()*1E-9>maxt)
 	    maxt=x->tdcTime()*1E-9;
-	  hdt->Fill(x->tdcTime());
-
+	  if (x->fine()< 277)
+	    {
+	      float t=x->coarse()*2.5+x->fine()/255.*2.5;
+	      hdt->Fill(t);
+	    }
 	  for (int i=1;i<heff->GetNbinsX();i++)
 	    heff->SetBinContent(i,hchan->GetBinContent(i)/hchan->GetBinContent(65)*100);
 	}
@@ -615,9 +627,9 @@ void lmana::TdcAnalyzer::rawAnalysis(std::vector<lydaq::TdcChannel>& vChannel,st
 void lmana::TdcAnalyzer::multiChambers(std::vector<lydaq::TdcChannel>& vChannel)
 {
   this->rawAnalysis(vChannel,"Raw");
-  return;
-  _noise=true;
-  this->noiseStudy(vChannel,"OffTime");
+  //  return;
+  //_noise=true;
+  //this->noiseStudy(vChannel,"OffTime");
   _noise=false;
   if (this->noiseStudy(vChannel,"InTime")) return;
   //if (_noise) return;
@@ -680,7 +692,7 @@ void lmana::TdcAnalyzer::multiChambers(std::vector<lydaq::TdcChannel>& vChannel)
 	  hdtrt0=rh()->BookTH2(sr.str()+"DeltaTriggerSel0",4000,dtmin,dtmax,48,71.,119.);
 	  hdtrt1=rh()->BookTH2(sr.str()+"DeltaTriggerSel1",4000,dtmin,dtmax,48,71.,119.);
 	  hpos=rh()->BookTH2(sr.str()+"DeltaTvsStrip",3000,-30.,30.,48,71.,119.);
-	  hnstrip=rh()->BookTH1(sr.str()+"NSTRIP",24,-0.1,23.9);
+	  hnstrip=rh()->BookTH1(sr.str()+"NSTRIP",48,-0.1,23.9);
 	  heff=rh()->BookTH1(sr.str()+"Efficiency",10,-0.1,9.9);
 	  hbp2=rh()->BookTH1(sr.str()+"BeamProfile",128,0.1,128.1);
 	  hti=rh()->BookTH1(sr.str()+"MaxTime",200000,0.,0.25);
@@ -876,11 +888,11 @@ void lmana::TdcAnalyzer::multiChambers(std::vector<lydaq::TdcChannel>& vChannel)
 			t0=tt;
 		      }
 		    
-		    lmana::TdcStrip ts(geo()->feb(x.feb()).chamber,x.feb(),x.detectorStrip(geo()->feb(x.feb())),t0,t1,geo()->feb(x.feb()).timePedestal[x.detectorStrip( geo()->feb(x.feb()))-70]);
+		    lmana::TdcStrip ts(geo()->feb(x.feb()).chamber,x.feb(),x.detectorStrip(geo()->feb(x.feb())),t0,t1,geo()->feb(x.feb()).timePedestal[x.detectorStrip( geo()->feb(x.feb()))]);
 
 		    //if (chamber==2)
 		    // {
-		    //  printf("New strip %d %d %d %f %f %f \n",geo()->feb(x.feb()).chamber,x.feb(),x.detectorStrip(x.feb()),t0,t1,geo()->feb(x.feb()).timePedestal[x.detectorStrip( geo()->feb(x.feb()))-70]);
+		    //  printf("New strip %d %d %d %f %f %f \n",geo()->feb(x.feb()).chamber,x.feb(),x.detectorStrip(x.feb()),t0,t1,geo()->feb(x.feb()).timePedestal[x.detectorStrip( geo()->feb(x.feb()))]);
 		    //}
 		    _strips.push_back(ts);
 
@@ -972,10 +984,10 @@ void lmana::TdcAnalyzer::multiChambers(std::vector<lydaq::TdcChannel>& vChannel)
 	  if (hposc==NULL)
 	    {
 	      
-	      hposc=rh()->BookTH2(src.str()+"XY",128,0.,128.,256,-15.,15.);
-	      hposc1=rh()->BookTH2(src.str()+"XY1",128,0.,128.,256,-15.,15.);
-	      hposcm=rh()->BookTH2(src.str()+"XYMore",128,0.,128.,256,-15.,15.);
-	      hposcma=rh()->BookTH2(src.str()+"XYMax",128,0.,128.,256,-15.,15.);
+	      hposc=rh()->BookTH2(src.str()+"XY",128,0.,128.,256,-25.,25.);
+	      hposc1=rh()->BookTH2(src.str()+"XY1",128,0.,128.,256,-25.,25.);
+	      hposcm=rh()->BookTH2(src.str()+"XYMore",128,0.,128.,256,-25.,25.);
+	      hposcma=rh()->BookTH2(src.str()+"XYMax",128,0.,128.,256,-25.,25.);
 	      hncl=rh()->BookTH1(src.str()+"Clusters",16,0.,16.);
 	      hmulc=rh()->BookTH1(src.str()+"ClusterSize",16,0.,16.);
 
@@ -1020,7 +1032,7 @@ void lmana::TdcAnalyzer::multiChambers(std::vector<lydaq::TdcChannel>& vChannel)
 	      if (hpos==NULL)
 		{
 	      
-		  hpos=rh()->BookTH2(sr.str()+"XY",128,0.,128.,128,-10.,10.);
+		  hpos=rh()->BookTH2(sr.str()+"XY",128,0.,128.,128,-20.,20.);
 	      
 	      
 		}
@@ -1036,7 +1048,7 @@ void lmana::TdcAnalyzer::multiChambers(std::vector<lydaq::TdcChannel>& vChannel)
 	  if (hpos==NULL)
 	    {
 		      
-	      hpos=rh()->BookTH2(sr.str()+"XY",128,0.,128.,256,-15.,15.);
+	      hpos=rh()->BookTH2(sr.str()+"XY",128,0.,128.,256,-25.,25.);
 
 
 	    }
@@ -1084,7 +1096,7 @@ void lmana::TdcAnalyzer::multiChambers(std::vector<lydaq::TdcChannel>& vChannel)
 		  if (hpos==NULL)
 		    {
 		  
-		      hpos=rh()->BookTH1(sd.str(),128,-10.,10.);
+		      hpos=rh()->BookTH1(sd.str(),128,-20.,20.);
 
 
 		    }
@@ -1323,7 +1335,7 @@ void lmana::TdcAnalyzer::fullAnalysis(std::vector<lydaq::TdcChannel>& vChannel)
       hdtrt0=rh()->BookTH2(sr.str()+"DeltaTriggerSel0",4000,-600.,-560,48,71.,119.);
       hdtrt1=rh()->BookTH2(sr.str()+"DeltaTriggerSel1",4000,-600.,-560,48,71.,119.);
       hpos=rh()->BookTH2(sr.str()+"DeltaTvsStrip",3000,-30.,30.,48,71.,119.);
-      hnstrip=rh()->BookTH1(sr.str()+"NSTRIP",24,-0.1,23.9);
+      hnstrip=rh()->BookTH1(sr.str()+"NSTRIP",48,-0.1,23.9);
       heff=rh()->BookTH1(sr.str()+"Efficiency",10,-0.1,9.9);
       hbp2=rh()->BookTH1(sr.str()+"BeamProfile",128,0.1,128.1);
 
@@ -1335,7 +1347,7 @@ void lmana::TdcAnalyzer::fullAnalysis(std::vector<lydaq::TdcChannel>& vChannel)
   std::bitset<16> btrg(0);
   for (auto x:vChannel)
     {
-      if (x.channel()==24) {
+      if (x.channel()==48) {
 	//printf("Trigger found %d %d %f\n",x.feb(),x.channel(),x.tdcTime());
 	btrg.set(x.feb(),1);
       }
@@ -1519,7 +1531,7 @@ void lmana::TdcAnalyzer::fullAnalysis(std::vector<lydaq::TdcChannel>& vChannel)
 	  if (hpos==NULL)
 	    {
 	      
-	      hpos=rh()->BookTH2(sr.str()+"XY",128,0.,128.,128,-10.,10.);
+	      hpos=rh()->BookTH2(sr.str()+"XY",128,0.,128.,128,-20.,20.);
 	      
 	      
 	    }
@@ -1535,7 +1547,7 @@ void lmana::TdcAnalyzer::fullAnalysis(std::vector<lydaq::TdcChannel>& vChannel)
       if (hpos==NULL)
 	{
 		      
-	  hpos=rh()->BookTH2(sr.str()+"XY",128,0.,128.,256,-15.,15.);
+	  hpos=rh()->BookTH2(sr.str()+"XY",128,0.,128.,256,-25.,25.);
 
 
 	}
@@ -1583,7 +1595,7 @@ void lmana::TdcAnalyzer::fullAnalysis(std::vector<lydaq::TdcChannel>& vChannel)
 	      if (hpos==NULL)
 		{
 		  
-		  hpos=rh()->BookTH1(sd.str(),128,-10.,10.);
+		  hpos=rh()->BookTH1(sd.str(),128,-20.,20.);
 
 
 		}
@@ -2043,7 +2055,7 @@ void lmana::TdcAnalyzer::LmAnalysis(uint32_t mezId,std::vector<lydaq::TdcChannel
   for (std::vector<lydaq::TdcChannel>::iterator it=vChannel.begin();it!=vChannel.end();it++)
     {
       hstrip->Fill(it->channel()*1.+0.5);
-      if (it->channel()!=_triggerChannel) hstripo->Fill(32*it->side()+it->strip()-70);
+      if (it->channel()!=_triggerChannel) hstripo->Fill(32*it->side()+it->strip());
       if (it->bcid()>bcidmax) bcidmax=it->bcid();
 
 	  
@@ -2204,8 +2216,8 @@ void lmana::TdcAnalyzer::LmAnalysis(uint32_t mezId,std::vector<lydaq::TdcChannel
       for (std::vector<lydaq::TdcChannel>::iterator x=t->second.begin();x!=t->second.end();++x)
 	{
 	  INFO_PRINTF("\t TDC %d LEMO %d STRIP %d  SIDE %d   time %f \n",x->channel(),x->lemo(),x->strip(),x->side(),  (x->tdcTime()-trigtime));
-	  if (x->channel()!=_triggerChannel) spat.set(x->strip()-70,1);
-	  if (x->channel()!=_triggerChannel) spatb.set(32*x->side()+x->strip()-70,1);
+	  if (x->channel()!=_triggerChannel) spat.set(x->strip(),1);
+	  if (x->channel()!=_triggerChannel) spatb.set(32*x->side()+x->strip(),1);
 	}
       std::cout<<_event<<" "<<_dif<<" "<<spat<<" "<<spat.count()<<std::endl;
       

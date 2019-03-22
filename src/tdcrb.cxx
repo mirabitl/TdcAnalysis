@@ -587,7 +587,19 @@ void tdcrb::read()
   std::vector<lydaq::TdcChannel> _vAll;
   uint32_t _eventChannels;
   _geo->fillFebs(_run);
+
+
   _geo->fillAlign(_run);
+
+    for (int i=0;i<255;i++)
+    {
+      if (_geo->feb(i).isEmpty()) continue;
+      printf("FEB %d %d \n",i,_geo->feb(i).id);
+
+
+    }
+    //getchar();   
+
   _started=true;
   while (_started)
     {

@@ -33,13 +33,13 @@ public:
   jsonFebInfo(){id=0;}
   uint32_t id;
   uint32_t chamber;
-  uint32_t tdc2strip[25];
+  uint32_t tdc2strip[49];
   uint32_t  tdc2side[49];
   uint32_t stripShift;
   float polarity;
   float triggerMin,triggerMax,triggerMean,dt[2];
-  float timePedestal[12];
-  float dtc[25];
+  float timePedestal[49];
+  float dtc[49];
   bool isEmpty(){return (id==0);}
   void dump()
   {

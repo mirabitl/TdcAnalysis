@@ -39,9 +39,9 @@ namespace lmana
     double _t0,_t1,_shift;
 
   };
-  // DTA 2.5 DTY 1.5  
-#define DTA 5.
-#define DTY 5.
+  // DTA 2.5 DTY 1.5 puis 5. 5.  
+#define DTA 15.
+#define DTY 15.
   class TdcCluster
   {
   public:

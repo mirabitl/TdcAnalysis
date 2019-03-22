@@ -94,9 +94,9 @@ def getdt(run,chamber,feb,sub=""):
   c=TCanvas()
   f82=TFile(sub+"histo%d_0.root" % run);
   r=[]
-  for i in range(0,25):
+  for i in range(0,49):
     r.append(0)
-  for i in range(1,25):
+  for i in range(1,49):
     #print "/run%d/Chamber%d/FEB/%d/Side0/channel%d" % (run,chamber,feb,i)
     f82.cd("/run%d/InTime/Chamber%d/FEB/%d/Side0/" % (run,chamber,feb))
     hch=f82.Get("/run%d/InTime/Chamber%d/FEB/%d/Side0/channel%d" % (run,chamber,feb,i))
@@ -104,8 +104,8 @@ def getdt(run,chamber,feb,sub=""):
     if (hch!=None):
       #print i,hch.GetEntries(),hch.GetMean();
       if (hch.GetEntries()>25):
-          scfit=TF1("scfit","gaus",-10.,10.)
-          hch.Fit("scfit","Q","",-10.,5);
+          scfit=TF1("scfit","gaus",-20.,20.)
+          hch.Fit("scfit","Q","",-20.,20);
           dtmean=scfit.GetParameter(1)
           dtres=scfit.GetParameter(2)
           print i,hch.GetEntries(),hch.GetMean(),dtmean,dtres
@@ -125,8 +125,8 @@ def getdt(run,chamber,feb,sub=""):
     if (hch1!=None):
       #print i,hch1.GetEntries(),hch1.GetMean();
       if (hch1.GetEntries()>25):
-          scfit=TF1("scfit","gaus",-10.,10.)
-          hch1.Fit("scfit","Q","",-10,5);
+          scfit=TF1("scfit","gaus",-20.,20.)
+          hch1.Fit("scfit","Q","",-20,20);
           dtmean=scfit.GetParameter(1)
           dtres=scfit.GetParameter(2)
           print i,hch1.GetEntries(),hch1.GetMean(),dtmean,dtres
@@ -146,15 +146,15 @@ def getdt(run,chamber,feb,sub=""):
   #print r
   hfeb0=f82.Get("/run%d/InTime/Chamber%d/FEB/%d/Side0/DTall" % (run,chamber,feb))
   hfeb1=f82.Get("/run%d/InTime/Chamber%d/FEB/%d/Side1/DTall" % (run,chamber,feb))
-  sfit=TF1("sfit","gaus",-615.,-570.)
-  hfeb0.Fit("sfit","Q","",-615.,-570.);
+  sfit=TF1("sfit","gaus",-150.,-100.)
+  hfeb0.Fit("sfit","Q","",-150.,-100.);
   c.cd()
   hfeb0.Draw()
   c.Modified()
   c.Update()
   #val=raw_input()
   print "dt0: %5.1f" % (sfit.GetParameter(1))
-  hfeb1.Fit("sfit","Q","",-615.,-570.);
+  hfeb1.Fit("sfit","Q","",-150.,-100.);
   c.cd()
   hfeb1.Draw()
   c.Modified()
@@ -556,12 +556,67 @@ def calceff(run,tdc,strip=71):
   val = raw_input()
 
 def fitped(run,tdc,vthmin,vthmax,asic=1,ncha=24,rising=True,old=defped):
-  fi=0
-  la=ncha
-  if (asic==2):
-      fi=ncha
-      la=2*ncha
+  rb=1
+  fi=1
+  la=ncha+1
+  #if (asic==2):
+  #    fi=ncha+1
+  #    la=2*ncha+1
+  asicmap={}
+  for i in {1,2}:
+      asicmap[i]=[]
+      for j in range(49):
+          asicmap[i].append(0)
 
+  asicmap[1][1]=30
+  asicmap[1][2]=28
+  asicmap[1][3]=26
+  asicmap[1][4]=24
+  asicmap[1][5]=23
+  asicmap[1][6]=22
+  asicmap[1][7]=21
+  asicmap[1][8]=20
+  asicmap[1][9]=19
+  asicmap[1][10]=18
+  asicmap[1][11]=17
+  asicmap[1][12]=16
+  asicmap[1][13]=15
+  asicmap[1][14]=14
+  asicmap[1][15]=13
+  asicmap[1][16]=12
+  asicmap[1][17]=11
+  asicmap[1][18]=10
+  asicmap[1][19]=9
+  asicmap[1][20]=8
+  asicmap[1][21]=7
+  asicmap[1][22]=6
+  asicmap[1][23]=5
+  asicmap[1][24]=4
+  asicmap[2][25]=30
+  asicmap[2][26]=28
+  asicmap[2][27]=26
+  asicmap[2][28]=24
+  asicmap[2][29]=23
+  asicmap[2][30]=22
+  asicmap[2][31]=21
+  asicmap[2][32]=20
+  asicmap[2][33]=19
+  asicmap[2][34]=18
+  asicmap[2][35]=17
+  asicmap[2][36]=16
+  asicmap[2][37]=15
+  asicmap[2][38]=14
+  asicmap[2][39]=13
+  asicmap[2][40]=12
+  asicmap[2][41]=11
+  asicmap[2][42]=10
+  asicmap[2][43]=9
+  asicmap[2][44]=8
+  asicmap[2][45]=7
+  asicmap[2][46]=6
+  asicmap[2][47]=5
+  asicmap[2][48]=4
+  print asicmap
   ped=[]
   for i in range(32):
     ped.append(0)
@@ -586,6 +641,8 @@ def fitped(run,tdc,vthmin,vthmax,asic=1,ncha=24,rising=True,old=defped):
   
   for ip in range(fi,la):
       #c2.cd()
+      if (asicmap[asic][ip]==0):
+          continue;
       hs=None
       if (rising):
           hs=f82.Get("/run%d/TDC%d/vthc%d" % (run,tdc,ip));
@@ -630,6 +687,9 @@ def fitped(run,tdc,vthmin,vthmax,asic=1,ncha=24,rising=True,old=defped):
       
   for ip in range(fi,la):
       #c2.cd()
+      if (asicmap[asic][ip]==0):
+          continue;
+
       hs=None
       if (rising):
           hs=f82.Get("/run%d/TDC%d/vthc%d" % (run,tdc,ip));
@@ -640,8 +700,8 @@ def fitped(run,tdc,vthmin,vthmax,asic=1,ncha=24,rising=True,old=defped):
       if (hs.GetEntries()==0):
         continue
       #hs.Scale(1./2700.);
-      hder=TH1F("hder%d" % ip,"derivative",900,0.,900.)	
-      #hs.Rebin(2)
+      hder=TH1F("hder%d" % ip,"derivative",900/rb,0.,900.)	
+      hs.Rebin(rb)
       nmax=0
       for i in range(1,hs.GetNbinsX()):
           if (hs.GetBinContent(i)==0):
@@ -695,16 +755,20 @@ def fitped(run,tdc,vthmin,vthmax,asic=1,ncha=24,rising=True,old=defped):
       
       firmwareta1=[21,20,23,22,25,24,27,26,29,28,31,30,1,0,3,2,5,4,7,6,10,8,15,12]
       firmwareta2=[21,20,23,22,25,24,27,26,29,28,31,30,1,0,3,2,5,4,7,6,10,8,14,12]
+      firmwaretb=[30,26,28,24,23,22,21,20,19,18,17,16,15,14,13,12,11,10,9,8,7,6,5,4,30,26,28,24,23,22,21,20,19,18,17,16,15,14,13,12,11,10,9,8,7,6,5,4]
+
       if (asic==1):
           firmware=firmwareta1
       else:
           firmware=firmwareta2
+      firmware=firmwaretb
       #if (ip>0):
       #  ipr=firmware[ip-fi-1]
       #else:
       #  ipr=0
       print ip,fi,ip-fi
       ipr=firmware[ip-fi]
+      ipr=asicmap[asic][ip]
       ped[ipr]=rped
       print ip,ipr,rped,scfit.GetParameter(2)
       hmean.Fill(rped)
@@ -747,7 +811,7 @@ def fitped(run,tdc,vthmin,vthmax,asic=1,ncha=24,rising=True,old=defped):
       med=ped[i]
 
   med=med+5
-  med=460
+  med=480
   print "Alignment to :",med
   dac=ped
   for i in range(32):
