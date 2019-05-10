@@ -63,10 +63,12 @@ public:
     printf("%d %d %d %f \n",channel(),coarse(),fine(),tdcTime());
     printf("\n");
   }
+ 
 private:
   uint8_t* _fr;
   bool _used;
   uint8_t _feb;
+
 };
 
   #endif
@@ -76,7 +78,7 @@ private:
 {
 public:
   TdcChannel() :_fr(NULL),_used(false) {;}
-  TdcChannel(uint8_t*  b,uint8_t feb=0) :_fr(b),_used(false),_feb(feb) {;}
+  TdcChannel(uint8_t*  b,uint8_t feb=0) :_fr(b),_used(false),_feb(feb),_0c(0),_0f(0),_0t(0.0) {;}
   inline uint8_t channel() {
     if (falling())
       return (_fr[0]-0x80)-LASTCHAN;
@@ -102,7 +104,7 @@ public:
   inline uint8_t fine() const {return _fr[5];}
 
   inline uint32_t bcid(){return (uint32_t) (coarse()*TDC_COARSE_TIME/200);}
-  inline  double tdcTime() const { return (coarse()+fine()/256.0)*TDC_COARSE_TIME;}
+  inline  double tdcTime() const { return (coarse()+fine()/256.0)*TDC_COARSE_TIME-_0t;}
   inline uint8_t* frame(){ return _fr;}
   inline bool used(){return _used;}
   inline void setUsed(bool t){_used=t;}
@@ -120,10 +122,14 @@ public:
     printf("%d %d %d %f \n",channel(),coarse(),fine(),tdcTime());
     printf("\n");
   }
+  void setZero(uint64_t c, uint8_t f){_0c=c;_0f=f;_0t= (_0c+_0f/256.0)*TDC_COARSE_TIME;}
 private:
   uint8_t* _fr;
   bool _used;
   uint8_t _feb;
+  uint8_t _0f;
+  uint64_t _0c;
+  double _0t;
 };
 
   #endif

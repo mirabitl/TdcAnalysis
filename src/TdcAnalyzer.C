@@ -574,6 +574,9 @@ void lmana::TdcAnalyzer::rawAnalysis(std::vector<lydaq::TdcChannel>& vChannel,st
 
   uint32_t mask=0;
 
+  double t11=0;
+  double t12=0;
+  bool dtfilled=false;
   for (auto x=vChannel.begin();x!=vChannel.end();x++)
 	{
 	  //std::cout<<"================================> bit set \n";
@@ -581,10 +584,16 @@ void lmana::TdcAnalyzer::rawAnalysis(std::vector<lydaq::TdcChannel>& vChannel,st
 	  sraw<<"/run"<<_run<<"/"<<subdir<<"/Feb"<<x->feb()<<"/";
 	  TH1* hchan=rh()->GetTH1(sraw.str()+"Channels");
 	  TH1* heff=rh()->GetTH1(sraw.str()+"EffChannels");
+	  TH1* hmean=rh()->GetTH1(sraw.str()+"ChannelMean");
+	  TH1* hrms=rh()->GetTH1(sraw.str()+"ChannelRMS");
+	  TH1* h1112=rh()->GetTH1(sraw.str()+"DT1112");
 	  if (hchan==NULL)
 	    {
 	      hchan=rh()->BookTH1(sraw.str()+"Channels",96,0.,96.);
 	      heff=rh()->BookTH1(sraw.str()+"EffChannels",96,0.,96.);
+	      hmean=rh()->BookTH1(sraw.str()+"ChannelMean",96,0.,96.);
+	      hrms=rh()->BookTH1(sraw.str()+"ChannelRMS",96,0.,96.);
+	      h1112=rh()->BookTH1(sraw.str()+"DT1112",2000,-10.0,10.0);
 
 	    }
 	  if (mask==0)
@@ -597,26 +606,38 @@ void lmana::TdcAnalyzer::rawAnalysis(std::vector<lydaq::TdcChannel>& vChannel,st
 	  // getchar();
 	  // Book and fill time to trigger
 	  std::stringstream src;
+	  std::stringstream srf;
 	  int side=0;
 	  if (x->falling()) side=1;
 	  src<<"/run"<<_run<<"/"<<subdir<<"/FEB/"<<x->feb()<<"/Fall"<<side<<"/channel"<<(int) x->channel();
+	  srf<<"/run"<<_run<<"/"<<subdir<<"/FEB/"<<x->feb()<<"/Fall"<<side<<"/fine"<<(int) x->channel();
 		  
 	  TH1* hdt=rh()->GetTH1(src.str());
+	  TH1* hdf=rh()->GetTH1(srf.str());
 	  if (hdt==NULL)
 	    {
-	      
-	      hdt=rh()->BookTH1(src.str(),350000,0.,10000.);
+	     
+ 	      hdt=rh()->BookTH1(src.str(),350000,0.,10000.);
+	      hdf=rh()->BookTH1(srf.str(),511,0.,511.);
 
 	    }
 	  if (x->tdcTime()*1E-9>maxt)
 	    maxt=x->tdcTime()*1E-9;
-	  if (x->fine()< 277)
-	    {
-	      float t=x->coarse()*2.5+x->fine()/255.*2.5;
-	      hdt->Fill(t);
-	    }
+	  hdt->Fill(x->tdcTime());
+	  hdf->Fill(x->fine()*1.);
+	  hmean->SetBinContent(x->channel(),hdt->GetMean());
+	  hrms->SetBinContent(x->channel(),hdt->GetRMS());
+	  if (x->channel()==21) t11=x->tdcTime();
+	  if (x->channel()==22) t12=x->tdcTime();
 	  for (int i=1;i<heff->GetNbinsX();i++)
-	    heff->SetBinContent(i,hchan->GetBinContent(i)/hchan->GetBinContent(65)*100);
+	    {
+	      heff->SetBinContent(i,hchan->GetBinContent(i)/hchan->GetBinContent(65)*100);
+	    }
+	  if (t11!=0 && t12!=0 && !dtfilled)
+	    {
+	    h1112->Fill(t11-t12);
+	    dtfilled=true;
+	    }
 	}
   //printf(" Mask %x \n",mask);
   //  if (mask!=0xFF)

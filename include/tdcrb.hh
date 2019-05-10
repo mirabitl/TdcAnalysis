@@ -71,5 +71,8 @@ private:
   std::map<uint32_t,std::vector<lydaq::TdcChannel> > _mezMap;
   std::map<uint64_t,std::vector<zdaq::buffer*> > _eventMap;
 
+  uint64_t _0coarse[255];
+  uint8_t  _0fine[255];
+
 };
 #endif

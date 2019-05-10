@@ -203,6 +203,14 @@ void tdcrb::processRawEvent(uint64_t idx)
 			  //c.dump();
 			 
 		  _eventChannels++;
+		   if (ca.channel()==0)
+		     {
+		       _0coarse[_difId&0xFF]=ca.coarse();
+		       _0fine[_difId&0xFF]=ca.fine();
+		     }
+		   //_mezMap[_difId].push_back(c);
+		   c.setZero(_0coarse[_difId&0xFF], _0fine[_difId&0xFF]);
+		   ca.setZero(_0coarse[_difId&0xFF], _0fine[_difId&0xFF]);
 		  //_mezMap[_difId].push_back(c);
 		  vch.push_back(c);
 		  _vAll.push_back(ca);
@@ -741,17 +749,24 @@ if (ier<0 || ((last==_event)&_nread>200))
 			  //c.dump();
 			 
 			  _eventChannels++;
-			  if (c.channel()==0)
+			  if (ca.channel()==0)
 			    {
+			      _0coarse[_difId&0xFF]=ca.coarse();
+			      _0fine[_difId&0xFF]=ca.fine();
 			      tfound=true;
 			      trigFound[_difId]++;
-			      tbcid=c.bcid();
+			      tbcid=ca.bcid();
 			    }
 			  //_mezMap[_difId].push_back(c);
+			  c.setZero(_0coarse[_difId&0xFF], _0fine[_difId&0xFF]);
+			  ca.setZero(_0coarse[_difId&0xFF], _0fine[_difId&0xFF]);
+			  //  ca.dump();
+			  //std::cout<<_difId<<" "<<(int) _0coarse[_difId&0xFF]<<" "<< (int) _0fine[_difId&0xFF]<<std::endl;
 			  vch.push_back(c);
 			  _vAll.push_back(ca);
 			  
 			}
+		      //if (nch>0) getchar();
 #ifdef DUMPCHANS
 		      if (nch>0) getchar();
 #endif
