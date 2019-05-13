@@ -104,7 +104,10 @@ public:
   inline uint8_t fine() const {return _fr[5];}
 
   inline uint32_t bcid(){return (uint32_t) (coarse()*TDC_COARSE_TIME/200);}
-  inline  double tdcTime() const { return (coarse()+fine()/256.0)*TDC_COARSE_TIME-_0t;}
+    inline  double rawTime(uint64_t c, uint8_t f) const { return (c+f/256.0)*TDC_COARSE_TIME;}
+
+  inline  double tdcTime() const { double rt=rawTime(coarse(),fine());
+    return (_0t<=rt)?rt-_0t:rt+(2**24-1)*TDC_COARSE_TIME-_0t;}
   inline uint8_t* frame(){ return _fr;}
   inline bool used(){return _used;}
   inline void setUsed(bool t){_used=t;}
@@ -122,7 +125,7 @@ public:
     printf("%d %d %d %f \n",channel(),coarse(),fine(),tdcTime());
     printf("\n");
   }
-  void setZero(uint64_t c, uint8_t f){_0c=c;_0f=f;_0t= (_0c+_0f/256.0)*TDC_COARSE_TIME;}
+  void setZero(uint64_t c, uint8_t f){_0c=c;_0f=f;_0t=rawTime(c,f);}
 private:
   uint8_t* _fr;
   bool _used;
