@@ -616,6 +616,59 @@ def fitped(run,tdc,vthmin,vthmax,asic=1,ncha=24,rising=True,old=defped):
   asicmap[2][46]=6
   asicmap[2][47]=5
   asicmap[2][48]=4
+
+
+  asicmap[1][0]=30
+  asicmap[1][1]=28
+  asicmap[1][2]=26
+  asicmap[1][3]=24
+  asicmap[1][4]=23
+  asicmap[1][5]=22
+  asicmap[1][6]=21
+  asicmap[1][7]=20
+  asicmap[1][8]=19
+  asicmap[1][9]=18
+  asicmap[1][10]=17
+  asicmap[1][11]=16
+  asicmap[1][12]=15
+  asicmap[1][13]=14
+  asicmap[1][14]=13
+  asicmap[1][15]=12
+  asicmap[1][16]=11
+  asicmap[1][17]=10
+  asicmap[1][18]=9
+  asicmap[1][19]=8
+  asicmap[1][20]=7
+  asicmap[1][21]=6
+  asicmap[1][22]=5
+  asicmap[1][23]=4
+
+  asicmap[2][24]=30
+  asicmap[2][25]=28
+  asicmap[2][26]=26
+  asicmap[2][27]=24
+  asicmap[2][28]=23
+  asicmap[2][29]=22
+  asicmap[2][30]=21
+  asicmap[2][31]=20
+  asicmap[2][32]=19
+  asicmap[2][33]=18
+  asicmap[2][34]=17
+  asicmap[2][35]=16
+  asicmap[2][36]=15
+  asicmap[2][37]=14
+  asicmap[2][38]=13
+  asicmap[2][39]=12
+  asicmap[2][40]=11
+  asicmap[2][41]=10
+  asicmap[2][42]=9
+  asicmap[2][43]=8
+  asicmap[2][44]=7
+  asicmap[2][45]=6
+  asicmap[2][46]=5
+  asicmap[2][47]=4
+
+  
   print asicmap
   ped=[]
   for i in range(32):
@@ -639,7 +692,7 @@ def fitped(run,tdc,vthmin,vthmax,asic=1,ncha=24,rising=True,old=defped):
   hpnoise=TH1F("hpnoise","Summary noise %d %d " %(run,tdc),2*ncha,0.,2.*ncha);
   scfit=TF1("scfit","[0]*TMath::Erfc((x-[1])/[2])",vthmin+1,vthmax);
   
-  for ip in range(fi,la):
+  for ip in range(la-1,fi,-1):
       #c2.cd()
       if (asicmap[asic][ip]==0):
           continue;
@@ -713,7 +766,7 @@ def fitped(run,tdc,vthmin,vthmax,asic=1,ncha=24,rising=True,old=defped):
       for i in range(1,hs.GetNbinsX()):
         if (hs.GetBinContent(i)-hs.GetBinContent(i+1)>-10):
           hder.SetBinContent(i,hs.GetBinContent(i)-hs.GetBinContent(i+1))
-      hder.Rebin(4)
+      hder.Rebin(2)
       hder.GetXaxis().SetRangeUser(vthmin-1,vthmax);
       scfit.SetParameter(0,nmax/2.);
       scfit.SetParameter(1,hder.GetMean());
@@ -732,10 +785,12 @@ def fitped(run,tdc,vthmin,vthmax,asic=1,ncha=24,rising=True,old=defped):
 
       hder.Draw()
       c1.Update()
-      val = raw_input()
+      val1 = raw_input()
 
-      print "heho ",rped,hder.GetMean()
+      print "heho ",val1,rped,hder.GetMean()
       rped=hder.GetMean()
+      if (len(val1)>0):
+          rped=float(val1)
       hs.Draw()
       
 

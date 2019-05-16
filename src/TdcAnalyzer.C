@@ -81,6 +81,7 @@ void lmana::TdcAnalyzer::drawHits(int ch)
  * Simple example reading SDHCAL H2 Spetember 2017 data
  *
  */
+#define TRIGCHAN 1
 using namespace std;
 lmana::TdcAnalyzer::TdcAnalyzer(DCHistogramHandler*r ) : Analyzer(r),_pedestalProcessed(false),_nevt(0),_ntrigger(0),_nfound(0),_nbside(0),_triggerFound(false),_display(false),_noise(false)
 {
@@ -111,7 +112,7 @@ void lmana::TdcAnalyzer::setInfo(uint32_t dif,uint32_t run,uint32_t ev,uint32_t 
   _event=ev;
   _gtc=gt;
   _abcid=ab;
-  _triggerChannel=trgchan;
+  _triggerChannel=TRIGCHAN;
   _vthSet=vth;
   _dacSet=dac;
   if (_abcid0==0 || _abcid<_abcid0) _abcid0=_abcid;
@@ -121,7 +122,7 @@ void lmana::TdcAnalyzer::setInfo(uint32_t dif,uint32_t run,uint32_t ev,uint32_t 
   _jEvent["event"]=_event;
   _jEvent["gtc"]=_gtc;
   _jEvent["abcid"]=Json::Value((Json::Value::UInt64)_abcid);
-  _jEvent["triggerChannel"]=trgchan;
+  _jEvent["triggerChannel"]=_triggerChannel;
   _jEvent["vthset"]=vth;
   _jEvent["dacset"]=dac;
   
@@ -159,7 +160,7 @@ bool lmana::TdcAnalyzer::noiseStudy(std::vector<lydaq::TdcChannel>& vChannel,std
   for (int i=0;i<45;i++) {   ch1_dt[72+i]=alg1[i];}
   for (int i=0;i<49;i++) {   ch2_dt[72+i]=alg2[i];}
 #endif
-  uint32_t triggerChannel=0;
+  uint32_t triggerChannel=TRIGCHAN;
   float dtmin=-140,dtmax=-585;
   bool noisy=false;
   //dtmin+=100;dtmax+=100;
@@ -199,8 +200,8 @@ bool lmana::TdcAnalyzer::noiseStudy(std::vector<lydaq::TdcChannel>& vChannel,std
 	  //   }
 	  //dtmin=dtm[x->feb()][ x->side(geo()->feb(x->feb()))]-10.;
 	  //dtmax=dtm[x->feb()][ x->side(geo()->feb(x->feb()))]+10.;
-	  dtmin=geo()->feb(x->feb()).dt[x->side(geo()->feb(x->feb()))]-20.;
-	  dtmax=geo()->feb(x->feb()).dt[x->side(geo()->feb(x->feb()))]+20.;
+	  dtmin=geo()->feb(x->feb()).dt[x->side(geo()->feb(x->feb()))]-25;//20.;
+	  dtmax=geo()->feb(x->feb()).dt[x->side(geo()->feb(x->feb()))]+25;//20.;
 
 	  if (x->tdcTime()-ttime[x->feb()]>dtmin-200 && x->tdcTime()-ttime[x->feb()]<dtmax-200)
 	    {
@@ -659,7 +660,7 @@ void lmana::TdcAnalyzer::multiChambers(std::vector<lydaq::TdcChannel>& vChannel)
   
 
   uint32_t ndifread=7;
-  uint32_t triggerChannel=0;
+  uint32_t triggerChannel=TRIGCHAN ;
   
   std::bitset<16> btrg(0);uint32_t ntrg=0,atbcid=0;
   for (auto x:vChannel)
@@ -2070,7 +2071,7 @@ void lmana::TdcAnalyzer::LmAnalysis(uint32_t mezId,std::vector<lydaq::TdcChannel
   uint32_t lbcid=0,bcidshift=0,bcidmax=0;
   uint32_t tbcid=0;
   double ttime=0;
-  _triggerChannel=0;
+  _triggerChannel=TRIGCHAN;
   if (_event%1000==0)
     printf("Event %d DIF %d GTC %d ABCID %lu Size %d %10.3f \n",_event,mezId,_gtc,_abcid,vChannel.size(),acquisitionTime());
   for (std::vector<lydaq::TdcChannel>::iterator it=vChannel.begin();it!=vChannel.end();it++)

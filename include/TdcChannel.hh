@@ -2,6 +2,7 @@
 #define _TDCCHANNEL_HH
 #define TDC_COARSE_TIME 2.5
 #define TDC_FINE_TIME 0.009765625
+#define COARSEMAX 0XFFFFFF
 #include <stdint.h>
 #include <stdio.h>
 #include "TdcMapping.hh"
@@ -104,10 +105,10 @@ public:
   inline uint8_t fine() const {return _fr[5];}
 
   inline uint32_t bcid(){return (uint32_t) (coarse()*TDC_COARSE_TIME/200);}
-    inline  double rawTime(uint64_t c, uint8_t f) const { return (c+f/256.0)*TDC_COARSE_TIME;}
+  inline  double rawTime(uint64_t c, uint8_t f) const { return (c+f/256.0)*TDC_COARSE_TIME;}
 
   inline  double tdcTime() const { double rt=rawTime(coarse(),fine());
-    return (_0t<=rt)?rt-_0t:rt+(2**24-1)*TDC_COARSE_TIME-_0t;}
+    return (_0t<=rt)?rt-_0t:rt+COARSEMAX*TDC_COARSE_TIME-_0t;}
   inline uint8_t* frame(){ return _fr;}
   inline bool used(){return _used;}
   inline void setUsed(bool t){_used=t;}
