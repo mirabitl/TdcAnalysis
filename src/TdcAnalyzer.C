@@ -176,8 +176,8 @@ bool lmana::TdcAnalyzer::noiseStudy(std::vector<lydaq::TdcChannel>& vChannel,std
 	{
 	  if (geo()->feb(x->feb()).chamber!=chamber) continue;
 	  if (x->channel()!=triggerChannel) continue;
-	  ttime[x->feb()]=x->tdcTime();
-	  mttime+=x->tdcTime();
+	  ttime[x->feb()]=x->pedSubTime(geo()->feb(x->feb()));
+	  mttime+=x->pedSubTime(geo()->feb(x->feb()));
 	  ntrg++;
 	}
       // for (int i=1;i<48;i++)
@@ -203,7 +203,7 @@ bool lmana::TdcAnalyzer::noiseStudy(std::vector<lydaq::TdcChannel>& vChannel,std
 	  dtmin=geo()->feb(x->feb()).dt[x->side(geo()->feb(x->feb()))]-25;//20.;
 	  dtmax=geo()->feb(x->feb()).dt[x->side(geo()->feb(x->feb()))]+25;//20.;
 
-	  if (x->tdcTime()-ttime[x->feb()]>dtmin-200 && x->tdcTime()-ttime[x->feb()]<dtmax-200)
+	  if (x->pedSubTime(geo()->feb(x->feb()))-ttime[x->feb()]>dtmin-200 && x->pedSubTime(geo()->feb(x->feb()))-ttime[x->feb()]<dtmax-200)
 	    {
 	      stfeb.set(x->feb(),1);
 	      //std::cout<<"================================> bit set \n";
@@ -242,22 +242,22 @@ bool lmana::TdcAnalyzer::noiseStudy(std::vector<lydaq::TdcChannel>& vChannel,std
 
 	    }
 	  // hfi->Fill(x->fine()/256.0*TDC_COARSE_TIME);
-	  // printf("%d %d %d %d %f \n",x->feb(),x->channel(),x->coarse(),x->fine(),x->tdcTime());
+	  // printf("%d %d %d %d %f \n",x->feb(),x->channel(),x->coarse(),x->fine(),x->pedSubTime(geo()->feb(x->feb())));
 	  // getchar();
 	  float dt=geo()->feb(x->feb()).dtc[x->channel()];
-	  hdtr->Fill(x->tdcTime()-ttime[x->feb()]-dt,x->channel());
-	  hdtrp->Fill(x->tdcTime()-ttime[x->feb()]-dt);
-	  //printf("%f %f %f \n",x->tdcTime(),ttime[x->feb()],x->tdcTime()-ttime[x->feb()]);
+	  hdtr->Fill(x->pedSubTime(geo()->feb(x->feb()))-ttime[x->feb()]-dt,x->channel());
+	  hdtrp->Fill(x->pedSubTime(geo()->feb(x->feb()))-ttime[x->feb()]-dt);
+	  //printf("%f %f %f \n",x->pedSubTime(geo()->feb(x->feb())),ttime[x->feb()],x->pedSubTime(geo()->feb(x->feb()))-ttime[x->feb()]);
 	  if (_noise)
 	    {
 	      dtmin-=200;
 	      dtmax-=200;
 	    }
 
-	  if (x->tdcTime()>maxtime) maxtime=x->tdcTime();
-	  if (x->tdcTime()-ttime[x->feb()]<dtmin) continue;
-	  if (x->tdcTime()-ttime[x->feb()]>dtmax) continue;
-	  hdt->Fill(x->tdcTime()-ttime[x->feb()]-
+	  if (x->pedSubTime(geo()->feb(x->feb()))>maxtime) maxtime=x->pedSubTime(geo()->feb(x->feb()));
+	  if (x->pedSubTime(geo()->feb(x->feb()))-ttime[x->feb()]<dtmin) continue;
+	  if (x->pedSubTime(geo()->feb(x->feb()))-ttime[x->feb()]>dtmax) continue;
+	  hdt->Fill(x->pedSubTime(geo()->feb(x->feb()))-ttime[x->feb()]-
 		    geo()->feb(x->feb()).dt[x->side(geo()->feb(x->feb()))]);	  
 	  //dtm[x->feb()][ 
 	  c_strip[x->detectorStrip(geo()->feb(x->feb()))].push_back(&(*x));
@@ -273,7 +273,7 @@ bool lmana::TdcAnalyzer::noiseStudy(std::vector<lydaq::TdcChannel>& vChannel,std
 		}
 	      hchan->Fill(x->feb()*48+x->channel());
 
-	      printf(" Channel %d Strip %d Shift %d Side %d %f\n",x->channel(),x->detectorStrip(geo()->feb(x->feb())),geo()->feb(x->feb()).stripShift,x->side(),x->tdcTime()-ttime[x->feb()]);
+	      printf(" Channel %d Strip %d Shift %d Side %d %f\n",x->channel(),x->detectorStrip(geo()->feb(x->feb())),geo()->feb(x->feb()).stripShift,x->side(),x->pedSubTime(geo()->feb(x->feb()))-ttime[x->feb()]);
 	      hstrips->Fill( x->side(geo()->feb(x->feb()))*48+x->detectorStrip(geo()->feb(x->feb())));
 
 
@@ -332,13 +332,13 @@ bool lmana::TdcAnalyzer::noiseStudy(std::vector<lydaq::TdcChannel>& vChannel,std
 		  double dt=geo()->feb(x->feb()).dtc[x->channel()];
 		  if (t0<0 &&  x->side(geo()->feb(x->feb()))==0)
 		    {
-		      t0=x->tdcTime()-dt;
+		      t0=x->pedSubTime(geo()->feb(x->feb()))-dt;
 
 		      //printf("T0 %d %d %d %d %f %f dt=%f \n",x->feb(),x->channel(),x->coarse(),x->fine(),x->tdcTime(),t0,dt);
 		    }
 		  if (t1<0 &&  x->side(geo()->feb(x->feb()))==1)
 		    {
-		      t1=x->tdcTime()-dt;
+		      t1=x->pedSubTime(geo()->feb(x->feb()))-dt;
 		      //printf("T1 %d %d %d %d %f %f \n",x->feb(),x->channel(),x->coarse(),x->fine(),x->tdcTime(),t1);
 		    }
 		  if(t0>0 && t1>0 )
@@ -622,14 +622,14 @@ void lmana::TdcAnalyzer::rawAnalysis(std::vector<lydaq::TdcChannel>& vChannel,st
 	      hdf=rh()->BookTH1(srf.str(),511,0.,511.);
 
 	    }
-	  if (x->tdcTime()*1E-9>maxt)
-	    maxt=x->tdcTime()*1E-9;
-	  hdt->Fill(x->tdcTime());
+	  if (x->pedSubTime(geo()->feb(x->feb()))*1E-9>maxt)
+	    maxt=x->pedSubTime(geo()->feb(x->feb()))*1E-9;
+	  hdt->Fill(x->pedSubTime(geo()->feb(x->feb())));
 	  hdf->Fill(x->fine()*1.);
 	  hmean->SetBinContent(x->channel(),hdt->GetMean());
 	  hrms->SetBinContent(x->channel(),hdt->GetRMS());
-	  if (x->channel()==21) t11=x->tdcTime();
-	  if (x->channel()==22) t12=x->tdcTime();
+	  if (x->channel()==21) t11=x->pedSubTime(geo()->feb(x->feb()));
+	  if (x->channel()==22) t12=x->pedSubTime(geo()->feb(x->feb()));
 	  for (int i=1;i<heff->GetNbinsX();i++)
 	    {
 	      heff->SetBinContent(i,hchan->GetBinContent(i)/hchan->GetBinContent(65)*100);
@@ -648,7 +648,7 @@ void lmana::TdcAnalyzer::rawAnalysis(std::vector<lydaq::TdcChannel>& vChannel,st
 }
 void lmana::TdcAnalyzer::multiChambers(std::vector<lydaq::TdcChannel>& vChannel)
 {
-  this->rawAnalysis(vChannel,"Raw");
+  /// A recommenter this->rawAnalysis(vChannel,"Raw");
   //  return;
   //_noise=true;
   //this->noiseStudy(vChannel,"OffTime");

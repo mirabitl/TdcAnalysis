@@ -94,6 +94,7 @@ public:
   inline uint16_t side(jsonFebInfo& f) {return  f.tdc2side[channel()];}
   //  inline uint16_t strip(jsonFebInfo& f) {return  70+f.tdc2strip[channel()];}
   inline uint16_t strip(jsonFebInfo& f) {return  f.tdc2strip[channel()];}
+  inline double pedSubTime(jsonFebInfo& f) {return  tdcTime()-f.timeped[channel()];}
   inline uint16_t feb(){return _feb;}
 
 

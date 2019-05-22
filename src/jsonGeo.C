@@ -86,6 +86,10 @@ void jsonGeo::fillFebs(uint32_t run)
 		_jFebs[feb_id].dtc[i]=jfeb["dtc"][i].asDouble();
 	      else
 		_jFebs[feb_id].dtc[i]=0.0;
+	      if (jfeb.isMember("dtcped"))
+		_jFebs[feb_id].timeped[i]=jfeb["dtcped"][i].asDouble();
+	      else
+		_jFebs[feb_id].timeped[i]=0.0;
 	    }
 	  _jFebs[feb_id].triggerMin=jfeb["triggerMin"].asDouble();
 	  _jFebs[feb_id].triggerMax=jfeb["triggerMax"].asDouble();
