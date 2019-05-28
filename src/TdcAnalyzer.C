@@ -83,7 +83,7 @@ void lmana::TdcAnalyzer::drawHits(int ch)
  */
 #define TRIGCHAN 1
 using namespace std;
-lmana::TdcAnalyzer::TdcAnalyzer(DCHistogramHandler*r ) : Analyzer(r),_pedestalProcessed(false),_nevt(0),_ntrigger(0),_nfound(0),_nbside(0),_triggerFound(false),_display(false),_noise(false)
+lmana::TdcAnalyzer::TdcAnalyzer(DCHistogramHandler*r ) : Analyzer(r),_pedestalProcessed(false),_nevt(0),_ntrigger(0),_nfound(0),_nbside(0),_triggerFound(false),_display(false),_noise(false),_lastabcid(0)
 {
 }
 void lmana::TdcAnalyzer::clear()
@@ -127,7 +127,27 @@ void lmana::TdcAnalyzer::setInfo(uint32_t dif,uint32_t run,uint32_t ev,uint32_t 
   _jEvent["dacset"]=dac;
   
   //std::cout<<_jEvent<<std::endl;
-  //getchar();
+  double dlt=0;
+  if (_lastabcid!=0)
+    {
+      dlt=(_abcid-_lastabcid)*2E-7;
+      printf("Windows time %lld %lld %f \n",_lastabcid,_abcid,dlt);
+    }
+  _lastabcid=_abcid;
+  if (dlt>1E-30)
+    {
+      std::stringstream sraw;
+      sraw<<"/run"<<_run<<"/";
+      TH1* hdlt=rh()->GetTH1(sraw.str()+"DeltaTrigger");
+
+      if (hdlt==NULL)
+	{
+	  hdlt=rh()->BookTH1(sraw.str()+"DeltaTrigger",10000,0.,20.);
+	}
+      hdlt->Fill(dlt);
+
+      //getchar();
+    }
 }
 bool lmana::TdcAnalyzer::noiseStudy(std::vector<lydaq::TdcChannel>& vChannel,std::string subdir)
 {
@@ -161,7 +181,7 @@ bool lmana::TdcAnalyzer::noiseStudy(std::vector<lydaq::TdcChannel>& vChannel,std
   for (int i=0;i<49;i++) {   ch2_dt[72+i]=alg2[i];}
 #endif
   uint32_t triggerChannel=TRIGCHAN;
-  float dtmin=-140,dtmax=-585;
+  float dtmin=-540,dtmax=-585;
   bool noisy=false;
   //dtmin+=100;dtmax+=100;
   for (uint32_t chamber=1;chamber<=2;chamber++)
@@ -200,8 +220,8 @@ bool lmana::TdcAnalyzer::noiseStudy(std::vector<lydaq::TdcChannel>& vChannel,std
 	  //   }
 	  //dtmin=dtm[x->feb()][ x->side(geo()->feb(x->feb()))]-10.;
 	  //dtmax=dtm[x->feb()][ x->side(geo()->feb(x->feb()))]+10.;
-	  dtmin=geo()->feb(x->feb()).dt[x->side(geo()->feb(x->feb()))]-25;//20.;
-	  dtmax=geo()->feb(x->feb()).dt[x->side(geo()->feb(x->feb()))]+25;//20.;
+	  dtmin=geo()->feb(x->feb()).dt[x->side(geo()->feb(x->feb()))]-35;//20.;
+	  dtmax=geo()->feb(x->feb()).dt[x->side(geo()->feb(x->feb()))]+35;//20.;
 
 	  if (x->pedSubTime(geo()->feb(x->feb()))-ttime[x->feb()]>dtmin-200 && x->pedSubTime(geo()->feb(x->feb()))-ttime[x->feb()]<dtmax-200)
 	    {
@@ -310,7 +330,7 @@ bool lmana::TdcAnalyzer::noiseStudy(std::vector<lydaq::TdcChannel>& vChannel,std
       bool dostop=false;int nstrip=0;
       uint16_t febc[48];
       memset(febc,0,48);
-      std::bitset<49> stb(0);
+      std::bitset<64> stb(0);
       for (int i=0;i<128;i++)
 	{
 	  if (c_strip[i].size()>0)
@@ -648,7 +668,7 @@ void lmana::TdcAnalyzer::rawAnalysis(std::vector<lydaq::TdcChannel>& vChannel,st
 }
 void lmana::TdcAnalyzer::multiChambers(std::vector<lydaq::TdcChannel>& vChannel)
 {
-  /// A recommenter this->rawAnalysis(vChannel,"Raw");
+  //this->rawAnalysis(vChannel,"Raw");
   //  return;
   //_noise=true;
   //this->noiseStudy(vChannel,"OffTime");

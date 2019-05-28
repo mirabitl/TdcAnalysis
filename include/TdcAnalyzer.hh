@@ -40,7 +40,7 @@ namespace lmana
 
   };
   // DTA 2.5 DTY 1.5 puis 5. 5.  
-#define DTA 2.5
+#define DTA 5.
 #define DTY 1.5
   class TdcCluster
   {
@@ -205,7 +205,7 @@ namespace lmana
     std::vector<lydaq::TdcChannel>::iterator _trigger;
     std::vector<lmana::TdcStrip> _strips;
     uint32_t _dif,_run,_event,_gtc,_vthSet,_dacSet,_nevt,_ntrigger,_nfound,_nbside;
-    uint64_t _abcid,_abcid0;
+    uint64_t _abcid,_abcid0, _lastabcid;
     uint16_t _triggerChannel;
     bool _pedestalProcessed,_triggerFound,_display,_noise;
     
