@@ -104,8 +104,22 @@ def getdt(run,chamber,feb,sub=""):
     if (hch!=None):
       #print i,hch.GetEntries(),hch.GetMean();
       if (hch.GetEntries()>25):
-          scfit=TF1("scfit","gaus",-20.,20.)
-          hch.Fit("scfit","Q","",-20.,20);
+          if (hch.GetEntries()<100):
+              hch.Rebin(2)
+          if (hch.GetEntries()<50):
+              hch.Rebin(2)
+          nmax=0
+          imax=0
+          for ib in range(1,hch.GetNbinsX()):
+              if (hch.GetBinContent(ib)>nmax):
+                  nmax=hch.GetBinContent(ib)
+                  imax=ib
+
+          vmin=hch.GetBinCenter(imax)-7;
+          vmax=hch.GetBinCenter(imax)+7;
+          print vmin,vmax,imax,nmax
+          scfit=TF1("scfit","gaus",vmin,vmax)
+          hch.Fit("scfit","Q","",vmin,vmax);
           dtmean=scfit.GetParameter(1)
           dtres=scfit.GetParameter(2)
           print i,hch.GetEntries(),hch.GetMean(),dtmean,dtres
@@ -125,8 +139,23 @@ def getdt(run,chamber,feb,sub=""):
     if (hch1!=None):
       #print i,hch1.GetEntries(),hch1.GetMean();
       if (hch1.GetEntries()>25):
-          scfit=TF1("scfit","gaus",-20.,20.)
-          hch1.Fit("scfit","Q","",-20,20);
+          if (hch1.GetEntries()<100):
+              hch1.Rebin(2)
+          if (hch1.GetEntries()<50):
+              hch1.Rebin(2)
+
+          nmax=0
+          imax=0
+          for ib in range(1,hch1.GetNbinsX()):
+              if (hch1.GetBinContent(ib)>nmax):
+                  nmax=hch1.GetBinContent(ib)
+                  imax=ib
+
+          vmin=hch1.GetBinCenter(imax)-7;
+          vmax=hch1.GetBinCenter(imax)+7;
+
+          scfit=TF1("scfit","gaus",vmin,vmax)
+          hch1.Fit("scfit","Q","",vmin,vmax);
           dtmean=scfit.GetParameter(1)
           dtres=scfit.GetParameter(2)
           print i,hch1.GetEntries(),hch1.GetMean(),dtmean,dtres
