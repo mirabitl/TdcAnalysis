@@ -96,6 +96,8 @@ void lmana::TdcAnalyzer::processFEB(uint32_t feb,std::vector<lydaq::TdcChannel>&
 }
 void lmana::TdcAnalyzer::processChannels(std::vector<lydaq::TdcChannel>& vChannel)
 {
+  _nevt++;
+  if (_nevt<3) return;
   for (int i=0;i<255;i++)
     {
       // printf("FEB %d %d \n",i,geo()->feb(i).id);
@@ -1696,7 +1698,7 @@ void lmana::TdcAnalyzer::scurveAnalysis(uint32_t mezId,std::vector<lydaq::TdcCha
 	    if (hvth==NULL)
 	      {
 		
-		hvth=rh()->BookTH1(src.str(),900,0.,900.);
+		hvth=rh()->BookTH1(src.str(),1030,0.,1030.);
 		printf("Booking %s \n",src.str().c_str());
 	      }
 
@@ -1766,7 +1768,7 @@ void lmana::TdcAnalyzer::scurveAnalysis(uint32_t mezId,std::vector<lydaq::TdcCha
 		if (hvthd==NULL)
 		  {
 		    
-		    hvthd=rh()->BookTH1(srd.str(),900,0.,900.);
+		    hvthd=rh()->BookTH1(srd.str(),1030,0.,1030.);
 
 		  }
 
@@ -1777,7 +1779,7 @@ void lmana::TdcAnalyzer::scurveAnalysis(uint32_t mezId,std::vector<lydaq::TdcCha
 		if (hvthc==NULL)
 		  {
 		
-		    hvthc=rh()->BookTH1(src.str(),900,0.,900.);
+		    hvthc=rh()->BookTH1(src.str(),1030,0.,1030.);
 		
 		    printf("Booking %s \n",src.str().c_str());
 		  }

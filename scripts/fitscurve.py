@@ -616,6 +616,25 @@ def fitped(run,tdc,vthmin,vthmax,asic=1,ncha=24,rising=True,old=defped):
   asicmap[2][46]=6
   asicmap[2][47]=5
   asicmap[2][48]=4
+
+  asicmap={}
+  for i in {1,2}:
+    asicmap[i]=[]
+    for j in range(50):
+      asicmap[i].append(0)
+  f=open("/opt/TdcAnalysis/feb_mapping.json")
+  s=json.loads(f.read())
+  prh=s["v1_56"]["FlexTop"]["High"]["PR"]
+  prl=s["v1_56"]["FlexTop"]["Low"]["PR"]
+  tdch0=s["v1_56"]["FlexTop"]["High"]["TDC"][0]
+  tdch1=s["v1_56"]["FlexTop"]["High"]["TDC"][1]
+  tdcl0=s["v1_56"]["FlexTop"]["Low"]["TDC"][0]
+  tdcl1=s["v1_56"]["FlexTop"]["Low"]["TDC"][1]
+  for i in range(12):
+      asicmap[1][tdch0[i]]=prh[i]
+      asicmap[1][tdcl0[i]]=prl[i]
+      asicmap[2][tdcl1[i]]=prl[i]
+      asicmap[2][tdch1[i]]=prh[i]
   print asicmap
   ped=[]
   for i in range(32):
