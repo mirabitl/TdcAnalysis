@@ -39,7 +39,8 @@ public:
   float polarity;
   float triggerMin,triggerMax,triggerMean,dt[2];
   float timePedestal[49];
-  float dtc[49];
+  double dtc[49];
+  double timeped[49];
   bool isEmpty(){return (id==0);}
   void dump()
   {

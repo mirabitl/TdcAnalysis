@@ -104,8 +104,22 @@ def getdt(run,chamber,feb,sub=""):
     if (hch!=None):
       #print i,hch.GetEntries(),hch.GetMean();
       if (hch.GetEntries()>25):
-          scfit=TF1("scfit","gaus",-20.,20.)
-          hch.Fit("scfit","Q","",-20.,20);
+          if (hch.GetEntries()<100):
+              hch.Rebin(2)
+          if (hch.GetEntries()<50):
+              hch.Rebin(2)
+          nmax=0
+          imax=0
+          for ib in range(1,hch.GetNbinsX()):
+              if (hch.GetBinContent(ib)>nmax):
+                  nmax=hch.GetBinContent(ib)
+                  imax=ib
+
+          vmin=hch.GetBinCenter(imax)-7;
+          vmax=hch.GetBinCenter(imax)+7;
+          print vmin,vmax,imax,nmax
+          scfit=TF1("scfit","gaus",vmin,vmax)
+          hch.Fit("scfit","Q","",vmin,vmax);
           dtmean=scfit.GetParameter(1)
           dtres=scfit.GetParameter(2)
           print i,hch.GetEntries(),hch.GetMean(),dtmean,dtres
@@ -125,8 +139,23 @@ def getdt(run,chamber,feb,sub=""):
     if (hch1!=None):
       #print i,hch1.GetEntries(),hch1.GetMean();
       if (hch1.GetEntries()>25):
-          scfit=TF1("scfit","gaus",-20.,20.)
-          hch1.Fit("scfit","Q","",-20,20);
+          if (hch1.GetEntries()<100):
+              hch1.Rebin(2)
+          if (hch1.GetEntries()<50):
+              hch1.Rebin(2)
+
+          nmax=0
+          imax=0
+          for ib in range(1,hch1.GetNbinsX()):
+              if (hch1.GetBinContent(ib)>nmax):
+                  nmax=hch1.GetBinContent(ib)
+                  imax=ib
+
+          vmin=hch1.GetBinCenter(imax)-7;
+          vmax=hch1.GetBinCenter(imax)+7;
+
+          scfit=TF1("scfit","gaus",vmin,vmax)
+          hch1.Fit("scfit","Q","",vmin,vmax);
           dtmean=scfit.GetParameter(1)
           dtres=scfit.GetParameter(2)
           print i,hch1.GetEntries(),hch1.GetMean(),dtmean,dtres
@@ -617,6 +646,7 @@ def fitped(run,tdc,vthmin,vthmax,asic=1,ncha=24,rising=True,old=defped):
   asicmap[2][47]=5
   asicmap[2][48]=4
 
+
   asicmap={}
   for i in {1,2}:
     asicmap[i]=[]
@@ -658,7 +688,7 @@ def fitped(run,tdc,vthmin,vthmax,asic=1,ncha=24,rising=True,old=defped):
   hpnoise=TH1F("hpnoise","Summary noise %d %d " %(run,tdc),2*ncha,0.,2.*ncha);
   scfit=TF1("scfit","[0]*TMath::Erfc((x-[1])/[2])",vthmin+1,vthmax);
   
-  for ip in range(fi,la):
+  for ip in range(la-1,fi,-1):
       #c2.cd()
       if (asicmap[asic][ip]==0):
           continue;
@@ -732,7 +762,7 @@ def fitped(run,tdc,vthmin,vthmax,asic=1,ncha=24,rising=True,old=defped):
       for i in range(1,hs.GetNbinsX()):
         if (hs.GetBinContent(i)-hs.GetBinContent(i+1)>-10):
           hder.SetBinContent(i,hs.GetBinContent(i)-hs.GetBinContent(i+1))
-      hder.Rebin(4)
+      hder.Rebin(2)
       hder.GetXaxis().SetRangeUser(vthmin-1,vthmax);
       scfit.SetParameter(0,nmax/2.);
       scfit.SetParameter(1,hder.GetMean());
@@ -751,10 +781,12 @@ def fitped(run,tdc,vthmin,vthmax,asic=1,ncha=24,rising=True,old=defped):
 
       hder.Draw()
       c1.Update()
-      val = raw_input()
+      val1 = raw_input()
 
-      print "heho ",rped,hder.GetMean()
+      print "heho ",val1,rped,hder.GetMean()
       rped=hder.GetMean()
+      if (len(val1)>0):
+          rped=float(val1)
       hs.Draw()
       
 
