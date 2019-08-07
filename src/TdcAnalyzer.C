@@ -644,6 +644,8 @@ void lmana::TdcAnalyzer::rawAnalysis(std::vector<lydaq::TdcChannel>& vChannel,st
   double t11=0;
   double t12=0;
   bool dtfilled=false;
+  double tch[64];
+  memset(tch,0,64*sizeof(double));
   for (auto x=vChannel.begin();x!=vChannel.end();x++)
 	{
 	  //std::cout<<"================================> bit set \n";
@@ -694,6 +696,7 @@ void lmana::TdcAnalyzer::rawAnalysis(std::vector<lydaq::TdcChannel>& vChannel,st
 	  hdf->Fill(x->fine()*1.);
 	  hmean->SetBinContent(x->channel(),hdt->GetMean());
 	  hrms->SetBinContent(x->channel(),hdt->GetRMS());
+	  tch[x->channel()]=x->pedSubTime(geo()->feb(x->feb()));
 	  if (x->channel()==21) t11=x->pedSubTime(geo()->feb(x->feb()));
 	  if (x->channel()==22) t12=x->pedSubTime(geo()->feb(x->feb()));
 	  for (int i=1;i<heff->GetNbinsX();i++)
@@ -706,6 +709,25 @@ void lmana::TdcAnalyzer::rawAnalysis(std::vector<lydaq::TdcChannel>& vChannel,st
 	    dtfilled=true;
 	    }
 	}
+  for (int i=0;i<64;i++)
+    {
+      for (int j=i+1;j<64;j++)
+	{
+	  if (tch[i]>0 && tch[j]>0)
+	    {
+
+	      std::stringstream sraw;
+	      sraw<<"/run"<<_run<<"/"<<subdir<<"/DT/ch_"<<i<<"_"<<j;
+	      TH1* hdt=rh()->GetTH1(sraw.str());
+	      if (hdt==NULL)
+	    {
+	      hdt=rh()->BookTH1(sraw.str(),2000,-10.0,10.0);
+
+	    }			 
+	      hdt->Fill(tch[i]-tch[j]);
+	    }								
+	}
+    }
   //printf(" Mask %x \n",mask);
   //  if (mask!=0xFF)
   //  printf(" Problem =================\n");
@@ -1699,16 +1721,16 @@ void lmana::TdcAnalyzer::fullAnalysis(std::vector<lydaq::TdcChannel>& vChannel)
 }
 void lmana::TdcAnalyzer::pedestalAnalysis(uint32_t mezId,std::vector<lydaq::TdcChannel>& vChannel)
 {
-  _pedestalProcessed=true;
+  _pedestalProcessed=false;
 
-  std::cout<<"Mezzanine "<<mezId<<"Event "<<_event<<" GTC"<<_gtc<<" hits"<<vChannel.size()<<" Trigger channel "<<_triggerChannel<<std::endl;
+  std::cout<<"Mezzanine "<<mezId<<"Event "<<_event<<" GTC"<<_gtc<<" hits"<<vChannel.size()<<" Trigger channel "<<_triggerChannel<<" dacSet "<<std::endl;
 
   // Analyze
   std::stringstream sr;
   sr<<"/run"<<_run<<"/TDC"<<mezId<<"/";
 
   uint32_t dac =_dacSet;
-  for (int ich=0;ich<_triggerChannel+1;ich++)
+  for (int ich=0;ich<57;ich++)
     {
  
       std::stringstream src;
@@ -1725,14 +1747,14 @@ void lmana::TdcAnalyzer::pedestalAnalysis(uint32_t mezId,std::vector<lydaq::TdcC
 	{
 	  if (x->channel()==ich) {
 	    //printf("%d %d %f \n",x.channel(),x.bcid(),x.tdcTime());
-	    double dt=x->tdcTime()-lastf;
-	    lastf=x->tdcTime();
-	    if (dt>25 || dt<0)
-	      hdac->Fill(dac*1.);
+	    //double dt=x->tdcTime()-lastf;
+	    //lastf=x->tdcTime();
+	    //if (dt>25 || dt<0)
+	    hdac->Fill(dac*1.);
 	  }
 	}
     }
-
+  //getchar();
 }
 void lmana::TdcAnalyzer::scurveAnalysis(uint32_t mezId,std::vector<lydaq::TdcChannel>& vChannel)
 {

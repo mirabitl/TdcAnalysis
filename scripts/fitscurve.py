@@ -89,7 +89,30 @@ def getdtc(run,chamber,sub=""):
   r1 = map(prettyfloat, r1)
   print '"dt1":',r1
 
-
+def drawtdc(run,sub="Histos/InTime/"):
+    c=TCanvas()
+    hmean=TH1F("hmean","Summary of mean distance ",1000,-20.,20.)
+    hrms=TH1F("hrms","Summary of dispersion ",200,0,0.04)
+    f82=TFile(sub+"histo%d_0.root" % run);
+    f82.cd("/run%d/Raw/DT/" % run )
+    for i in range(64):
+        for j in range(i+1,64):
+            hch=f82.Get("/run%d/Raw/DT/ch_%d_%d" % (run,i,j))
+            if (hch==None):
+                continue
+            m=hch.GetMean()
+            r=hch.GetRMS()
+            hmean.Fill(m)
+            hrms.Fill(r)
+    c.cd()
+    hmean.Draw()
+    c.SaveAs("Dispersion_channel_to_channel_%d.png" % run)
+    v=raw_input()
+    
+    hrms.Draw()
+    c.Update()
+    c.SaveAs("RMS_channel_to_channel_%d.png" % run)
+    v=raw_input()
 def getdt(run,chamber,feb,sub=""):
   c=TCanvas()
   f82=TFile(sub+"histo%d_0.root" % run);
