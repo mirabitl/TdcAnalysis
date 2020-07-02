@@ -417,7 +417,7 @@ void tdcrb::read()
 	  
 	  int ier=::read(_fdIn,&_event,sizeof(uint32_t));
 	  _nread++;
-	  if (ier<0 || last==_event)
+	  if (ier<0 || (last==_event && _event!=_run) )
 	    {
 	      printf("Cannot read Event anymore %d %d %d \n ",ier,last,_event);return;
 	    }
@@ -622,7 +622,7 @@ void tdcrb::read()
 	  
 	  int ier=::read(_fdIn,&_event,sizeof(uint32_t));
 	  _nread++;
-if (ier<0 || ((last==_event)&_nread>200))
+if (ier<0 || ((last==_event)&_nread>200 && _event!=_run))
 	    {
 	      printf("Cannot read Event anymore %d  %d %d read %d \n ",ier,last,_event,_nread);return;
 	    }
@@ -738,7 +738,7 @@ if (ier<0 || ((last==_event)&_nread>200))
 		      bool tfound=false;
 		      for (int i=0;i<nch;i++)
 			{
-#define DUMPCHANSN			
+#define DUMPCHANSN	
 #ifdef DUMPCHANS			  
 			  for (int j=0;j<6;j++)
 			     INFO_PRINTF("\t %.2x ",cbuf[i*6+j]);

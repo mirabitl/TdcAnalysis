@@ -618,7 +618,7 @@ def fitped(run,tdc,vthmin,vthmax,asic=1,ncha=24,rising=True,old=defped):
   for i in {1,2}:
       asicmap[i]=[]
       for j in range(49):
-          asicmap[i].append(0)
+          asicmap[i].append(-1)
 
   asicmap[1][1]=30
   asicmap[1][2]=28
@@ -674,21 +674,27 @@ def fitped(run,tdc,vthmin,vthmax,asic=1,ncha=24,rising=True,old=defped):
   for i in {1,2}:
     asicmap[i]=[]
     for j in range(50):
-      asicmap[i].append(0)
-  f=open("/opt/TdcAnalysis/feb_mapping.json")
+      asicmap[i].append(-1)
+  f=open("/opt/TdcAnalysis/feb_mapping_proto.json")
   s=json.loads(f.read())
-  prh=s["v1_56"]["FlexTop"]["High"]["PR"]
-  prl=s["v1_56"]["FlexTop"]["Low"]["PR"]
-  tdch0=s["v1_56"]["FlexTop"]["High"]["TDC"][0]
-  tdch1=s["v1_56"]["FlexTop"]["High"]["TDC"][1]
-  tdcl0=s["v1_56"]["FlexTop"]["Low"]["TDC"][0]
-  tdcl1=s["v1_56"]["FlexTop"]["Low"]["TDC"][1]
-  for i in range(12):
-      asicmap[1][tdch0[i]]=prh[i]
-      asicmap[1][tdcl0[i]]=prl[i]
-      asicmap[2][tdcl1[i]]=prl[i]
-      asicmap[2][tdch1[i]]=prh[i]
+  prh=[]
+  prl=[]
+  
+  prh.append(s["v1_32"]["FlexTop"]["High"]["PR"][0])
+  prh.append(s["v1_32"]["FlexTop"]["High"]["PR"][1])
+  prl.append(s["v1_32"]["FlexTop"]["Low"]["PR"][0])
+  prl.append(s["v1_32"]["FlexTop"]["Low"]["PR"][1])
+  tdch0=s["v1_32"]["FlexTop"]["High"]["TDC"][0]
+  tdch1=s["v1_32"]["FlexTop"]["High"]["TDC"][1]
+  tdcl0=s["v1_32"]["FlexTop"]["Low"]["TDC"][0]
+  tdcl1=s["v1_32"]["FlexTop"]["Low"]["TDC"][1]
+  for i in range(ncha/4):
+      asicmap[1][tdch0[i]]=prh[0][i]
+      asicmap[1][tdcl0[i]]=prl[0][i]
+      asicmap[2][tdcl1[i]]=prl[1][i]
+      asicmap[2][tdch1[i]]=prh[1][i]
   print asicmap
+  val = raw_input()
   ped=[]
   for i in range(32):
     ped.append(0)
@@ -713,7 +719,7 @@ def fitped(run,tdc,vthmin,vthmax,asic=1,ncha=24,rising=True,old=defped):
   
   for ip in range(la-1,fi,-1):
       #c2.cd()
-      if (asicmap[asic][ip]==0):
+      if (asicmap[asic][ip]==-1):
           continue;
       hs=None
       if (rising):
@@ -759,7 +765,7 @@ def fitped(run,tdc,vthmin,vthmax,asic=1,ncha=24,rising=True,old=defped):
       
   for ip in range(fi,la):
       #c2.cd()
-      if (asicmap[asic][ip]==0):
+      if (asicmap[asic][ip]==-1):
           continue;
 
       hs=None

@@ -108,7 +108,7 @@ int main(int argc, char **argv )
    //getchar();
   std::stringstream spat;
   //int runask=atol(argv[1]);
-  spat<<"SMM*"<<runask<<"*.dat";
+  spat<<"SMM*R"<<runask<<".dat";
   //spat<<"SMM*"<<argv[1]<<"*.dat";
  #define UNTEST
  #ifdef UNTEST
