@@ -254,6 +254,7 @@ bool lmana::TdcAnalyzer::noiseStudy(std::vector<lydaq::TdcChannel>& vChannel,std
 	  TH1* hdt=rh()->GetTH1(src.str());
 	  TH2* hdtr=rh()->GetTH2(srcp.str()+"DeltaTrigger");
 	  TH1* hdtrp=rh()->GetTH1(srcp.str()+"DTall");
+	  TH2* hdtre=rh()->GetTH2(srcp.str()+"DTallVsGtc");
 	  //TH1* hfi=rh()->GetTH1(srcp.str()+"Fine");
 	  
 	  if (hdt==NULL)
@@ -262,6 +263,7 @@ bool lmana::TdcAnalyzer::noiseStudy(std::vector<lydaq::TdcChannel>& vChannel,std
 	      hdt=rh()->BookTH1(src.str(),135,-45,45);
 	      hdtr=rh()->BookTH2(srcp.str()+"DeltaTrigger",4000,-2000.,1500.,48,0.,48.);
 	      hdtrp=rh()->BookTH1(srcp.str()+"DTall",20000,-1000.,0.);
+	      hdtre=rh()->BookTH2(srcp.str()+"DTallVsGtc",4000,-500.,-100.,2000,0.,20000.);
 	      //hfi=rh()->BookTH1(srcp.str()+"Fine",100,-2.5,2.5);
 
 	    }
@@ -272,6 +274,7 @@ bool lmana::TdcAnalyzer::noiseStudy(std::vector<lydaq::TdcChannel>& vChannel,std
 	  dt=0;
 	  hdtr->Fill(x->pedSubTime(geo()->feb(x->feb()))-ttime[x->feb()]-dt,x->channel());
 	  hdtrp->Fill(x->pedSubTime(geo()->feb(x->feb()))-ttime[x->feb()]-dt);
+	  hdtre->Fill(x->pedSubTime(geo()->feb(x->feb()))-ttime[x->feb()]-dt,_gtc*1.);
 	  //printf("%f %f %f \n",x->pedSubTime(geo()->feb(x->feb())),ttime[x->feb()],x->pedSubTime(geo()->feb(x->feb()))-ttime[x->feb()]);
 	  if (_noise)
 	    {
@@ -417,7 +420,7 @@ bool lmana::TdcAnalyzer::noiseStudy(std::vector<lydaq::TdcChannel>& vChannel,std
 			{
 			  lmana::TdcStrip ts(geo()->feb(x->feb()).chamber,x->feb(),x->detectorStrip(geo()->feb(x->feb())),t0,t1,geo()->feb(x->feb()).timePedestal[x->detectorStrip( geo()->feb(x->feb()))]);
 					     //ch1_dt[x->detectorStrip( geo()->feb(x->feb()))+1]);
-			  if (abs(ts.ypos())>1.) 
+			  if (abs(ts.ypos())>-100.) // Usually >1 
 			    _strips.push_back(ts);
 			}
 		      else

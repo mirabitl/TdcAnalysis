@@ -41,7 +41,7 @@ namespace lmana
   };
   // DTA 2.5 DTY 1.5 puis 5. 5.  
 #define DTA 5.
-#define DTY 1.5
+#define DTY 8.5
   class TdcCluster
   {
   public:
